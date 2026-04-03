@@ -11,6 +11,7 @@ Most residents don’t know:
 ❖ what the impacts might be
 
 Run locally
+    
     from frontend/
     npm run build
     npm run dev
