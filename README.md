@@ -22,11 +22,14 @@ Civic Spiegel guarantees un-biased, fact-checked RAG summaries without compromis
 ## Running Locally
 
 ### 1. The Data Pipeline
-*Currently utilizing an offline JSON fallback database so ML/Data execution requires no live Neon DB connection.*
+*Currently utilizing an offline JSON fallback (`mock_db.json`) so ML/Data execution requires no live Neon DB connection.*
+
 ```bash
-cd pipeline
+# 1. Install unified dependencies
 pip install -r requirements.txt
-python -m scrapers.nyc_council_rss
+
+# 2. Run the unified pipeline (scrapes, classifies, and embeds)
+python pipeline/run_pipeline.py
 ```
 
 ### 2. The Frontend

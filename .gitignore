@@ -57,3 +57,13 @@ next-env.d.ts
 **/__pycache__/
 **/.pytest_cache/
 
+# Pipeline
+**/.cache/
+**/pipeline/output/*.json
+!**/pipeline/output/mock_db.json
+
+# Local Environment
+.env*
+install_log*.txt
+run_log*.txt
+pip_list.txt
