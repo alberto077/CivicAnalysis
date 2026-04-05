@@ -56,7 +56,7 @@ This documentation is designed to be easily referenced for academic project defe
   * **Cost & Limit Constraints:** We required a 100% free solution to batch-process thousands of NYC Council minutes and news articles. API free tiers (like Voyage AI) restrict to 3 Requests Per Minute without a credit card, which is unworkable for bulk scraping.
   * **Local Overhead Constraint:** `sentence-transformers` requires downloading massive PyTorch libraries (1-2GB+). `fastembed` uses the ONNX runtime to execute quantized models (e.g., `BAAI/bge-small-en-v1.5`) solely on the CPU - fast, low memory, no GPU needed.
   * **384 dimensions** is intentionally small - it matches our `pgvector` column in `DocumentChunk` and keeps index sizes manageable on a free DB tier.
-* **Current Status:** Model is instantiated but `embed()` call is commented out in `embedding_engine.py`. Embeddings currently return `[0.0] * 384` as stubs. Activation requires uncommenting 3 lines.
+* **Current Status:** Fully activated. `EmbeddingEngine` provides sentence-aware chunking with word overlap and generates 384-dimension vectors via `BAAI/bge-small-en-v1.5`.
 
 ---
 

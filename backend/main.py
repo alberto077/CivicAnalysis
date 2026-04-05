@@ -28,7 +28,7 @@ def get_mock_db_context():
     """Reads the JSON pipeline output into memory as dummy RAG context."""
     db_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), 
-        "pipeline", "output", "nyc_council_rss_test.json"
+        "pipeline", "output", "mock_db.json"
     )
     
     if not os.path.exists(db_path):

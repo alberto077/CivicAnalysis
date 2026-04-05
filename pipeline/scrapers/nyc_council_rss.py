@@ -6,6 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from base_scraper import BaseScraper
 from embedding_engine import EmbeddingEngine
+from tag_classifier import TagClassifier
 
 class NYCCouncilRSSScraper(BaseScraper):
     """
@@ -15,6 +16,7 @@ class NYCCouncilRSSScraper(BaseScraper):
     def __init__(self, feed_url: str = "https://rss.nytimes.com/services/xml/rss/nyt/NYRegion.xml"):
         self.feed_url = feed_url
         self.embedder = EmbeddingEngine()
+        self.classifier = TagClassifier()
         
     def scrape(self) -> List[Dict[str, Any]]:
         print(f"Executing live scrape from {self.feed_url}...")
@@ -52,7 +54,7 @@ class NYCCouncilRSSScraper(BaseScraper):
             return []
 
     def process(self, raw_data: List[Dict[str, Any]]) -> List[Dict]:
-        print("Simulating processing data...")
+        print("Processing NY Local News RSS...")
         processed = []
         for item in raw_data:
             # Chunk the text
@@ -61,6 +63,9 @@ class NYCCouncilRSSScraper(BaseScraper):
             # Generate the vector arrays
             vectors = self.embedder.generate_embeddings(chunks)
             
+            # Generate advanced classification tags
+            ml_tags = self.classifier.classify(item["title"], item["description"])
+
             document_chunks = []
             for i, (text, vector) in enumerate(zip(chunks, vectors)):
                 document_chunks.append({
@@ -72,6 +77,13 @@ class NYCCouncilRSSScraper(BaseScraper):
             processed.append({
                 "title": item["title"],
                 "source_url": item["link"],
+                "source_type": "News RSS",
+                "published_date": item.get("pub_date"),
+                "metadata_tags": {
+                    "outlet": "NYT Regional",
+                    "jurisdiction": "NYC/NYS",
+                    **ml_tags
+                },
                 "chunks": document_chunks
             })
             
