@@ -47,11 +47,12 @@
 - [x] `BaseScraper` abstract class with `scrape()`, `process()`, `save_to_json()`, `run()` interface
 - [x] `SampleRSSScraper` — hardcoded mock data demonstrating schema output format
 - [x] `NYCCouncilRSSScraper` — live scraper hitting NYT Regional RSS (placeholder until Legistar available)
-- [x] `EmbeddingEngine` class — boilerplate chunker + stub `generate_embeddings()` (returns `[0.0]*384`)
-- [x] `pipeline/output/` — JSON export pipeline confirmed working end-to-end
-- [ ] Activate real FastEmbed model (`BAAI/bge-small-en-v1.5`) — uncomment 3 lines in `embedding_engine.py`
-- [ ] Replace NYT RSS placeholder with real NYC Civic data sources (Legistar, Open Data)
-- [ ] Add `metadata_tags` classification (policy area, affected demographics) to `process()` output
+- [x] `EmbeddingEngine` class — improved sentence-aware chunking + overlap
+- [x] `TagClassifier` class — hybrid keyword + spaCy NER metadata classification
+- [x] `pipeline/output/mock_db.json` — unified mock database produced by run_pipeline.py
+- [x] Activate real FastEmbed model (`BAAI/bge-small-en-v1.5`)
+- [x] Replace NYT RSS placeholder with real NYC Civic data sources (Legistar, Open Data)
+- [x] Add `metadata_tags` classification (policy area, affected demographics) to `process()` output
 - [ ] Build `init_db.py` to migrate from JSON output to Neon Postgres *(needs Neon DB)*
 
 ### 3. Backend & Storage
@@ -319,15 +320,16 @@ CivicAnalysis/
 | | `NYCCouncilRSSScraper` (NYT RSS placeholder, live scrape) | ML | ✅ |
 | | `SampleRSSScraper` mock data showing correct output format | ML | ✅ |
 | | `EmbeddingEngine` boilerplate (chunker + stub embeddings) | ML | ✅ |
-| | Activate real FastEmbed model in `embedding_engine.py` | ML | 🛠️ In Progress |
+| | Activate real FastEmbed model in `embedding_engine.py` | ML | ✅ |
 | | Replace NYT RSS with real NYC data sources (Legistar / Open Data) | ML | 🛠️ In Progress |
 | | Set up Groq account + add `GROQ_API_KEY` to `.env` | BE | ⏳ Pending |
 | **Apr 17** | **[BE + ML BLOCKER]** Set up Neon Postgres + `DATABASE_URL` in `.env` | BE | ⏳ Pending |
-| | **[BE BLOCKER]** Run `init_db.py` to create tables in Neon | BE | ⏳ Pending |
-| | **[ML BLOCKER]** Build `save_to_postgres()` in `BaseScraper` (replaces `save_to_json`) | ML | ⏳ Pending |
-| | **[ML BLOCKER]** Run full pipeline: scrape → embed → push to Neon | ML | ⏳ Pending |
-| | **[BE BLOCKER]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ⏳ Pending |
-| | **[ML BLOCKER]** Add `metadata_tags` classification to `process()` (policy area, demographics) | ML | ⏳ Pending |
+| | **[BE]** Run `init_db.py` to create tables in Neon | BE | ⏳ Pending |
+| | **[ML]** Build `save_to_postgres()` in `BaseScraper` (replaces `save_to_json`) | ML | ⏳ Pending |
+| | **[ML]** Run full pipeline: scrape → embed → push to Neon | ML | ⏳ Pending |
+| | **[BE]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ⏳ Pending |
+| | Add `metadata_tags` classification to `process()` (policy area, demographics) | ML | ✅ |
+| | Improve chunking + overlap (sentence-aware) | ML | ✅ |
 | | OnboardingModal → save to `localStorage` | FE | ⏳ Pending |
 | | Personalization toggle + Advanced Filters on Dashboard | FE | ⏳ Pending |
 | | Connect Politician Cards & Omnibus breakdown components to DB APIs | FE | ⏳ Pending |
