@@ -10,15 +10,16 @@ from llm_engine import LLMEngine
 
 app = FastAPI(title="Civic Spiegel Backend API")
 
-# Configure CORS for Next.js localhost testing
+# CORS: explicit production URLs + local dev + any Vercel preview (*.vercel.app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://civic-spiegel.vercel.app",
+        "https://spieglo.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://spieglo.vercel.app/"
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
