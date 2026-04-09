@@ -7,24 +7,21 @@
 
 - **Frontend:** Next.js + TypeScript + Tailwind. 
 - **Zero-Auth** - demographic user data stays in the browser's `localStorage` only.
-- **Backend API:** Python + FastAPI, bridging the pipeline to the frontend via REST. Deployed on Render.
-- **Database:** Neon Serverless Postgres + `pgvector`. The schema is defined in `backend/schema.py` using SQLModel. 
-    - *Neon account not yet set up - using local JSON mock in the meantime, but will be needed for deployment*
-- **Data & Pipeline:** Abstract Python scrapers (`BaseScraper`) that output structured JSON matching the DB schema.
-- **Embeddings:** FastEmbed (`BAAI/bge-small-en-v1.5`) running locally on CPU via ONNX. 
-    - *Currently mocked with zero-vectors - real model activation requires one code change: uncommenting the import and model loading in `pipeline/embedding_engine.py`*
-- **LLM:** Groq API (`llama-3.1-8b-instant`) for fast, free inference. 
-    - *Running in mock bypass mode - no Groq key needed to test locally, but will be needed for deployment*
+- **Backend API:** Python + FastAPI, bridging the pipeline to the frontend via REST. Deployed on Render (Active).
+- **Database:** Neon Serverless Postgres + `pgvector`. The schema is defined in `backend/schema.py` using SQLModel. (Provisioned & Live).
+- **Data & Pipeline:** Abstract Python scrapers (`BaseScraper`) that push to Neon or output structured JSON.
+- **Embeddings:** FastEmbed (`BAAI/bge-small-en-v1.5`) running locally on CPU via ONNX. (Finalized).
+- **LLM:** Groq API (`llama-3.1-8b-instant`) for fast, free inference. (Active).
 
 ## 2. Current Development Environment
 
 *You do not need to wait for the Neon Postgres database to start writing ML or scraping logic.*
 
-We have created an **offline mock-database pipeline** in `pipeline/`.
+We have created a robust pipeline in `pipeline/`.
 *   All scrapers inherit from `pipeline/base_scraper.py`.
-*   Once a scraper extracts data and passes it through `embedding_engine.py`, the `run()` function dumps a structured JSON file to `pipeline/output/`.
-*   The FastAPI backend reads this JSON directly, so the frontend and backend can run and test the full RAG loop without any cloud infrastructure.
-*   Once Neon is provisioned, the only change needed is replacing `save_to_json()` with `save_to_postgres()`.
+*   Scrapers push results directly to the live Neon Postgres database.
+*   The FastAPI backend performs `pgvector` similarity search to retrieve the most relevant context for the RAG loop.
+*   Local testing: You can still run scrapers with the `--json` flag to verify data without hitting the cloud database.
 
 ## 3. Running the Backend Server
 ```bash
@@ -53,10 +50,12 @@ uvicorn main:app --reload
 ```bash
 cd pipeline
 pip install -r requirements.txt
-# Run the NYC Council RSS scraper (currently hits NYT Regional RSS as placeholder):
-python -m scrapers.nyc_council_rss
-# Run the sample mock scraper (shows expected output format):
-python -m scrapers.sample_rss_scraper
+# Run all scrapers in sequence (default to Neon DB, or use --json):
+python run_pipeline.py --json
+
+# Run individual NYS scrapers:
+python -m scrapers.nys_senate_bills --json
+python -m scrapers.nys_senate_transcripts --json
 ```
 Output JSON files are saved to `pipeline/output/`.
 
@@ -65,6 +64,8 @@ Create a `.env` file in the `backend/` folder before deploying or using real API
 ```
 DATABASE_URL=<your Neon postgres connection string>
 GROQ_API_KEY=<your Groq API key>
+NYS_SENATE_API_KEY=<your NYS Senate API key>
+BACKEND_PROD_URL=<your Render backend URL>
 ```
 Without these, the backend runs in full mock mode — which is fine for local development.
 
@@ -76,24 +77,22 @@ Without these, the backend runs in full mock mode — which is fine for local de
 | `backend/llm_engine.py` | Groq LLM wrapper with mock bypass |
 | `pipeline/base_scraper.py` | Abstract base class all scrapers must inherit |
 | `pipeline/embedding_engine.py` | Text chunker + FastEmbed stub (real model commented out) |
-| `pipeline/scrapers/nyc_council_rss.py` | Live scraper (NYT RSS placeholder) |
-| `pipeline/scrapers/sample_rss_scraper.py` | Hardcoded mock data showing correct output schema |
-| `pipeline/output/` | Local JSON files used by the backend as mock DB |
-| `docs/PLANNING.md` | Master project plan, benchmarks, and timeline |
-| `docs/ARCHITECTURE_DECISIONS.md` | Why we chose each tool/approach |
-| `docs/DATABASE_ARCHITECTURE.md` | Schema details, ER diagram, and blocker actions |
-| `docs/DOMAINS_AND_NUANCES.md` | NYC/NYS political context — important for fair data modeling |
+| `pipeline/scrapers/nys_senate_bills.py` | Official NYS legislative records scraper |
+| `pipeline/scrapers/nys_senate_transcripts.py` | High-signal NYS transcript scraper |
+| `cron/` | Orchestration scripts (keep-alive, triggers) |
+| `docs/DATA_SYSTEM_INTEGRATION.md` | Comprehensive system architecture & FE guide |
+| `docs/PLANNING.md` | Master project plan and benchmarks |
+| `docs/ARCHITECTURE_DECISIONS.md` | Logic behind technology choices |
+| `docs/DOMAINS_AND_NUANCES.md` | NYC/NYS political context |
 
-## 7. What Needs to Happen Next (ML/BE Focus)
+## 7. What Needs to Happen Next
 
-**Backend blockers (BE team):**
-- [ ] Create Neon Postgres account → save `DATABASE_URL` to `.env`
-- [ ] Create Groq account → save `GROQ_API_KEY` to `.env`
-- [ ] Write and run `init_db.py` to create tables in Neon
-- [ ] Replace JSON mock retrieval with `pgvector` cosine similarity in `/api/chat`
+**Current State:**
+- [x] Core Data Pipeline & ML Tagger (NYS + NYC ready)
+- [x] Scraper Orchestration & Cron logic implemented
+- [x] Backend RAG endpoints with background pipeline triggering
 
-**Pipeline next steps (ML team):**
-- [ ] Activate real FastEmbed in `embedding_engine.py` (uncomment 3 lines)
-- [ ] Replace NYT RSS placeholder with real NYC civic data sources
-- [ ] Add `metadata_tags` classification (policy area, affected demographics) to `process()` output
-- [ ] Build `save_to_postgres()` in `BaseScraper` once Neon is available
+**What Needs to Happen Next:**
+- [ ] Frontend Team: Connect Chat UI to `POST /api/chat`
+- [ ] Frontend Team: Build Dashboard filters using `metadata_tags` schema (see `DATA_SYSTEM_INTEGRATION.md`)
+- [ ] DevOps: Set up [cron-job.org](https://cron-job.org) to hit production endpoints.
