@@ -9,16 +9,16 @@ class TagClassifier:
     """
 
     POLICY_KEYWORDS = {
-        "Housing": ["housing", "rent", "tenant", "landlord", "eviction", "affordable", "zoning", "buildings", "nycha", "homeless"],
-        "Criminal Justice": ["police", "nypd", "criminal", "policing", "law enforcement", "public safety", "jail", "correction", "bail"],
-        "Transportation": ["transit", "mta", "subway", "bus", "transportation", "traffic", "street", "bike", "vision zero"],
-        "Budget": ["budget", "funding", "expense", "finance", "fiscal", "tax", "appropriation", "spending"],
-        "Education": ["school", "education", "doe", "teacher", "student", "curriculum", "university", "cuny"],
-        "Environment": ["climate", "environment", "sanitation", "energy", "park", "pollution", "sustainability", "waste"],
-        "Health": ["health", "hospital", "medical", "mental health", "public health", "clinic", "disease"],
-        "Immigration": ["immigrant", "immigration", "daca", "asylum", "undocumented", "refugee"],
-        "Labor": ["labor", "employment", "wage", "worker", "union", "job", "workforce", "minimum wage"],
-        "Civil Rights": ["civil rights", "equality", "discrimination", "liberties", "protest", "justice"],
+        "Housing": ["housing", "rent", "tenant", "landlord", "eviction", "affordable", "zoning", "buildings", "nycha", "homeless", "rent stabilization", "rent control"],
+        "Criminal Justice": ["police", "nypd", "criminal", "policing", "law enforcement", "public safety", "jail", "correction", "bail", "parole", "prison", "district attorney"],
+        "Transportation": ["transit", "mta", "subway", "bus", "transportation", "traffic", "street", "bike", "vision zero", "lirr", "metro-north", "thruway"],
+        "Budget": ["budget", "funding", "expense", "finance", "fiscal", "tax", "appropriation", "spending", "discretionary", "revenue"],
+        "Education": ["school", "education", "doe", "teacher", "student", "curriculum", "university", "cuny", "suny", "regents"],
+        "Environment": ["climate", "environment", "sanitation", "energy", "park", "pollution", "sustainability", "waste", "dec", "clean energy"],
+        "Health": ["health", "hospital", "medical", "mental health", "public health", "clinic", "disease", "medicaid", "doh"],
+        "Immigration": ["immigrant", "immigration", "daca", "asylum", "undocumented", "refugee", "sanctuary"],
+        "Labor": ["labor", "employment", "wage", "worker", "union", "job", "workforce", "minimum wage", "unemployment"],
+        "Civil Rights": ["civil rights", "equality", "discrimination", "liberties", "protest", "justice", "voting rights"],
     }
 
     DEMOGRAPHIC_KEYWORDS = {
@@ -33,8 +33,8 @@ class TagClassifier:
     }
 
     JURISDICTION_MAP = {
-        "NYC Council": ["council", "city hall", "borough", "mayor", "local law"],
-        "NYS Legislature": ["albany", "senate", "assembly", "governor", "state law"],
+        "NYC Council": ["council", "city hall", "borough", "mayor", "local law", "nycc", "legistar"],
+        "NYS Legislature": ["albany", "senate", "assembly", "governor", "state law", "nys senate", "nys assembly", "legislative", "capitol"],
     }
 
     def __init__(self, model: str = "en_core_web_sm"):
