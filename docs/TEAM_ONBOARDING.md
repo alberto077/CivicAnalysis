@@ -53,7 +53,9 @@ pip install -r requirements.txt
 # Run all scrapers in sequence (default to Neon DB, or use --json):
 python run_pipeline.py --json
 
-# Run individual NYS scrapers:
+# Run individual NYS/NYC scrapers:
+python -m scrapers.nyc_council_meetings --json
+python -m scrapers.nyc_council_legistar --json
 python -m scrapers.nys_senate_bills --json
 python -m scrapers.nys_senate_transcripts --json
 ```
@@ -65,6 +67,7 @@ Create a `.env` file in the `backend/` folder before deploying or using real API
 DATABASE_URL=<your Neon postgres connection string>
 GROQ_API_KEY=<your Groq API key>
 NYS_SENATE_API_KEY=<your NYS Senate API key>
+NYC_COUNCIL_API_KEY=<your NYC Council Legistar API key>
 BACKEND_PROD_URL=<your Render backend URL>
 ```
 Without these, the backend runs in full mock mode — which is fine for local development.
