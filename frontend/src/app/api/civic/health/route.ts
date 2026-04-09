@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 
 import { getBackendOrigin } from "@/lib/backend-internal";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   let upstream: Response;
   try {
-    upstream = await fetch(`${getBackendOrigin()}/api/civic/health`, {
+    upstream = await fetch(`${getBackendOrigin()}/api/health`, {
       cache: "no-store",
     });
   } catch (e) {
