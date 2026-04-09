@@ -53,7 +53,7 @@
 - [x] Activate real FastEmbed model (`BAAI/bge-small-en-v1.5`)
 - [x] Replace NYT RSS placeholder with real NYC Civic data sources (Legistar, Open Data)
 - [x] Add `metadata_tags` classification (policy area, affected demographics) to `process()` output
-- [ ] Build `init_db.py` to migrate from JSON output to Neon Postgres *(needs Neon DB)*
+- [x] Build `init_db.py` to migrate from JSON output to Neon Postgres *(needs Neon DB)*
 
 ### 3. Backend & Storage
 - [x] 5-table normalized schema (`Politician`, `LegislationEvent`, `VoteRecord`, `PolicyDocument`, `DocumentChunk`)
@@ -61,9 +61,9 @@
 - [x] `LLMEngine` with Groq SDK + **mock bypass switch** (no key needed to test)
 - [x] `POST /api/chat` endpoint — reads `pipeline/output/*.json`, sends top 5 chunks to LLM as RAG context
 - [x] `GET /api/health` endpoint confirmed working
-- [ ] Groq API key — set `GROQ_API_KEY` in `.env` *(needs account setup)*
-- [ ] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py` *(needs account setup)*
-- [ ] Replace JSON mock retrieval with `pgvector` cosine similarity search *(needs Neon DB)*
+- [x] Groq API key — set `GROQ_API_KEY` in `.env` *(needs account setup)*
+- [x] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py` *(needs account setup)*
+- [x] Replace JSON mock retrieval with `pgvector` cosine similarity search *(needs Neon DB)*
 - [ ] Add `POST /api/documents` endpoint to seed DB from pipeline JSON *(needs Neon DB)*
 
 ### 4. Frontend (Next.js)
@@ -322,12 +322,12 @@ CivicAnalysis/
 | | `EmbeddingEngine` boilerplate (chunker + stub embeddings) | ML | ✅ |
 | | Activate real FastEmbed model in `embedding_engine.py` | ML | ✅ |
 | | Replace NYT RSS with real NYC data sources (Legistar / Open Data) | ML | 🛠️ In Progress |
-| | Set up Groq account + add `GROQ_API_KEY` to `.env` | BE | ⏳ Pending |
-| **Apr 17** | **[BE + ML BLOCKER]** Set up Neon Postgres + `DATABASE_URL` in `.env` | BE | ⏳ Pending |
-| | **[BE]** Run `init_db.py` to create tables in Neon | BE | ⏳ Pending |
-| | **[ML]** Build `save_to_postgres()` in `BaseScraper` (replaces `save_to_json`) | ML | ⏳ Pending |
-| | **[ML]** Run full pipeline: scrape → embed → push to Neon | ML | ⏳ Pending |
-| | **[BE]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ⏳ Pending |
+| | Set up Groq account + add `GROQ_API_KEY` to `.env` | BE | ✅ |
+| **Apr 17** | **[BE + ML BLOCKER]** Set up Neon Postgres + `DATABASE_URL` in `.env` | BE | ✅ |
+| | **[BE]** Run `init_db.py` to create tables in Neon | BE | ✅ |
+| | **[ML]** Build `save_to_postgres()` in `BaseScraper` (replaces `save_to_json`) | ML | ✅ |
+| | **[ML]** Run full pipeline: scrape → embed → push to Neon | ML | ✅ |
+| | **[BE]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ✅ |
 | | Add `metadata_tags` classification to `process()` (policy area, demographics) | ML | ✅ |
 | | Improve chunking + overlap (sentence-aware) | ML | ✅ |
 | | OnboardingModal → save to `localStorage` | FE | ⏳ Pending |
@@ -341,5 +341,5 @@ CivicAnalysis/
 | | Connect Reranker feature (Voyage AI - stretch goal) | ML/BE | ⏳ Pending |
 | **May 08** | Working MVP end-to-end integration | ALL | ⏳ Pending |
 | | QA, Testing, UI Polish | ALL | ⏳ Pending |
-| | All hosting live (Vercel / Render / Neon) | ALL | ⏳ Pending |
+| | All hosting live (Vercel / Render / Neon) | ALL | ✅ |
 | **May 15** | Final Projects and Demos Due | ALL | ⏳ Pending |
