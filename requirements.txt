@@ -1,27 +1,23 @@
-# Civic Spiegel - Project Requirements
-
-# Core Pipeline (scraping + embeddings)
-beautifulsoup4==4.12.3
-requests>=2.31.0
-fastembed>=0.5.0
-lxml>=5.2.1
-
-# NLP / Classification
-spacy>=3.7.0
-
-# Backend (FastAPI)
+# Backend (FastAPI + RAG) 
 fastapi>=0.115.0
 uvicorn>=0.30.0
 python-dotenv>=1.0.0
 python-multipart>=0.0.9
+pydantic>=2.5.0
 
-# Database (Neon Postgres + pgvector)
+# Database (Neon Postgres + pgvector) 
 sqlmodel>=0.0.16
 pgvector>=0.2.5
 psycopg2-binary>=2.9.9
 
-# LLM (Groq)
-groq>=0.4.2
+# LLM (Groq) 
+groq>=0.12.0
 
-# Shared utilities
-pydantic>=2.5.0
+# Embeddings 
+fastembed>=0.5.0
+requests>=2.31.0
+
+# Pipeline (scraping + NLP) 
+beautifulsoup4==4.12.3
+lxml>=5.2.1
+spacy>=3.7.0
