@@ -18,6 +18,7 @@ app.add_middleware(
         "https://spieglo.vercel.app",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "civiq-du3mvo3yt-thasmias-projects.vercel.app"
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
