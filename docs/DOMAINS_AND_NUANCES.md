@@ -120,6 +120,23 @@ This maps our Q5 ("issues that matter to you") answers to the NYC legislative bo
 
 ---
 
+### 9. NYS Senate Biennial Cycle (API Nuance)
+The New York State Legislature operates on a **biennial (two-year) cycle**. This is a major technical hurdle for data ingestion:
+- **Session Year Logic:** To retrieve data for 2024, you must query the session start year (2023). Requesting an even year directly via the Open Legislation API often results in `400 Bad Request` or incomplete results.
+- **Backfill Strategy:** Historical backfills must loop through odd years (2021, 2023, 2025) to capture the full legislative context of those sessions.
+
+---
+
+## Technical Scalability Nuances
+
+### High-Density Signal Recovery
+Capturing 8-10 years of civic history in a limited-storage environment (like Neon Free Tier) requires a shift from "Scrape Everything" to **"Signal Recovery"**:
+- **Lossy Compression for RAG:** Verbose transcripts (often 50+ pages) must be summarized by AI (Groq/Llama 3.1) into "Civic Briefings" *before* storage.
+- **Procedural Noise Filtering:** Up to 30% of civic records are procedural noise. Identifying "High-Signal" items is a domain requirement for historical scalability.
+- **Precision vs. Quantity:** A 16-bit vector (`halfvec`) provides sufficient semantic precision for policy search while doubling the number of years we can store.
+
+---
+
 ## Conclusion for the MVP
 
 Users aren't coming to Civic Spiegel just to see a spreadsheet of "Yeas" and "Nays" — they can get that on the official government website. They come to **understand the context**.

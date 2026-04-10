@@ -10,7 +10,16 @@ export type ChatExtra = {
 };
 
 /** Same-origin proxy (see app/api/civic/*) — avoids CORS and localhost vs 127.0.0.1 issues. */
-const CIVIC_API = "/api/civic";
+const CIVIC_API = "https://civic-spiegel.onrender.com";
+
+/** Plain "Not Found" usually means the Next proxy hit the wrong host/path (wrong API_INTERNAL_BASE_URL). */
+export function formatUserFacingApiError(message: string): string {
+  const t = message.trim();
+  if (t === "Not Found") {
+    return `${t} — Configure API_INTERNAL_BASE_URL (or BACKEND_URL) to your FastAPI server’s public URL (where /api/health works), not your frontend site URL.`;
+  }
+  return message;
+}
 
 function buildDemographics(extra?: ChatExtra): Record<string, string> {
   if (!extra) return {};
@@ -69,7 +78,7 @@ export async function sendChat(
     body.demographics = demographics;
   }
 
-  const res = await fetch(`${CIVIC_API}/chat`, {
+  const res = await fetch(`${CIVIC_API}/briefing`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

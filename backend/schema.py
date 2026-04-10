@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, JSON
 from typing import Optional, Dict, List
 from datetime import datetime, date
-from pgvector.sqlalchemy import Vector
+from pgvector.sqlalchemy import Vector, HalfVector
 
 class Politician(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -56,5 +56,5 @@ class DocumentChunk(SQLModel, table=True):
     text_content: str
     chunk_index: int
     
-    embedding: Optional[list[float]] = Field(default=None, sa_column=Column(Vector(384)))
+    embedding: Optional[list[float]] = Field(default=None, sa_column=Column(HalfVector(384)))
     document: Optional[PolicyDocument] = Relationship(back_populates="chunks")

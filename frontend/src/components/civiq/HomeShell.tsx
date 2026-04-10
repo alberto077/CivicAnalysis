@@ -8,7 +8,12 @@ import { NeighborhoodInsights } from "@/components/civiq/NeighborhoodInsights";
 import { MapPanel } from "@/components/civiq/MapPanel";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
-import { checkHealth, sendChat, type ChatResponse } from "@/lib/api";
+import {
+  checkHealth,
+  formatUserFacingApiError,
+  sendChat,
+  type ChatResponse,
+} from "@/lib/api";
 
 const OnboardingModal = dynamic(
   () =>
@@ -40,13 +45,10 @@ export function HomeShell() {
       setLastBriefingQuery(q);
     } catch (e) {
       console.error("Briefing request failed:", e);
-      const message =
-        e instanceof Error ? e.message : "Unable to load policy data";
-      setError(
-        process.env.NODE_ENV === "development"
-          ? message
-          : "Policy data unavailable. Please try again.",
+      const message = formatUserFacingApiError(
+        e instanceof Error ? e.message : "Unable to load policy data",
       );
+      setError(message);
     } finally {
       setLoading(false);
     }

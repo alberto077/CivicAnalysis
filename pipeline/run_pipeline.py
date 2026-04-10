@@ -1,21 +1,27 @@
 import sys
 from scrapers.gothamist_rss import GothamistRSSScraper
 from scrapers.nyc_council_meetings import NYCCouncilMeetingsScraper
-from scrapers.nyc_council_rss import NYCCouncilRSSScraper
+from scrapers.nyc_council_legistar import NYCCouncilLegistarScraper
+from scrapers.nys_senate_bills import NYSSenateBillsScraper
+from scrapers.nys_senate_transcripts import NYSSenateTranscriptsScraper
 
 
-def run_full_pipeline():
+def run_full_pipeline(use_json: bool = False):
     """
     Unified runner for all civic scrapers.
     Each scraper writes directly to Neon DB via BaseScraper.save_to_db().
     Pass --json flag for local JSON fallback.
     """
-    use_json = "--json" in sys.argv
+    # If not explicitly set, check command line arguments
+    if not use_json:
+        use_json = "--json" in sys.argv
 
     scrapers = [
         # GothamistRSSScraper(),  # Skip Gothamist for now as per user request to avoid 403s
         NYCCouncilMeetingsScraper(),
-        NYCCouncilRSSScraper(),
+        NYCCouncilLegistarScraper(),
+        NYSSenateBillsScraper(),
+        NYSSenateTranscriptsScraper(),
     ]
 
     total = 0

@@ -20,14 +20,14 @@
 | API | Python + FastAPI | Render
 | Database | Neon PostgreSQL (Free Tier) | Cloud
 | Vector DB | `pgvector` (PostgreSQL extension) | Cloud
-| Pipeline | Python scripts + cron-job.org | Local -> DB -> Cloud
-| Web Scraping | Beautiful Soup / Requests (Python) | Local
-| Embeddings | FastEmbed (`BAAI/bge-small-en-v1.5`) via local CPU | Local pipeline
+| Pipeline | Python scripts + GitHub Actions (7GB RAM) | Cloud
+| Web Scraping | Beautiful Soup / Requests (Python) | GitHub Actions
+| Embeddings | FastEmbed (`BAAI/bge-small-en-v1.5`) via ONNX | GitHub Actions
 | Precision RAG | Voyage AI Reranker (Stretch/Phase 2) | API
 | LLM | Groq API (`llama-3.1-8b-instant`) | API
-| ML tags | Keyword rules or spaCy | Local
+| ML tags | Hybrid Keyword/spaCy (NYS + NYC) | GitHub Actions
 | Auth | None (`localStorage` + URL params only) | Browser
-| Cron | cron-job.org (free) | Cloud
+| Cron | GitHub Actions (Pipeline) + cron-job.org (Keep-Alive) | Cloud
 
 - Optional Considerations: 
     - Caching / Queues: Redis
@@ -45,15 +45,17 @@
 
 ### 2. Data Pipeline & ML
 - [x] `BaseScraper` abstract class with `scrape()`, `process()`, `save_to_json()`, `run()` interface
-- [x] `SampleRSSScraper` — hardcoded mock data demonstrating schema output format
-- [x] `NYCCouncilRSSScraper` — live scraper hitting NYT Regional RSS (placeholder until Legistar available)
+- [x] Implement "Fail Fast" data integrity (No Mocks)
+- [x] Implement High-Density Storage (AI Summarization + `halfvec`)
+- [x] Create and execute Historical Backfill Script (2021-2026)
 - [x] `EmbeddingEngine` class — improved sentence-aware chunking + overlap
 - [x] `TagClassifier` class — hybrid keyword + spaCy NER metadata classification
 - [x] `pipeline/output/mock_db.json` — unified mock database produced by run_pipeline.py
 - [x] Activate real FastEmbed model (`BAAI/bge-small-en-v1.5`)
-- [x] Replace NYT RSS placeholder with real NYC Civic data sources (Legistar, Open Data)
+- [x] Replace NYT RSS placeholder with real NYC Civic data sources (Legistar API + Socrata)
 - [x] Add `metadata_tags` classification (policy area, affected demographics) to `process()` output
-- [x] Build `init_db.py` to migrate from JSON output to Neon Postgres *(needs Neon DB)*
+- [x] Integrate full NYC + NYS Transcript Engine
+- [x] Build `init_db.py` to migrate from JSON output to Neon Postgres (Neon DB)
 
 ### 3. Backend & Storage
 - [x] 5-table normalized schema (`Politician`, `LegislationEvent`, `VoteRecord`, `PolicyDocument`, `DocumentChunk`)
@@ -61,10 +63,10 @@
 - [x] `LLMEngine` with Groq SDK + **mock bypass switch** (no key needed to test)
 - [x] `POST /api/chat` endpoint — reads `pipeline/output/*.json`, sends top 5 chunks to LLM as RAG context
 - [x] `GET /api/health` endpoint confirmed working
-- [x] Groq API key — set `GROQ_API_KEY` in `.env` *(needs account setup)*
-- [x] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py` *(needs account setup)*
-- [x] Replace JSON mock retrieval with `pgvector` cosine similarity search *(needs Neon DB)*
-- [ ] Add `POST /api/documents` endpoint to seed DB from pipeline JSON *(needs Neon DB)*
+- [x] Groq API key — set `GROQ_API_KEY` in `.env`
+- [x] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py`
+- [x] Replace JSON mock retrieval with `pgvector` cosine similarity search (Neon DB)
+- [x] ~~Add `POST /api/pipeline/run` endpoint~~ (Removed for RAM safety; use GitHub Actions)
 
 ### 4. Frontend (Next.js)
 - [x] Initial Next.js scaffolding with TypeScript + Tailwind
@@ -249,7 +251,7 @@
 RSS scrape (NYT placeholder) → chunk text → save to pipeline/output/*.json → FastAPI reads JSON → LLM mock response
 ```
 
-**Target flow (once Neon DB is set up):**
+**Target flow (via GitHub Actions):**
 ```
 scrape real sources → chunk → classify (metadata_tags) → FastEmbed embeddings → Neon Postgres (pgvector) → semantic retrieval → Groq LLM → response
 ```
@@ -283,7 +285,7 @@ CivicAnalysis/
   frontend/     # Next.js app, components, lib
   backend/      # FastAPI server, schema, LLM engine
   pipeline/     # scrapers, embedding engine, output/
-  cron/         # cron-job.org ; quick/daily/minor updates to db
+  cron/         # keep-alive heartbeat
   docs/         # all project documentation
 ```
 
@@ -291,15 +293,13 @@ CivicAnalysis/
 ---
 
 ## Roles
-- Project Manager: 
-- Frontend: 
-- Backend:
-- Data / ML: 
+- Project Manager: Juana
+- Frontend: Thasmia, Kevon
+- Backend: Alberto
+- Data / ML: Juana
 
 
 ## Timeline / Deadlines
-
-> **[ML/BE] Blocker:** Neon DB and Groq API key not yet set up. BE + ML tasks depend on this. BE team should create Neon account and save `DATABASE_URL` + `GROQ_API_KEY` to `.env` ASAP.
 
 | Date | Task Description | Role | Status |
 |---|---|---|---|
@@ -321,7 +321,7 @@ CivicAnalysis/
 | | `SampleRSSScraper` mock data showing correct output format | ML | ✅ |
 | | `EmbeddingEngine` boilerplate (chunker + stub embeddings) | ML | ✅ |
 | | Activate real FastEmbed model in `embedding_engine.py` | ML | ✅ |
-| | Replace NYT RSS with real NYC data sources (Legistar / Open Data) | ML | 🛠️ In Progress |
+| | Replace NYT RSS with real NYC data sources (Legistar / Open Data) | ML | ✅ |
 | | Set up Groq account + add `GROQ_API_KEY` to `.env` | BE | ✅ |
 | **Apr 17** | **[BE + ML BLOCKER]** Set up Neon Postgres + `DATABASE_URL` in `.env` | BE | ✅ |
 | | **[BE]** Run `init_db.py` to create tables in Neon | BE | ✅ |
@@ -330,13 +330,17 @@ CivicAnalysis/
 | | **[BE]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ✅ |
 | | Add `metadata_tags` classification to `process()` (policy area, demographics) | ML | ✅ |
 | | Improve chunking + overlap (sentence-aware) | ML | ✅ |
-| | OnboardingModal → save to `localStorage` | FE | ⏳ Pending |
+| | Filter procedural no    ise (roll calls, housekeeping) via `TagClassifier.is_high_signal` | ML | ✅ |
+| | Condense verbose transcripts via `EmbeddingEngine.summarize` (Groq/Llama 3.1) | ML | ✅ |
+| | Double storage capacity via `HalfVector` (16-bit) schema optimization | ML | ✅ |
+| | OnboardingModal → save to `localStorage` | FE | ✅ |
 | | Personalization toggle + Advanced Filters on Dashboard | FE | ⏳ Pending |
 | | Connect Politician Cards & Omnibus breakdown components to DB APIs | FE | ⏳ Pending |
 | **Apr 24** | *Buffer week — continue previous tasks* | ALL | ⏳ Pending |
 | | Multi-language support, accessibility tweaks | FE | ⏳ Pending |
 | | Error handling, strict rate limiting | BE | ⏳ Pending |
-| | Create `cron` triggers for regular scraping pipeline execution | ML | ⏳ Pending |
+| | Create `GitHub Actions` orchestration for daily scraping pipeline | DevOps | ✅ |
+| | ~~Implement RAM Safety Guard for Render Free Tier~~ | DevOps | ✅ |
 | **May 01** | *Stretch Features* | ALL | ⏳ Pending |
 | | Connect Reranker feature (Voyage AI - stretch goal) | ML/BE | ⏳ Pending |
 | **May 08** | Working MVP end-to-end integration | ALL | ⏳ Pending |

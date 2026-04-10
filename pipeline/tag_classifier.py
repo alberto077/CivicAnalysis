@@ -9,16 +9,16 @@ class TagClassifier:
     """
 
     POLICY_KEYWORDS = {
-        "Housing": ["housing", "rent", "tenant", "landlord", "eviction", "affordable", "zoning", "buildings", "nycha", "homeless"],
-        "Criminal Justice": ["police", "nypd", "criminal", "policing", "law enforcement", "public safety", "jail", "correction", "bail"],
-        "Transportation": ["transit", "mta", "subway", "bus", "transportation", "traffic", "street", "bike", "vision zero"],
-        "Budget": ["budget", "funding", "expense", "finance", "fiscal", "tax", "appropriation", "spending"],
-        "Education": ["school", "education", "doe", "teacher", "student", "curriculum", "university", "cuny"],
-        "Environment": ["climate", "environment", "sanitation", "energy", "park", "pollution", "sustainability", "waste"],
-        "Health": ["health", "hospital", "medical", "mental health", "public health", "clinic", "disease"],
-        "Immigration": ["immigrant", "immigration", "daca", "asylum", "undocumented", "refugee"],
-        "Labor": ["labor", "employment", "wage", "worker", "union", "job", "workforce", "minimum wage"],
-        "Civil Rights": ["civil rights", "equality", "discrimination", "liberties", "protest", "justice"],
+        "Housing": ["housing", "rent", "tenant", "landlord", "eviction", "affordable", "zoning", "buildings", "nycha", "homeless", "rent stabilization", "rent control"],
+        "Criminal Justice": ["police", "nypd", "criminal", "policing", "law enforcement", "public safety", "jail", "correction", "bail", "parole", "prison", "district attorney"],
+        "Transportation": ["transit", "mta", "subway", "bus", "transportation", "traffic", "street", "bike", "vision zero", "lirr", "metro-north", "thruway"],
+        "Budget": ["budget", "funding", "expense", "finance", "fiscal", "tax", "appropriation", "spending", "discretionary", "revenue"],
+        "Education": ["school", "education", "doe", "teacher", "student", "curriculum", "university", "cuny", "suny", "regents"],
+        "Environment": ["climate", "environment", "sanitation", "energy", "park", "pollution", "sustainability", "waste", "dec", "clean energy"],
+        "Health": ["health", "hospital", "medical", "mental health", "public health", "clinic", "disease", "medicaid", "doh"],
+        "Immigration": ["immigrant", "immigration", "daca", "asylum", "undocumented", "refugee", "sanctuary"],
+        "Labor": ["labor", "employment", "wage", "worker", "union", "job", "workforce", "minimum wage", "unemployment"],
+        "Civil Rights": ["civil rights", "equality", "discrimination", "liberties", "protest", "justice", "voting rights"],
     }
 
     DEMOGRAPHIC_KEYWORDS = {
@@ -33,17 +33,25 @@ class TagClassifier:
     }
 
     JURISDICTION_MAP = {
-        "NYC Council": ["council", "city hall", "borough", "mayor", "local law"],
-        "NYS Legislature": ["albany", "senate", "assembly", "governor", "state law"],
+        "NYC Council": ["council", "city hall", "borough", "mayor", "local law", "nycc", "legistar"],
+        "NYS Legislature": ["albany", "senate", "assembly", "governor", "state law", "nys senate", "nys assembly", "legislative", "capitol"],
     }
 
+    _model_cache = {}
+
     def __init__(self, model: str = "en_core_web_sm"):
-        try:
-            self.nlp = spacy.load(model)
-            print(f"TagClassifier initialized with spaCy model: {model}")
-        except Exception as e:
-            print(f"Warning: Could not load spaCy model {model}. NER will be disabled. Error: {e}")
-            self.nlp = None
+        # Singleton pattern: prevent loading the same spaCy model multiple times
+        if model not in TagClassifier._model_cache:
+            try:
+                print(f"Loading spaCy model into memory: {model}...")
+                TagClassifier._model_cache[model] = spacy.load(model)
+            except Exception as e:
+                print(f"Warning: Could not load spaCy model {model}. NER will be disabled. Error: {e}")
+                TagClassifier._model_cache[model] = None
+        
+        self.nlp = TagClassifier._model_cache[model]
+        if self.nlp:
+            print(f"TagClassifier ready (shared instance) with model: {model}")
 
     def _keyword_match(self, text: str, keyword_dict: Dict[str, List[str]], threshold: int = 2) -> List[str]:
         """Returns categories where at least 'threshold' keywords match (case-insensitive)."""
@@ -104,6 +112,33 @@ class TagClassifier:
             "policy_stage": policy_stage,
             "entities": {k: list(v) for k, v in entities.items()}
         }
+
+    def is_high_signal(self, text: str) -> bool:
+        """
+        Determines if a chunk of text is worth storing or if it's 'procedural junk'.
+        A chunk is high signal if it matches at least one policy/demographic keyword,
+        or contains a politician's name.
+        """
+        text_lower = text.lower()
+        
+        # 1. Ignore common procedural/housekeeping phrases
+        junk_phrases = ["roll call", "adjourn", "meeting called to order", "minutes of the meeting", "housekeeping"]
+        if any(junk in text_lower for junk in junk_phrases) and len(text_lower) < 200:
+            return False
+
+        # 2. Check for policy/demographic signal
+        for categories in [self.POLICY_KEYWORDS, self.DEMOGRAPHIC_KEYWORDS]:
+            for keywords in categories.values():
+                if any(re.search(rf"\b{re.escape(kw)}\b", text_lower) for kw in keywords):
+                    return True
+        
+        # 3. Check for specific named entities (politicians/agencies)
+        if self.nlp:
+            doc = self.nlp(text[:2000])
+            if any(ent.label_ in ["PERSON", "ORG"] for ent in doc.ents):
+                return True
+                
+        return False
 
 if __name__ == "__main__":
     classifier = TagClassifier()
