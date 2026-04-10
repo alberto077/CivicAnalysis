@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${getBackendOrigin()}/api/civic/chat`, {
+    upstream = await fetch(`${getBackendOrigin()}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
