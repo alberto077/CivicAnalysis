@@ -76,10 +76,9 @@ class NYSSenateTranscriptsScraper(BaseScraper):
 
         for trans in raw_data:
             session_type = trans.get("sessionType", "session")
-            t_type = trans.get("transcriptType", "unknown")
-            date_str = trans.get("transcriptDate", "Unknown Date")
-            location = trans.get("location", "NYS Senate Chamber")
-            
+            date_str = trans.get("dateTime", "Unknown Date")
+            t_type = session_type
+
             # Transcripts in this API usually have multiple segments or a full text
             # We'll take the 'plainText' if available or concatenate segments
             content = trans.get("plainText", "")
@@ -108,10 +107,10 @@ class NYSSenateTranscriptsScraper(BaseScraper):
             metadata = {
                 "transcript_date": date_str,
                 "session_year": year,
-                "transcript_type": t_type,
-                "location": location,
+                "transcript_type": session_type,
+                "location": "NYS Senate Chamber",
                 "jurisdiction": "NYS Legislature",
-                "published_date": trans.get("transcriptDate"),
+                "published_date": date_str,
                 **ml_tags
             }
 
@@ -119,7 +118,7 @@ class NYSSenateTranscriptsScraper(BaseScraper):
                 "title": title,
                 "source_url": f"https://www.nysenate.gov/transcripts/{year}/{date_str}/{session_type}",
                 "source_type": "NYS Senate Transcript",
-                "published_date": trans.get("transcriptDate"),
+                "published_date": date_str,
                 "metadata_tags": metadata,
                 "chunks": document_chunks,
             })
