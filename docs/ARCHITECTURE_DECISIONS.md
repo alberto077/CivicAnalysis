@@ -85,13 +85,15 @@ This documentation is designed to be easily referenced for academic project defe
 ---
 
 ## 8. Data Pipeline & Scraper Orchestration
-**Decision:** Abstract Python `BaseScraper` class, run locally or via cron-job.org
+**Decision:** Abstract Python `BaseScraper` class, automated via `cron/` scripts and `cron-job.org` triggers.
 * **Alternatives Considered:** Apache Airflow, Prefect, Celery.
 * **How We Decided:** 
   * **Complexity tradeoffs:** Tools like Airflow require dedicated Docker infrastructure, massive configuration, and high memory usage. That's overhead we cannot justify for an MVP on a $0 budget.
   * NYC Council minutes and civic data update infrequently (weekly hearings, monthly budget updates, not by the millisecond). Scheduled Python scripts are a perfect fit.
   * `BaseScraper` provides the interface; any team member can write a new scraper in ~50 lines by implementing `scrape()` and `process()`.
   * Cron triggers via cron-job.org (free) can hit a FastAPI endpoint that triggers a scraper run periodically.
+  * **Webhook Trigger Pattern:** By exposing a POST `/api/pipeline/run` endpoint on the FastAPI backend, we allow external free services (like cron-job.org) to trigger the pipeline without managing local cron tabs on the Render server.
+  * **Maintenance:** A dedicated `cron/keep_alive.py` script ensures the Render free-tier remains active, eliminating cold-start delays for demo visibility.
 
 ---
 
@@ -101,11 +103,11 @@ Given the NYC/NYS civic domain (see `DOMAINS_AND_NUANCES.md`), our scraping prio
 
 | Priority | Source | What it provides | Signal strength |
 |----------|--------|-----------------|-----------------|
-| 🥇 High | NYC Council Legistar (meeting minutes, transcripts) | What politicians *said* in hearings | Extremely high — raw testimony |
-| 🥇 High | NYC Open Data (legislation, budgets, council meetings) | Structured metadata for `LegislationEvent` and `Politician` tables | High — official record |
+| 🥇 High | NYS Senate Open Legislation API | State-level bills, transcripts, and floor debate | Extremely high — official state record |
+| 🥇 High | NYC Council Legistar (API + Scraping) | Full transcripts and meeting minutes | Extremely high — raw testimony |
+| 🥇 High | NYC Open Data (Socrata API) | Structured metadata for `LegislationEvent` tables | High — official record |
 | 🥈 Medium | NYC Mayor's Office press releases | Executive branch position statements | Medium — curated messaging |
 | 🥈 Medium | Local news RSS (NYT NYC, Gothamist) | Journalistic context and political impact analysis | Medium — interpreted |
-| 🥉 Lower | Floor vote roll calls | Raw Yea/Nay per politician per bill | Low without context — see Omnibus nuance |
 
 **Current State:** The `NYCCouncilRSSScraper` hits the NYT Regional RSS as a quick placeholder. The real Legistar API requires a developer access token (free, applied for via the Legistar portal). This is the primary data source to unlock for the Apr 17 milestone.
 
