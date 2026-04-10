@@ -33,6 +33,18 @@ app.add_middleware(
 llm = LLMEngine()
 
 
+@app.on_event("startup")
+async def list_routes():
+    """
+    Diagnostic log to verify available routes in the Render console.
+    """
+    print("\n--- Registered Routes ---")
+    for route in app.routes:
+        methods = ", ".join(route.methods) if hasattr(route, 'methods') else "N/A"
+        print(f"{methods.ljust(15)} {route.path}")
+    print("------------------------\n")
+
+
 # Pydantic schemas for the endpoint
 class ChatRequest(BaseModel):
     query: str
@@ -98,7 +110,9 @@ async def chat_endpoint(request: ChatRequest):
 
 
 @app.get("/api/health")
+@app.get("/api/health/")
 @app.get("/health")
+@app.get("/health/")
 async def health_check():
     """
     System status check.
@@ -113,7 +127,9 @@ async def health_check():
 
 
 @app.post("/api/pipeline/run")
+@app.post("/api/pipeline/run/")
 @app.post("/pipeline/run")
+@app.post("/pipeline/run/")
 async def trigger_pipeline(
     background_tasks: BackgroundTasks,
     x_cron_token: Optional[str] = Header(None)
@@ -137,4 +153,21 @@ async def trigger_pipeline(
         "status": "success",
         "message": "Full pipeline triggered in background",
         "timestamp": time.time()
+    }
+
+
+@app.get("/api/pipeline/run")
+@app.get("/api/pipeline/run/")
+@app.get("/pipeline/run")
+@app.get("/pipeline/run/")
+async def trigger_pipeline_diagnostic():
+    """
+    Diagnostic endpoint to confirm route visibility.
+    If you see this in your browser, the 404 is NOT a route issue,
+    but likely a Method (GET vs POST) mismatch.
+    """
+    return {
+        "status": "diagnostic_discovery",
+        "message": "Endpoint found! However, this URL requires a POST request to trigger the pipeline.",
+        "hint": "Ensure your cron-job.org task is set to 'POST' and includes the X-Cron-Token header."
     }
