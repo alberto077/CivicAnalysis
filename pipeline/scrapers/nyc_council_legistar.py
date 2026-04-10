@@ -43,8 +43,8 @@ class NYCCouncilLegistarScraper(BaseScraper):
         print(f"Fetching NYC Council Legislation from Legistar API...")
         
         if not NYC_COUNCIL_API_KEY:
-            print("  ⚠️ NYC_COUNCIL_API_KEY not found. Using small mock dataset for testing.")
-            return self._get_mock_data()
+            print("  ✗ NYC_COUNCIL_API_KEY not found. Skipping NYC Council scraping.")
+            return []
 
         try:
             import requests
@@ -60,7 +60,7 @@ class NYCCouncilLegistarScraper(BaseScraper):
             
             if response.status_code != 200:
                 print(f"  ✗ Failed to fetch matters: {response.status_code}")
-                return self._get_mock_data()
+                return []
 
             matters = response.json()
             all_data = []
@@ -88,7 +88,7 @@ class NYCCouncilLegistarScraper(BaseScraper):
 
         except Exception as e:
             print(f"Error fetching NYC Legistar data: {e}")
-            return self._get_mock_data()
+            return []
 
     def process(self, raw_data: List[Dict[str, Any]]) -> List[Dict]:
         print("Processing NYC Council legislation...")
@@ -137,30 +137,6 @@ class NYCCouncilLegistarScraper(BaseScraper):
 
         return processed
 
-    def _get_mock_data(self) -> List[Dict[str, Any]]:
-        """Fallback mock data for development without Legistar API key."""
-        return [
-            {
-                "MatterId": "12345",
-                "MatterFile": "Int 0123-2024",
-                "MatterName": "Air Quality Monitoring",
-                "MatterTitle": "A Local Law to amend the administrative code of the city of New York, in relation to air quality monitoring in disadvantaged communities.",
-                "MatterStatusName": "In Committee",
-                "MatterTypeName": "Introduction",
-                "MatterLastModifiedDate": "2024-03-20T10:00:00",
-                "_full_text": "This bill requires the Department of Environmental Protection to install air quality monitors in every census tract identified as a disadvantaged community under the climate leadership and community protection act."
-            },
-            {
-                "MatterId": "67890",
-                "MatterFile": "Res 0456-2024",
-                "MatterName": "Tenant Protection Act Support",
-                "MatterTitle": "Resolution calling upon the New York State Legislature to pass and the Governor to sign the Tenant Protection Act of 2024.",
-                "MatterStatusName": "Adopted",
-                "MatterTypeName": "Resolution",
-                "MatterLastModifiedDate": "2024-04-05T14:30:00",
-                "_full_text": "WHEREAS, New York City is facing a housing crisis of historic proportions; and WHEREAS, rent stabilization is a critical tool for preventing displacement..."
-            }
-        ]
 
 if __name__ == "__main__":
     scraper = NYCCouncilLegistarScraper()

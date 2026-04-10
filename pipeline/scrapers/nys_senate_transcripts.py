@@ -42,8 +42,8 @@ class NYSSenateTranscriptsScraper(BaseScraper):
         print(f"Fetching NYS Senate transcripts for {SESSION_YEAR}...")
         
         if not NYS_SENATE_API_KEY:
-            print("  ⚠️ NYS_SENATE_API_KEY not found. Using small mock dataset for testing.")
-            return self._get_mock_data()
+            print("  ✗ NYS_SENATE_API_KEY not found. Skipping NYS Senate Transcripts scraping.")
+            return []
 
         try:
             import requests
@@ -74,7 +74,7 @@ class NYSSenateTranscriptsScraper(BaseScraper):
 
         except Exception as e:
             print(f"Error fetching NYS Senate transcripts: {e}")
-            return self._get_mock_data()
+            return []
 
     def process(self, raw_data: List[Dict[str, Any]]) -> List[Dict]:
         print("Processing NYS Senate transcripts...")
@@ -129,22 +129,6 @@ class NYSSenateTranscriptsScraper(BaseScraper):
 
         return processed
 
-    def _get_mock_data(self) -> List[Dict[str, Any]]:
-        """Fallback mock data for development without API key."""
-        return [
-            {
-                "_transcript_type": "floor",
-                "transcriptDate": "2024-03-15",
-                "location": "Albany, NY",
-                "plainText": "Senator Rivera: 'We must ensure that the MTA budget is fully funded to prevent service cuts in the outer boroughs.' Senator Ortt: 'While we support transit, we must also consider the tax burden on suburban residents.'",
-            },
-            {
-                "_transcript_type": "public-hearing",
-                "transcriptDate": "2024-04-01",
-                "location": "Virtual / Albany",
-                "plainText": "The Committee on Housing, Construction and Community Development meets today to discuss the extension of rent stabilization laws. 20 speakers from tenant unions and 5 from landlord associations are scheduled to testify.",
-            }
-        ]
 
 if __name__ == "__main__":
     scraper = NYSSenateTranscriptsScraper()

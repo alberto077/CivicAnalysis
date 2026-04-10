@@ -41,8 +41,8 @@ class NYSSenateBillsScraper(BaseScraper):
         print(f"Fetching NYS Senate bills for {SESSION_YEAR}...")
         
         if not NYS_SENATE_API_KEY:
-            print("  ⚠️ NYS_SENATE_API_KEY not found. Using small mock dataset for testing.")
-            return self._get_mock_data()
+            print("  ✗ NYS_SENATE_API_KEY not found. Skipping NYS Senate Bills scraping.")
+            return []
 
         try:
             import requests
@@ -67,7 +67,7 @@ class NYSSenateBillsScraper(BaseScraper):
 
         except Exception as e:
             print(f"Error fetching NYS Senate bills: {e}")
-            return self._get_mock_data()
+            return []
 
     def process(self, raw_data: List[Dict[str, Any]]) -> List[Dict]:
         print("Processing NYS Senate bill records...")
@@ -129,28 +129,6 @@ class NYSSenateBillsScraper(BaseScraper):
 
         return processed
 
-    def _get_mock_data(self) -> List[Dict[str, Any]]:
-        """Fallback mock data for development without API key."""
-        return [
-            {
-                "printNo": "S1234",
-                "title": "NYS Clean Energy Act expansion",
-                "summary": "This bill seeks to expand renewable energy tax credits for low-income homeowners across New York State, specifically targeting solar and wind installations.",
-                "status": {"statusDesc": "In Committee"},
-                "sponsor": {"member": {"fullName": "Senator Jane Doe"}},
-                "billType": {"chamber": "SENATE"},
-                "publishedDateTime": datetime.now().isoformat()
-            },
-            {
-                "printNo": "A5678",
-                "title": "Statewide Tenant Protection Extension",
-                "summary": "Extends the deadline for eviction protections and provides additional funding for the Emergency Rental Assistance Program (ERAP).",
-                "status": {"statusDesc": "Passed House"},
-                "sponsor": {"member": {"fullName": "Assemblymember John Smith"}},
-                "billType": {"chamber": "ASSEMBLY"},
-                "publishedDateTime": datetime.now().isoformat()
-            }
-        ]
 
 if __name__ == "__main__":
     scraper = NYSSenateBillsScraper()
