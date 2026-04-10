@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Header
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
@@ -7,13 +7,7 @@ from backend.db import engine
 from backend.schema import DocumentChunk, PolicyDocument
 from backend.embed import get_query_embedding
 from backend.llm_engine import LLMEngine
-from pipeline.run_pipeline import run_full_pipeline
-import sys
 import os
-import time
-
-# add pipeline directory to sys.path for cross-module imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = FastAPI(title="Civic Spiegel Backend API")
 
@@ -124,50 +118,3 @@ async def health_check():
         return {"status": "ok", "db_connected": True, "has_data": count > 0}
     except Exception as e:
         return {"status": "degraded", "db_connected": False, "error": str(e)}
-
-
-@app.post("/api/pipeline/run")
-@app.post("/api/pipeline/run/")
-@app.post("/pipeline/run")
-@app.post("/pipeline/run/")
-async def trigger_pipeline(
-    background_tasks: BackgroundTasks,
-    x_cron_token: Optional[str] = Header(None)
-):
-    """
-    Webhook to trigger the full data pipeline.
-    Runs as a background task to prevent HTTP timeouts.
-    Requires X-Cron-Token header for production security.
-    """
-    # Security token check
-    expected_token = os.getenv("CRON_SECRET")
-    
-    if expected_token and x_cron_token != expected_token:
-        print("Unauthorized pipeline trigger attempt.")
-        raise HTTPException(status_code=401, detail="Invalid cron token")
-    
-    print("Pipeline execution requested via API endpoint.")
-    background_tasks.add_task(run_full_pipeline, use_json=False)
-    
-    return {
-        "status": "success",
-        "message": "Full pipeline triggered in background",
-        "timestamp": time.time()
-    }
-
-
-@app.get("/api/pipeline/run")
-@app.get("/api/pipeline/run/")
-@app.get("/pipeline/run")
-@app.get("/pipeline/run/")
-async def trigger_pipeline_diagnostic():
-    """
-    Diagnostic endpoint to confirm route visibility.
-    If you see this in your browser, the 404 is NOT a route issue,
-    but likely a Method (GET vs POST) mismatch.
-    """
-    return {
-        "status": "diagnostic_discovery",
-        "message": "Endpoint found! However, this URL requires a POST request to trigger the pipeline.",
-        "hint": "Ensure your cron-job.org task is set to 'POST' and includes the X-Cron-Token header."
-    }

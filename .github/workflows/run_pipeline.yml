@@ -9,22 +9,37 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 60  # Allow plenty of time for scraping + NLP
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: 'pip' # Speeds up subsequent runs
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Download spaCy model
-        run: python -m spacy download en_core_web_sm
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m spacy download en_core_web_sm
 
       - name: Run pipeline
         env:
+          # Core DB
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # LLM & NLP (Required for summarization/tagging)
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Scraper APIs
+          NYS_SENATE_API_KEY: ${{ secrets.NYS_SENATE_API_KEY }}
+          NYC_COUNCIL_API_KEY: ${{ secrets.NYC_COUNCIL_API_KEY }}
+          # Context
+          BACKEND_PROD_URL: "https://civic-spiegel.onrender.com"
         run: |
-          cd pipeline
-          python run_pipeline.py
+          # Use PYTHONPATH to ensure imports work from root
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python pipeline/run_pipeline.py
