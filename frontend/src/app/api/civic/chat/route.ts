@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getBackendOrigin } from "@/lib/backend-internal";
+import {
+  getUpstreamApiUrl,
+  upstream404Hint,
+} from "@/lib/backend-internal";
 
 /** Vercel: allow slow Render cold starts / HuggingFace + RAG latency */
 export const maxDuration = 60;
@@ -9,10 +12,11 @@ const UPSTREAM_TIMEOUT_MS = 55_000;
 
 export async function POST(request: Request) {
   const body = await request.text();
+  const url = getUpstreamApiUrl("chat");
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${getBackendOrigin()}/api/chat`, {
+    upstream = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
@@ -28,6 +32,10 @@ export async function POST(request: Request) {
   }
 
   const text = await upstream.text();
+  if (upstream.status === 404) {
+    return NextResponse.json({ detail: upstream404Hint(url) }, { status: 502 });
+  }
+
   return new NextResponse(text, {
     status: upstream.status,
     headers: {

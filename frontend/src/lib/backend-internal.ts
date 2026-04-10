@@ -3,14 +3,28 @@
  * Never import this from Client Components.
  *
  * On Vercel, set one of: API_INTERNAL_BASE_URL (preferred), BACKEND_URL,
- * or NEXT_PUBLIC_API_BASE_URL — all must be the public HTTPS base of FastAPI (no trailing slash).
+ * or NEXT_PUBLIC_API_BASE_URL — the public HTTPS base of FastAPI (no trailing slash).
+ * Use the API server's URL (e.g. Render), not your Vercel frontend URL.
+ *
+ * If the env value already ends with `/api` (some hosts document it that way),
+ * paths are joined as `{base}/health` and `{base}/chat` instead of `{base}/api/...`.
  */
-export function getBackendOrigin(): string {
+
+export type UpstreamRoute = "health" | "chat";
+
+function getBackendBase(): { base: string } {
   const raw =
     process.env.API_INTERNAL_BASE_URL?.trim() ||
     process.env.BACKEND_URL?.trim() ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  const base = raw ? raw.replace(/\/$/, "") : "http://127.0.0.1:8000";
+    process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
+    "";
+  const base = (raw || "http://127.0.0.1:8000").replace(/\/+$/, "");
+  return { base };
+}
+
+/** Raw configured base (no path normalization). For logging and localhost warnings. */
+export function getBackendOrigin(): string {
+  const { base } = getBackendBase();
 
   if (process.env.VERCEL === "1" && /127\.0\.0\.1|localhost/.test(base)) {
     console.warn(
@@ -19,4 +33,39 @@ export function getBackendOrigin(): string {
   }
 
   return base;
+}
+
+/** Full URL for FastAPI health or chat, accounting for optional `/api` suffix on the base. */
+export function getUpstreamApiUrl(route: UpstreamRoute): string {
+  const { base } = getBackendBase();
+  const path = /\/api$/i.test(base)
+    ? route === "health"
+      ? "/health"
+      : "/chat"
+    : route === "health"
+      ? "/api/health"
+      : "/api/chat";
+  return `${base}${path}`;
+}
+
+/** Explains common 404s when the proxy reaches the wrong host or double-/api paths. */
+export function upstream404Hint(triedUrl: string): string {
+  const vercelHost = process.env.VERCEL_URL?.trim();
+  let looksLikeFrontend = false;
+  try {
+    const host = new URL(triedUrl).hostname.toLowerCase();
+    if (host.endsWith(".vercel.app")) looksLikeFrontend = true;
+    if (vercelHost && host === vercelHost.toLowerCase()) looksLikeFrontend = true;
+  } catch {
+    /* ignore */
+  }
+
+  const parts = [
+    `The policy API returned 404 for: ${triedUrl}.`,
+    looksLikeFrontend
+      ? "On Vercel, API_INTERNAL_BASE_URL must be your FastAPI server (e.g. https://….onrender.com), not this frontend's Vercel URL."
+      : "Confirm API_INTERNAL_BASE_URL is the root of your FastAPI app.",
+    "If your docs give a base URL that already ends with /api, keep that form — the proxy will call /health and /chat under it.",
+  ];
+  return parts.join(" ");
 }
