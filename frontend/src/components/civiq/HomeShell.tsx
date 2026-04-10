@@ -1,5 +1,5 @@
 "use client";
-
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
@@ -9,6 +9,15 @@ import { MapPanel } from "@/components/civiq/MapPanel";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { checkHealth, sendChat, type ChatResponse } from "@/lib/api";
+
+const OnboardingModal = dynamic(
+  () =>
+    import("@/components/civiq/OnboardingModal").then(
+      (mod) => mod.OnboardingModal
+    ),
+  { ssr: false }
+);
+
 
 export function HomeShell() {
   const [query, setQuery] = useState("");
@@ -45,6 +54,7 @@ export function HomeShell() {
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
+      <OnboardingModal />
       <Header />
       <main className="relative z-10 flex-1">
         <Hero
