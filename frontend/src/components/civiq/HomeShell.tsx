@@ -33,11 +33,7 @@ export function HomeShell() {
       console.error("Briefing request failed:", e);
       const message =
         e instanceof Error ? e.message : "Unable to load policy data";
-      setError(
-        process.env.NODE_ENV === "development"
-          ? message
-          : "Policy data unavailable. Please try again.",
-      );
+      setError(message);
     } finally {
       setLoading(false);
     }

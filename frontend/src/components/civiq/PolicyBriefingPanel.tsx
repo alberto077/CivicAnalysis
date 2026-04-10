@@ -79,23 +79,18 @@ export function PolicyBriefingPanel({
           className="mb-6 rounded-2xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-900 shadow-[0_4px_20px_-8px_rgba(180,40,40,0.12)] backdrop-blur-sm"
           role="alert"
         >
+          <span className="font-semibold">Policy data unavailable. </span>
+          <span className="font-normal">{error}</span>
           {process.env.NODE_ENV === "development" ? (
-            <>
-              <span className="font-semibold">Request failed · </span>
-              {error}
-              <p className="mt-2 text-xs font-normal text-red-800/90">
-                Tip: start FastAPI{" "}
-                <code className="rounded bg-red-100 px-1">python -m uvicorn main:app --reload</code>{" "}
-                in <code className="rounded bg-red-100 px-1">backend/</code> (port 8000). Optional{" "}
-                <code className="rounded bg-red-100 px-1">frontend/.env.local</code>{" "}
-                <code className="rounded bg-red-100 px-1">NEXT_PUBLIC_API_BASE_URL</code> tells the
-                Next proxy where to forward; default is <code className="rounded bg-red-100 px-1">127.0.0.1:8000</code>.
-                Then restart <code className="rounded bg-red-100 px-1">npm run dev</code>.
-              </p>
-            </>
-          ) : (
-            "Policy data unavailable. Please try again."
-          )}
+            <p className="mt-2 text-xs font-normal text-red-800/90">
+              Tip: start FastAPI{" "}
+              <code className="rounded bg-red-100 px-1">python -m uvicorn main:app --reload</code>{" "}
+              in <code className="rounded bg-red-100 px-1">backend/</code> (port 8000). Set{" "}
+              <code className="rounded bg-red-100 px-1">API_INTERNAL_BASE_URL</code> (or{" "}
+              <code className="rounded bg-red-100 px-1">NEXT_PUBLIC_API_BASE_URL</code>) in{" "}
+              <code className="rounded bg-red-100 px-1">frontend/.env.local</code> for the proxy.
+            </p>
+          ) : null}
         </div>
       ) : null}
 

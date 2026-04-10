@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getBackendOrigin } from "@/lib/backend-internal";
 
+/** Vercel: allow slow Render cold starts / HuggingFace + RAG latency */
+export const maxDuration = 60;
+
+const UPSTREAM_TIMEOUT_MS = 55_000;
+
 export async function POST(request: Request) {
   const body = await request.text();
 
@@ -12,6 +17,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
       body,
       cache: "no-store",
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
