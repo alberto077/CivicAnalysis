@@ -90,10 +90,7 @@ class NYSSenateTranscriptsScraper(BaseScraper):
 
             title = f"NYS Senate {t_type.capitalize()} Transcript — {date_str}"
             
-            # High-Density AI Summarization
-            summarized_content = self.embedder.summarize(content)
-            
-            chunks_text = self.embedder.chunk_text(summarized_content)
+            chunks_text = self.embedder.chunk_text(content)
             vectors = self.embedder.generate_embeddings(chunks_text)
 
             document_chunks = []

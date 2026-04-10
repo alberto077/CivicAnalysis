@@ -98,10 +98,8 @@ class NYSSenateBillsScraper(BaseScraper):
             # Date parsing
             pub_date = bill.get("publishedDateTime") or bill.get("approvalDate")
             
-            # High-Density AI Summarization
-            summarized_content = self.embedder.summarize(full_content)
             
-            chunks_text = self.embedder.chunk_text(summarized_content)
+            chunks_text = self.embedder.chunk_text(full_content)
             vectors = self.embedder.generate_embeddings(chunks_text)
 
             document_chunks = []
