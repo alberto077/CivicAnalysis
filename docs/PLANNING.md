@@ -20,14 +20,14 @@
 | API | Python + FastAPI | Render
 | Database | Neon PostgreSQL (Free Tier) | Cloud
 | Vector DB | `pgvector` (PostgreSQL extension) | Cloud
-| Pipeline | Python scripts + cron-job.org | Local -> DB -> Cloud
-| Web Scraping | Beautiful Soup / Requests (Python) | Local
-| Embeddings | FastEmbed (`BAAI/bge-small-en-v1.5`) via local CPU | Local pipeline
+| Pipeline | Python scripts + GitHub Actions (7GB RAM) | Cloud
+| Web Scraping | Beautiful Soup / Requests (Python) | GitHub Actions
+| Embeddings | FastEmbed (`BAAI/bge-small-en-v1.5`) via ONNX | GitHub Actions
 | Precision RAG | Voyage AI Reranker (Stretch/Phase 2) | API
 | LLM | Groq API (`llama-3.1-8b-instant`) | API
-| ML tags | Hybrid Keyword/spaCy (NYS + NYC) | Local
+| ML tags | Hybrid Keyword/spaCy (NYS + NYC) | GitHub Actions
 | Auth | None (`localStorage` + URL params only) | Browser
-| Cron | cron-job.org + /cron scripts | Cloud
+| Cron | GitHub Actions (Pipeline) + cron-job.org (Keep-Alive) | Cloud
 
 - Optional Considerations: 
     - Caching / Queues: Redis
@@ -65,7 +65,7 @@
 - [x] Groq API key — set `GROQ_API_KEY` in `.env`
 - [x] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py`
 - [x] Replace JSON mock retrieval with `pgvector` cosine similarity search (Neon DB)
-- [x] Add `POST /api/pipeline/run` endpoint to trigger updates
+- [x] ~~Add `POST /api/pipeline/run` endpoint~~ (Removed for RAM safety; use GitHub Actions)
 
 ### 4. Frontend (Next.js)
 - [x] Initial Next.js scaffolding with TypeScript + Tailwind
@@ -250,7 +250,7 @@
 RSS scrape (NYT placeholder) → chunk text → save to pipeline/output/*.json → FastAPI reads JSON → LLM mock response
 ```
 
-**Target flow (once Neon DB is set up):**
+**Target flow (via GitHub Actions):**
 ```
 scrape real sources → chunk → classify (metadata_tags) → FastEmbed embeddings → Neon Postgres (pgvector) → semantic retrieval → Groq LLM → response
 ```
@@ -284,7 +284,7 @@ CivicAnalysis/
   frontend/     # Next.js app, components, lib
   backend/      # FastAPI server, schema, LLM engine
   pipeline/     # scrapers, embedding engine, output/
-  cron/         # keep-alive and pipeline trigger scripts
+  cron/         # keep-alive heartbeat
   docs/         # all project documentation
 ```
 
@@ -335,7 +335,8 @@ CivicAnalysis/
 | **Apr 24** | *Buffer week — continue previous tasks* | ALL | ⏳ Pending |
 | | Multi-language support, accessibility tweaks | FE | ⏳ Pending |
 | | Error handling, strict rate limiting | BE | ⏳ Pending |
-| | Create `cron` triggers for regular scraping pipeline execution (DevOps) | ML | ✅ |
+| | Create `GitHub Actions` orchestration for daily scraping pipeline | DevOps | ✅ |
+| | ~~Implement RAM Safety Guard for Render Free Tier~~ | DevOps | ✅ |
 | **May 01** | *Stretch Features* | ALL | ⏳ Pending |
 | | Connect Reranker feature (Voyage AI - stretch goal) | ML/BE | ⏳ Pending |
 | **May 08** | Working MVP end-to-end integration | ALL | ⏳ Pending |

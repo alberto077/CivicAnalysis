@@ -9,8 +9,8 @@
 - **Zero-Auth** - demographic user data stays in the browser's `localStorage` only.
 - **Backend API:** Python + FastAPI, bridging the pipeline to the frontend via REST. Deployed on Render (Active).
 - **Database:** Neon Serverless Postgres + `pgvector`. The schema is defined in `backend/schema.py` using SQLModel. (Provisioned & Live).
-- **Data & Pipeline:** Abstract Python scrapers (`BaseScraper`) that push to Neon or output structured JSON.
-- **Embeddings:** FastEmbed (`BAAI/bge-small-en-v1.5`) running locally on CPU via ONNX. (Finalized).
+- **Data & Pipeline:** Automated Python scrapers running on **GitHub Actions** (7GB RAM Muskcle).
+- **Embeddings:** FastEmbed (`BAAI/bge-small-en-v1.5`) via ONNX on Github Actions. (Finalized).
 - **LLM:** Groq API (`llama-3.1-8b-instant`) for fast, free inference. (Active).
 
 ## 2. Current Development Environment
@@ -82,7 +82,7 @@ Without these, the backend runs in full mock mode — which is fine for local de
 | `pipeline/embedding_engine.py` | Text chunker + FastEmbed stub (real model commented out) |
 | `pipeline/scrapers/nys_senate_bills.py` | Official NYS legislative records scraper |
 | `pipeline/scrapers/nys_senate_transcripts.py` | High-signal NYS transcript scraper |
-| `cron/` | Orchestration scripts (keep-alive, triggers) |
+| `cron/` | Keep-alive heartbeat script |
 | `docs/DATA_SYSTEM_INTEGRATION.md` | Comprehensive system architecture & FE guide |
 | `docs/PLANNING.md` | Master project plan and benchmarks |
 | `docs/ARCHITECTURE_DECISIONS.md` | Logic behind technology choices |
@@ -92,10 +92,11 @@ Without these, the backend runs in full mock mode — which is fine for local de
 
 **Current State:**
 - [x] Core Data Pipeline & ML Tagger (NYS + NYC ready)
-- [x] Scraper Orchestration & Cron logic implemented
-- [x] Backend RAG endpoints with background pipeline triggering
+- [x] Scraper Orchestration via GitHub Actions
+- [x] Backend RAG endpoints (Decoupled from Pipeline)
 
 **What Needs to Happen Next:**
 - [ ] Frontend Team: Connect Chat UI to `POST /api/chat`
 - [ ] Frontend Team: Build Dashboard filters using `metadata_tags` schema (see `DATA_SYSTEM_INTEGRATION.md`)
-- [ ] DevOps: Set up [cron-job.org](https://cron-job.org) to hit production endpoints.
+- [x] DevOps: Set up GitHub Action (run_pipeline.yml) and Secrets.
+- [x] DevOps: Set up [cron-job.org](https://cron-job.org) for backend Keep-Alive.

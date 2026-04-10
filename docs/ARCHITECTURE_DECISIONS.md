@@ -45,7 +45,7 @@ This documentation is designed to be easily referenced for academic project defe
   * **Unified Architecture:** A single database handles BOTH relational tabular data (e.g., Council Member profiles, legislation metadata) and non-relational vector embeddings side-by-side.
   * **Referential Integrity:** We can write real SQL joins (e.g., "give me all `DocumentChunk`s linked to `PolicyDocument`s linked to `LegislationEvent`s voted on by Politician X") - something pure vector DBs cannot do.
   * Neon offers a generous free tier requiring no credit card, perfectly aligning with our $0 budget constraints.
-* **Current Status:** Neon account not yet created. The pipeline uses a local JSON export as a temporary substitute. Schema is fully defined and ready in `backend/schema.py`.
+* **Current Status:** **[ACTIVE]** Neon Postgres is the primary storage engine. ALL data (relational metadata and vector embeddings) is persisted via `pgvector` in the cloud instance.
 
 ---
 
@@ -85,15 +85,15 @@ This documentation is designed to be easily referenced for academic project defe
 ---
 
 ## 8. Data Pipeline & Scraper Orchestration
-**Decision:** Abstract Python `BaseScraper` class, automated via `cron/` scripts and `cron-job.org` triggers.
-* **Alternatives Considered:** Apache Airflow, Prefect, Celery.
+**Decision:** Abstract Python `BaseScraper` class, automated via **GitHub Actions**.
+* **Alternatives Considered:** Apache Airflow, Prefect, Celery, `cron-job.org` webhooks.
 * **How We Decided:** 
   * **Complexity tradeoffs:** Tools like Airflow require dedicated Docker infrastructure, massive configuration, and high memory usage. That's overhead we cannot justify for an MVP on a $0 budget.
   * NYC Council minutes and civic data update infrequently (weekly hearings, monthly budget updates, not by the millisecond). Scheduled Python scripts are a perfect fit.
-  * `BaseScraper` provides the interface; any team member can write a new scraper in ~50 lines by implementing `scrape()` and `process()`.
-  * Cron triggers via cron-job.org (free) can hit a FastAPI endpoint that triggers a scraper run periodically.
-  * **Webhook Trigger Pattern:** By exposing a POST `/api/pipeline/run` endpoint on the FastAPI backend, we allow external free services (like cron-job.org) to trigger the pipeline without managing local cron tabs on the Render server.
-  * **Maintenance:** A dedicated `cron/keep_alive.py` script ensures the Render free-tier remains active, eliminating cold-start delays for demo visibility.
+  * **Stability First:** We originally considered webhooks on Render, but the 512MB RAM limit caused frequent OOM crashes during scraping.
+  * **Unified Orchestration:** By using GitHub Actions (7GB RAM), we run the pipeline in a separate, high-resource environment. 
+  * **Clean Security:** We removed the "Trigger Webhook" from the backend entirely. This eliminates the need for `CRON_SECRET` tokens and ensures that the production database can only be updated via official GitHub workflows.
+  * **Keep-Alive:** A dedicated `cron/keep_alive.py` script (triggered via `cron-job.org`) ensures the Render free-tier remains active, eliminating cold-start delays.
 
 ---
 
@@ -107,9 +107,9 @@ Given the NYC/NYS civic domain (see `DOMAINS_AND_NUANCES.md`), our scraping prio
 | 🥇 High | NYC Council Legistar (API + Scraping) | Full transcripts and meeting minutes | Extremely high — raw testimony |
 | 🥇 High | NYC Open Data (Socrata API) | Structured metadata for `LegislationEvent` tables | High — official record |
 | 🥈 Medium | NYC Mayor's Office press releases | Executive branch position statements | Medium — curated messaging |
-| 🥈 Medium | Local news RSS (NYT NYC, Gothamist) | Journalistic context and political impact analysis | Medium — interpreted |
+| Low/None | Local news RSS (NYT NYC, Gothamist) | Journalistic context and political impact analysis | Medium — interpreted |
 
-**Current State:** The `NYCCouncilRSSScraper` hits the NYT Regional RSS as a quick placeholder. The real Legistar API requires a developer access token (free, applied for via the Legistar portal). This is the primary data source to unlock for the Apr 17 milestone.
+**Current State:** **[COMPLETE]** The pipeline now integrates real NYC Legistar data (including transcripts) and NYS Senate records. No placeholder RSS feeds are used for core legislative data.
 
 ---
 
@@ -129,3 +129,14 @@ Given the NYC/NYS civic domain (see `DOMAINS_AND_NUANCES.md`), our scraping prio
   * **Zero DevOps:** Vercel automatically deploys every Next.js GitHub commit with highly optimized CDN caching. Render/Fly.io offer free Python web-service tiers without requiring us to manage Nginx or SSL certificates.
   * Both support environment variables (`.env`) natively - critical for injecting `GROQ_API_KEY` and `DATABASE_URL` securely.
 * **Tradeoff:** Free-tier Render instances "sleep" after 15 minutes of inactivity, causing a ~30-second cold start delay on the first request. Acceptable for an MVP demo; can be mitigated with a cron-job.org ping to keep the service warm.
+
+---
+
+## 12. Decoupled Pipeline Orchestration (Stability Strategy)
+**Decision:** Decouple from Backend server; execute via GitHub Actions.
+* **Alternatives Considered:** Running synchronously on Render (512MB RAM), upgrading to paid Render tier ($7/mo+), local manually-triggered cron.
+* **How We Decided:** 
+  * **Resource Constraint:** The Render Free Tier (512MB RAM) is insufficient for the `FastEmbed` and `spaCy` NLP engines required for production-scale scraping. This caused frequent Out-of-Memory (OOM) crashes during concurrent scraping and chat sessions.
+  * **Stability First:** GitHub Actions provides a 7GB RAM environment for free. By moving the "Muscle" (Python Pipeline) to GitHub, we ensure the "Heart" (FastAPI Backend) remains active and responsive on Render.
+  * **Simplified Security:** We removed the trigger endpoints from `main.py` entirely, resolving the OOM risk by decoupling completely and removing the need for internal security tokens.
+* **Current Status:** **[ACTIVE]** Automated pipeline runs on GitHub Actions.
