@@ -8,10 +8,6 @@ from typing import List, Dict, Any
 # backend imports workaround for db and schema
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
-from sqlmodel import Session, select
-from db import engine
-from schema import PolicyDocument, DocumentChunk
-
 
 class BaseScraper(ABC):
     """
@@ -56,6 +52,10 @@ class BaseScraper(ABC):
         Skips documents whose source_url already exists (dedup).
         Wraps the entire batch in a single transaction.
         """
+        from sqlmodel import Session, select
+        from db import engine
+        from schema import PolicyDocument, DocumentChunk
+
         inserted = 0
         skipped = 0
         failed = 0
