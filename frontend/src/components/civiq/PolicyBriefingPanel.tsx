@@ -86,11 +86,11 @@ export function PolicyBriefingPanel({
               <p className="mt-2 text-xs font-normal text-red-800/90">
                 Tip: start FastAPI{" "}
                 <code className="rounded bg-red-100 px-1">python -m uvicorn main:app --reload</code>{" "}
-                in <code className="rounded bg-red-100 px-1">backend/</code>. In{" "}
-                <code className="rounded bg-red-100 px-1">frontend/.env.local</code> set{" "}
-                <code className="rounded bg-red-100 px-1">API_INTERNAL_BASE_URL</code> (server-only;
-                default <code className="rounded bg-red-100 px-1">127.0.0.1:8000</code>). Restart{" "}
-                <code className="rounded bg-red-100 px-1">npm run dev</code>.
+                in <code className="rounded bg-red-100 px-1">backend/</code> (port 8000). Optional{" "}
+                <code className="rounded bg-red-100 px-1">frontend/.env.local</code>{" "}
+                <code className="rounded bg-red-100 px-1">NEXT_PUBLIC_API_BASE_URL</code> tells the
+                Next proxy where to forward; default is <code className="rounded bg-red-100 px-1">127.0.0.1:8000</code>.
+                Then restart <code className="rounded bg-red-100 px-1">npm run dev</code>.
               </p>
             </>
           ) : (

@@ -23,8 +23,7 @@ app = FastAPI(title="Civic Spiegel Backend API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://civic-spiegel.vercel.app",
-        "http://localhost:3000"
+        "https://civic-spiegel.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
