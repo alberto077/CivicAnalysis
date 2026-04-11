@@ -12,6 +12,9 @@ import { motion } from "framer-motion";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import type { ChatResponse } from "@/lib/api";
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 const placeholderSections = [
   {
     title: "Tracking Status",
@@ -135,8 +138,10 @@ export function PolicyBriefingPanel({
                 <h3 className="font-display text-lg font-semibold text-[var(--foreground)]">
                   At a glance
                 </h3>
-                <div className="prose-policy mt-4 max-w-none text-[15px] leading-relaxed text-[var(--foreground)] sm:text-base">
-                  {reply}
+                <div className="prose-policy mt-4 max-w-none text-[15px] leading-relaxed text-[var(--foreground)] sm:text-base prose prose-slate">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {reply}
+                  </ReactMarkdown>
                 </div>
               </div>
 

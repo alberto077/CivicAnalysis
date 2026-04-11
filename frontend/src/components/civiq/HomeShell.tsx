@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
 import { PolicyBriefingPanel } from "@/components/civiq/PolicyBriefingPanel";
@@ -29,17 +29,29 @@ export function HomeShell() {
   const [selectedArea, setSelectedArea] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All NYC");
   const [selectedTime, setSelectedTime] = useState("Last 30 Days");
+  const [isPersonalized, setIsPersonalized] = useState(true);
 
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Show onboarding on first load if profile doesn't exist
-  if (isLoaded && !profile && !showOnboarding && !localStorage.getItem("civic_profile_skipped")) {
-    setShowOnboarding(true);
-  }
+  // Auto-refetch if profile or personalized flag changes AFTER an initial search
+  useEffect(() => {
+    if (lastBriefingQuery) {
+      handleSearch(lastBriefingQuery);
+    }
+  }, [profile, isPersonalized]);
 
-  const handleSearch = async () => {
-    const q = query.trim();
+  // Show onboarding on first load if profile doesn't exist
+  useEffect(() => {
+    if (isLoaded && !profile && !showOnboarding) {
+      if (typeof window !== "undefined" && !localStorage.getItem("civic_profile_skipped")) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [isLoaded, profile, showOnboarding]);
+
+  const handleSearch = async (searchQuery = query) => {
+    const q = searchQuery.trim();
     if (!q) return;
 
     setLoading(true);
@@ -47,7 +59,8 @@ export function HomeShell() {
 
     try {
       await checkHealth();
-      const data = await sendChat(q);
+      const extra = (isPersonalized && profile) ? { borough: profile.borough } : undefined;
+      const data = await sendChat(q, extra);
       setResponse(data);
       setLastBriefingQuery(q);
     } catch (e) {
@@ -88,6 +101,8 @@ export function HomeShell() {
           setSelectedLocation={setSelectedLocation}
           selectedTime={selectedTime}
           setSelectedTime={setSelectedTime}
+          isPersonalized={isPersonalized}
+          setIsPersonalized={setIsPersonalized}
         />
         <div id="briefings">
           <PolicyBriefingPanel

@@ -7,11 +7,13 @@ const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "State
 export function DashboardFilters({ 
   selectedArea, setSelectedArea,
   selectedLocation, setSelectedLocation,
-  selectedTime, setSelectedTime
+  selectedTime, setSelectedTime,
+  isPersonalized, setIsPersonalized
 }: { 
   selectedArea: string; setSelectedArea: (v: string) => void;
   selectedLocation: string; setSelectedLocation: (v: string) => void;
   selectedTime: string; setSelectedTime: (v: string) => void;
+  isPersonalized: boolean; setIsPersonalized: (v: boolean) => void;
 }) {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 mb-8">
@@ -32,21 +34,33 @@ export function DashboardFilters({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-start md:justify-end">
-           <select 
-             value={selectedLocation} 
-             onChange={(e) => setSelectedLocation(e.target.value)}
-             className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
-           >
-              {LOCATIONS.map(l => <option key={l}>{l}</option>)}
-           </select>
-           <select 
-             value={selectedTime} 
-             onChange={(e) => setSelectedTime(e.target.value)}
-             className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
-           >
-              {TIME_RANGES.map(t => <option key={t}>{t}</option>)}
-           </select>
+        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-end">
+           <label className="flex items-center gap-2 cursor-pointer group shrink-0">
+             <div className={`w-8 h-4.5 rounded-full relative transition-colors ${isPersonalized ? "bg-[var(--accent)]" : "bg-gray-300"}`}>
+               <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-transform ${isPersonalized ? "left-4" : "left-0.5"}`} />
+             </div>
+             <span className="text-[13px] font-semibold text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors uppercase tracking-tight hidden sm:block">
+               {isPersonalized ? "Profile Active" : "Generic Data"}
+             </span>
+             <input type="checkbox" className="hidden" checked={isPersonalized} onChange={(e) => setIsPersonalized(e.target.checked)} />
+           </label>
+
+           <div className="flex gap-3">
+             <select 
+               value={selectedLocation} 
+               onChange={(e) => setSelectedLocation(e.target.value)}
+               className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+             >
+                {LOCATIONS.map(l => <option key={l}>{l}</option>)}
+             </select>
+             <select 
+               value={selectedTime} 
+               onChange={(e) => setSelectedTime(e.target.value)}
+               className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+             >
+                {TIME_RANGES.map(t => <option key={t}>{t}</option>)}
+             </select>
+           </div>
         </div>
       </div>
     </div>
