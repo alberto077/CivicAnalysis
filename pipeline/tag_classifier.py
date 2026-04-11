@@ -119,6 +119,22 @@ class TagClassifier:
         A chunk is high signal if it matches at least one policy/demographic keyword,
         or contains a politician's name.
         """
+
+        """
+        Semantic relevance check — NOT called at ingest time.
+        
+        Kept here for potential use as a query-time re-ranker: after pgvector
+        returns the top-k chunks for a user query, this method could filter
+        out chunks without policy/demographic keyword matches or named entities.
+        
+        Removed from the ingest path (base_scraper.py) because:
+        1. It dropped legitimate content that didn't use specific policy vocabulary
+        2. Its spaCy NER fallback failed silently when en_core_web_sm wasn't loaded
+        3. Semantic filtering belongs after retrieval, not before storage
+        
+        Ingest-time junk detection now lives in base_scraper.is_junk_content,
+        which only drops empty strings and placeholder sentinels.
+        """
         text_lower = text.lower()
         
         # 1. Ignore common procedural/housekeeping phrases
