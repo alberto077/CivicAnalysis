@@ -8,6 +8,31 @@ from typing import List, Dict, Any
 # backend imports workaround for db and schema
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
+def is_junk_content(text: str) -> bool:
+    """
+    Returns True ONLY for clearly empty or placeholder content.
+    Fails open — if in doubt, keep the doc.
+    """
+    if not text or not isinstance(text, str):
+        return True
+    
+    stripped = text.strip()
+    
+    if len(stripped) < 20:
+        return True
+    
+    placeholders = [
+        "full text pending",
+        "pending official publication",
+        "no content available",
+        "no summary available",
+    ]
+    lower = stripped.lower()
+    if any(p in lower for p in placeholders):
+        return True
+    
+    return False
+
 
 class BaseScraper(ABC):
     """
@@ -71,7 +96,16 @@ class BaseScraper(ABC):
                 if existing:
                     skipped += 1
                     continue
-
+                # Junk filter — drop obvious empty/placeholder content
+                chunks = item.get("chunks", [])
+                all_chunks_are_junk = all(
+                    is_junk_content(chunk.get("text_content", ""))
+                    for chunk in chunks
+                )
+                if all_chunks_are_junk:
+                    print(f"Skipping junk content: {item['title'][:60]}")
+                    skipped += 1
+                    continue
                 try:
                     # Savepoint for failed items
                     with session.begin_nested():
@@ -127,12 +161,29 @@ class BaseScraper(ABC):
         os.makedirs(output_dir, exist_ok=True)
 
         filepath = os.path.join(output_dir, filename)
+        filtered = []
+        dropped = 0
+
+        for item in data:
+            chunks = item.get("chunks", [])
+            all_chunks_are_junk = all(
+                is_junk_content(chunk.get("text_content", ""))
+                for chunk in chunks
+            )
+            if all_chunks_are_junk:
+                print(f"Skipping junk content: {item['title'][:60]}")
+                dropped += 1
+                continue
+            filtered.append(item)
+
+        # Filter for JSON too so local tests match DB behavior
+       
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(filtered, f, indent=4, default=str)
+        print(f"Saved {len(filtered)} items to {filepath} ({dropped} junk skipped)")
+
         
         # Filter for JSON too so local tests match DB behavior
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, default=str)
-        print(f"Saved {len(data)} items to {filepath}")
 
     # entrypoint 
 
