@@ -10,7 +10,6 @@ import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import {
   checkHealth,
-  formatUserFacingApiError,
   sendChat,
   type ChatResponse,
 } from "@/lib/api";
@@ -36,10 +35,7 @@ export function HomeShell() {
       setLastBriefingQuery(q);
     } catch (e) {
       console.error("Briefing request failed:", e);
-      const message = formatUserFacingApiError(
-        e instanceof Error ? e.message : "Unable to load policy data",
-      );
-      setError(message);
+      setError(e instanceof Error ? e.message : "Unable to load policy data");
     } finally {
       setLoading(false);
     }
