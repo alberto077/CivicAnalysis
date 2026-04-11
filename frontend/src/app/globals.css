@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f3ef;
-  --foreground: #1e2a33;
-  --muted: #5c6b76;
-  --border: rgba(30, 42, 51, 0.08);
-  --accent: #5b7fa3;
-  --accent-mid: #8fa9c4;
-  --accent-soft: #c5d4e5;
-  --accent-glow: rgba(91, 127, 163, 0.35);
-  --accent-rose: rgba(212, 165, 175, 0.28);
-  --surface-glass: rgba(255, 255, 255, 0.62);
-  --surface-glass-strong: rgba(255, 255, 255, 0.78);
+  --background: #eef2f6;
+  --foreground: #0d1b2a;
+  --muted: #4a5568;
+  --border: rgba(26, 54, 93, 0.08);
+  --accent: #1a365d;
+  --accent-mid: #e63946;
+  --accent-soft: #a8dadc;
+  --accent-glow: rgba(230, 57, 70, 0.25);
+  --accent-rose: rgba(230, 57, 70, 0.15);
+  --surface-glass: rgba(255, 255, 255, 0.85);
+  --surface-glass-strong: rgba(255, 255, 255, 0.95);
 
   /* Layered shadows */
   --shadow-glass:
@@ -24,8 +24,8 @@
     0 20px 48px -16px rgba(91, 127, 163, 0.12),
     0 0 0 1px rgba(255, 255, 255, 0.55) inset;
   --shadow-glow-hover:
-    0 0 40px -10px rgba(91, 127, 163, 0.35),
-    0 0 80px -20px rgba(167, 139, 250, 0.18);
+    0 0 40px -10px rgba(26, 54, 93, 0.25),
+    0 0 80px -20px rgba(230, 57, 70, 0.15);
   --shadow-btn:
     0 2px 8px -2px rgba(91, 127, 163, 0.35),
     0 1px 2px rgba(30, 42, 51, 0.06);
@@ -52,9 +52,7 @@ body {
   background: linear-gradient(
     110deg,
     var(--accent) 0%,
-    #8b9fe8 22%,
-    #a78bfa 45%,
-    #e879a6 70%,
+    #2c5282 40%,
     var(--accent-mid) 100%
   );
   background-size: 220% auto;
@@ -127,8 +125,8 @@ body {
   box-shadow:
     var(--shadow-glass),
     0 0 0 1px rgba(255, 255, 255, 0.75),
-    0 0 36px -10px rgba(91, 127, 163, 0.25),
-    0 0 72px -18px rgba(167, 139, 250, 0.14);
+    0 0 36px -10px rgba(26, 54, 93, 0.15),
+    0 0 72px -18px rgba(230, 57, 70, 0.08);
   transition:
     box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -138,8 +136,8 @@ body {
   box-shadow:
     var(--shadow-float),
     0 0 0 1px rgba(255, 255, 255, 0.9),
-    0 0 48px -8px rgba(91, 127, 163, 0.38),
-    0 0 90px -20px rgba(232, 121, 166, 0.16);
+    0 0 48px -8px rgba(26, 54, 93, 0.25),
+    0 0 90px -20px rgba(230, 57, 70, 0.15);
   transform: translateY(-1px);
 }
 
@@ -154,8 +152,8 @@ body {
 .btn-premium:hover {
   transform: scale(1.03);
   box-shadow:
-    0 4px 16px -2px rgba(91, 127, 163, 0.45),
-    0 0 28px -6px rgba(167, 139, 250, 0.3);
+    0 4px 16px -2px rgba(26, 54, 93, 0.35),
+    0 0 28px -6px rgba(230, 57, 70, 0.2);
   filter: brightness(1.06);
 }
 
@@ -163,8 +161,8 @@ body {
   outline: none;
   box-shadow:
     var(--shadow-btn),
-    0 0 0 3px rgba(91, 127, 163, 0.35),
-    0 0 24px -4px rgba(167, 139, 250, 0.35);
+    0 0 0 3px rgba(26, 54, 93, 0.25),
+    0 0 24px -4px rgba(230, 57, 70, 0.2);
 }
 
 .focus-soft:focus-visible {

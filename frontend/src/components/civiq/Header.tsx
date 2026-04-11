@@ -8,10 +8,10 @@ export function Header() {
           href="/"
           className="font-display text-lg font-semibold tracking-tight text-[var(--foreground)] transition hover:opacity-85"
         >
-          civ<span className="text-[var(--accent)]">IQ</span>
+          Civic <span className="text-[var(--accent)]">Spiegel</span>
         </Link>
         <p className="hidden text-sm text-[var(--muted)] sm:block">
-          NYC policy briefings
+          Civic Research Assistant
         </p>
       </div>
     </header>

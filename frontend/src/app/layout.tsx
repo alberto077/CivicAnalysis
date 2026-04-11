@@ -13,9 +13,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "civIQ · NYC policy briefings",
+  title: "Civic Spiegel · Civic Research Assistant",
   description:
-    "Location-aware, RAG-powered policy briefings for New York City residents.",
+    "Location-aware, RAG-powered policy briefings and research assistance for New Yorkers.",
 };
 
 export default function RootLayout({

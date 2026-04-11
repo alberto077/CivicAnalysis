@@ -47,22 +47,22 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
   return (
     <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16">
       <div
-        className="pointer-events-none absolute -top-28 left-1/2 h-[480px] w-[min(920px,120vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(167,139,250,0.2)_0%,rgba(91,127,163,0.12)_35%,transparent_68%)]"
+        className="pointer-events-none absolute -top-28 left-1/2 h-[480px] w-[min(920px,120vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(230,57,70,0.08)_0%,rgba(26,54,93,0.05)_45%,transparent_70%)]"
         aria-hidden
       />
-      <SkylineDecor />
-      <SkylineDecor className="text-[var(--accent-mid)] [&_svg]:opacity-45" />
+      <SkylineDecor className="text-[var(--accent)] opacity-20" />
+      <SkylineDecor className="text-[var(--accent-mid)] opacity-[0.08] translate-x-4 translate-y-2" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <p className="font-display text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--accent)] sm:text-xs">
-          civIQ
+          Civic Spiegel
         </p>
         <h1 className="font-display mt-5 max-w-4xl text-[2.35rem] font-semibold leading-[1.06] tracking-tight text-[var(--foreground)] sm:text-5xl md:text-6xl lg:text-[4.15rem] lg:leading-[1.04]">
           Understand Policies That Affect{" "}
           <span className="hero-gradient-text">Your Neighborhood</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted)] sm:text-xl">
-          Location-aware policy briefings for NYC residents
+          Your AI-powered civic research assistant
         </p>
 
         <form
