@@ -13,7 +13,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "civIQ · NYC policy briefings",
+  title: "Civic Spiegel · NYC policy briefings",
   description:
     "Location-aware, RAG-powered policy briefings for New York City residents.",
 };

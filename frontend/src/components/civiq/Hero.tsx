@@ -55,7 +55,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <p className="font-display text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--accent)] sm:text-xs">
-          civIQ
+          Civic Spiegel
         </p>
         <h1 className="font-display mt-5 max-w-4xl text-[2.35rem] font-semibold leading-[1.06] tracking-tight text-[var(--foreground)] sm:text-5xl md:text-6xl lg:text-[4.15rem] lg:leading-[1.04]">
           Understand Policies That Affect{" "}
