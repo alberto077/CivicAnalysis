@@ -1,8 +1,6 @@
-import time
 from typing import List
 import os
 from fastembed import TextEmbedding
-from groq import Groq
 
 
 class EmbeddingEngine:
@@ -27,12 +25,6 @@ class EmbeddingEngine:
             )
         
         self.embedding_model = EmbeddingEngine._model_cache[model_name]
-        
-        # Initialize Groq for summarization
-        self.groq_client = None
-        api_key = os.getenv("GROQ_API_KEY")
-        if api_key:
-            self.groq_client = Groq(api_key=api_key)
             
         print(f"EmbeddingEngine ready (shared instance) for model: {self.model_name}")
 
@@ -82,7 +74,7 @@ class EmbeddingEngine:
             
         return chunks
 
-    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def generate_embeddings(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         """
         Generates 384-dimension float vectors for each text chunk via FastEmbed.
         Returns an empty list if no texts provided.
@@ -90,43 +82,11 @@ class EmbeddingEngine:
         if not texts:
             return []
         print(f"Generating FastEmbed vectors for {len(texts)} chunk(s)...")
-        embeddings = list(self.embedding_model.embed(texts))
-        return [emb.tolist() for emb in embeddings]
-
-    def summarize(self, text: str) -> str:
-        """
-        Uses Groq LLM to summarize long legislative documents into a dense civic briefing.
-        Returns the original text if Groq is unavailable or fails.
-        """
-        if not self.groq_client or not text:
-            return text
-            
-        if len(text.split()) < 300:
-            return text # Don't summarize already short text
-            
-        print(f"Summarizing document via Groq ({len(text.split())} words)...")
-        try:
-            prompt = (
-                "You are a civic data expert. Summarize the following legislative document into a dense, "
-                "fact-heavy briefing. Focus on: What it does, who it affects, and major arguments. "
-                "Keep the tone neutral and factual. Output only the summarized text (max 400 words).\n\n"
-                f"DOCUMENT:\n{text}"
-            )
-            
-            completion = self.groq_client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=500
-            )
-            
-            summary = completion.choices[0].message.content
-            if summary:
-                print(f"  Successfully summarized down to ~{len(summary.split())} words.")
-                # Rate limiting: small sleep to stay within Groq free tier RPM limits
-                time.sleep(1)
-                return summary
-        except Exception as e:
-            print(f"  Warning: Summarization failed ({e}). Using raw text.")
-            
-        return text
+        all_embeddings = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            batch_embeddings = list(self.embedding_model.embed(batch))
+            all_embeddings.extend(emb.tolist() for emb in batch_embeddings)
+ 
+        return all_embeddings
+    

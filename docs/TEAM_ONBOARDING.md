@@ -11,8 +11,7 @@
 - **Database:** Neon Serverless Postgres + `pgvector`. The schema is defined in `backend/schema.py` using SQLModel. (Provisioned & Live).
 - **Data & Pipeline:** Automated Python scrapers running on **GitHub Actions** (7GB RAM Muskcle).
 - **Embeddings:** FastEmbed (`BAAI/bge-small-en-v1.5`) via ONNX on Github Actions. (Finalized).
-- **AI Summarization Layer:** Groq API (**Llama 3.1 8B**) used as a high-density pre-processor to condense verbose records.
-- **LLM:** Groq API (`llama-3.1-8b-instant`) for fast, free inference. (Active).
+- **LLM:** Groq API (`llama-3.1-8b-instant`) for fast, free inference matching RAG queries to verbatim database text. (Active).
 
 ## 2. Current Development Environment
 

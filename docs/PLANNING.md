@@ -46,7 +46,7 @@
 ### 2. Data Pipeline & ML
 - [x] `BaseScraper` abstract class with `scrape()`, `process()`, `save_to_json()`, `run()` interface
 - [x] Implement "Fail Fast" data integrity (No Mocks)
-- [x] Implement High-Density Storage (AI Summarization + `halfvec`)
+- [x] Implement High-Density Storage (Batched chunk processing + Raw text retention for better RAG precision)
 - [x] Create and execute Historical Backfill Script (2021-2026)
 - [x] `EmbeddingEngine` class — improved sentence-aware chunking + overlap
 - [x] `TagClassifier` class — hybrid keyword + spaCy NER metadata classification
@@ -330,9 +330,9 @@ CivicAnalysis/
 | | **[BE]** Implement `pgvector` cosine similarity search in `/api/chat` | BE | ✅ |
 | | Add `metadata_tags` classification to `process()` (policy area, demographics) | ML | ✅ |
 | | Improve chunking + overlap (sentence-aware) | ML | ✅ |
-| | Filter procedural no    ise (roll calls, housekeeping) via `TagClassifier.is_high_signal` | ML | ✅ |
-| | Condense verbose transcripts via `EmbeddingEngine.summarize` (Groq/Llama 3.1) | ML | ✅ |
-| | Double storage capacity via `HalfVector` (16-bit) schema optimization | ML | ✅ |
+| | Filter junk placeholders explicitly via `is_junk_content` to preserve safe data | BE/ML | ✅ |
+| | Batch FastEmbed processing (`n=32`) to handle heavy 50+ page transcripts | BE/ML | ✅ |
+| | Standard Vector (384-bit) schema integration resolving `ndim` instantiation bugs | BE/ML | ✅ |
 | | OnboardingModal → save to `localStorage` | FE | ✅ |
 | | Personalization toggle + Advanced Filters on Dashboard | FE | ⏳ Pending |
 | | Connect Politician Cards & Omnibus breakdown components to DB APIs | FE | ⏳ Pending |

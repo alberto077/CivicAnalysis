@@ -109,11 +109,9 @@ class NYCCouncilLegistarScraper(BaseScraper):
             # Classification
             ml_tags = self.classifier.classify(title, content)
             
-            # High-Density AI Summarization
-            summarized_content = self.embedder.summarize(content)
             
             # Embeddings (on summarized content)
-            chunks_text = self.embedder.chunk_text(summarized_content)
+            chunks_text = self.embedder.chunk_text(content)
             vectors = self.embedder.generate_embeddings(chunks_text)
 
             document_chunks = []

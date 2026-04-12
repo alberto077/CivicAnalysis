@@ -9,17 +9,15 @@ export type ChatExtra = {
   community_board?: string;
 };
 
-/** Same-origin proxy (see app/api/civic/*) — avoids CORS and localhost vs 127.0.0.1 issues. */
-const CIVIC_API = "https://civic-spiegel.onrender.com";
+export type HealthResponse = {
+  status?: string;
+  db_connected?: boolean;
+  has_data?: boolean;
+  error?: string;
+};
 
-/** Plain "Not Found" usually means the Next proxy hit the wrong host/path (wrong API_INTERNAL_BASE_URL). */
-export function formatUserFacingApiError(message: string): string {
-  const t = message.trim();
-  if (t === "Not Found") {
-    return `${t} — Configure API_INTERNAL_BASE_URL (or BACKEND_URL) to your FastAPI server’s public URL (where /api/health works), not your frontend site URL.`;
-  }
-  return message;
-}
+
+const CIVIC_API = "/api/civic";
 
 function buildDemographics(extra?: ChatExtra): Record<string, string> {
   if (!extra) return {};
@@ -30,13 +28,6 @@ function buildDemographics(extra?: ChatExtra): Record<string, string> {
   return d;
 }
 
-export type HealthResponse = {
-  status?: string;
-  db_connected?: boolean;
-  has_data?: boolean;
-  error?: string;
-};
-
 export async function checkHealth(): Promise<HealthResponse> {
   const res = await fetch(`${CIVIC_API}/health`, {
     method: "GET",
@@ -44,7 +35,7 @@ export async function checkHealth(): Promise<HealthResponse> {
   });
 
   const text = await res.text();
-  let json: HealthResponse & { error?: string; detail?: string } = {};
+  let json: HealthResponse & { detail?: string } = {};
   try {
     json = text ? (JSON.parse(text) as typeof json) : {};
   } catch {
@@ -53,13 +44,7 @@ export async function checkHealth(): Promise<HealthResponse> {
   }
 
   if (!res.ok) {
-    const hint =
-      json.detail ||
-      json.error ||
-      (json as { error?: string }).error ||
-      text ||
-      `HTTP ${res.status}`;
-    throw new Error(hint);
+    throw new Error(json.detail || json.error || text || `HTTP ${res.status}`);
   }
 
   return json;
@@ -71,14 +56,12 @@ export async function sendChat(
 ): Promise<ChatResponse> {
   const demographics = buildDemographics(extra);
 
-  const body: { query: string; demographics?: Record<string, string> } = {
-    query,
-  };
+  const body: { query: string; demographics?: Record<string, string> } = { query };
   if (Object.keys(demographics).length > 0) {
     body.demographics = demographics;
   }
 
-  const res = await fetch(`${CIVIC_API}/briefing`, {
+  const res = await fetch(`${CIVIC_API}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -99,7 +82,9 @@ export async function sendChat(
       const d = (json as { detail: unknown }).detail;
       if (typeof d === "string") message = d;
       else if (Array.isArray(d)) message = JSON.stringify(d);
-    } else if (text) message = text;
+    } else if (text) {
+      message = text;
+    }
     throw new Error(message);
   }
 
@@ -109,7 +94,7 @@ export async function sendChat(
     !("reply" in json) ||
     typeof (json as ChatResponse).reply !== "string"
   ) {
-    throw new Error("Invalid briefing response shape");
+    throw new Error("Invalid chat response shape");
   }
 
   return json as ChatResponse;

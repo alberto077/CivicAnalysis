@@ -8,6 +8,31 @@ from typing import List, Dict, Any
 # backend imports workaround for db and schema
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
+def is_junk_content(text: str) -> bool:
+    """
+    Returns True ONLY for clearly empty or placeholder content.
+    Fails open — if in doubt, keep the doc.
+    """
+    if not text or not isinstance(text, str):
+        return True
+    
+    stripped = text.strip()
+    
+    if len(stripped) < 20:
+        return True
+    
+    placeholders = [
+        "full text pending",
+        "pending official publication",
+        "no content available",
+        "no summary available",
+    ]
+    lower = stripped.lower()
+    if any(p in lower for p in placeholders):
+        return True
+    
+    return False
+
 
 class BaseScraper(ABC):
     """
@@ -55,9 +80,7 @@ class BaseScraper(ABC):
         from sqlmodel import Session, select
         from db import engine
         from schema import PolicyDocument, DocumentChunk
-        from tag_classifier import TagClassifier
 
-        classifier = TagClassifier()
         inserted = 0
         skipped = 0
         failed = 0
@@ -73,20 +96,16 @@ class BaseScraper(ABC):
                 if existing:
                     skipped += 1
                     continue
-
-                # High-Density Storage: Filter out low-signal items early
-                # We check the first few chunks for signal
-                has_signal = False
-                for chunk in item.get("chunks", []):
-                    if classifier.is_high_signal(chunk["text_content"]):
-                        has_signal = True
-                        break
-                
-                if not has_signal:
-                    print(f"  ℹ Skipping low-signal document: {item['title'][:50]}...")
+                # Junk filter — drop obvious empty/placeholder content
+                chunks = item.get("chunks", [])
+                all_chunks_are_junk = all(
+                    is_junk_content(chunk.get("text_content", ""))
+                    for chunk in chunks
+                )
+                if all_chunks_are_junk:
+                    print(f"Skipping junk content: {item['title'][:60]}")
                     skipped += 1
                     continue
-
                 try:
                     # Savepoint for failed items
                     with session.begin_nested():
@@ -142,18 +161,29 @@ class BaseScraper(ABC):
         os.makedirs(output_dir, exist_ok=True)
 
         filepath = os.path.join(output_dir, filename)
+        filtered = []
+        dropped = 0
+
+        for item in data:
+            chunks = item.get("chunks", [])
+            all_chunks_are_junk = all(
+                is_junk_content(chunk.get("text_content", ""))
+                for chunk in chunks
+            )
+            if all_chunks_are_junk:
+                print(f"Skipping junk content: {item['title'][:60]}")
+                dropped += 1
+                continue
+            filtered.append(item)
+
+        # Filter for JSON too so local tests match DB behavior
+       
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(filtered, f, indent=4, default=str)
+        print(f"Saved {len(filtered)} items to {filepath} ({dropped} junk skipped)")
+
         
         # Filter for JSON too so local tests match DB behavior
-        from tag_classifier import TagClassifier
-        classifier = TagClassifier()
-        filtered_data = [
-            item for item in data 
-            if any(classifier.is_high_signal(c["text_content"]) for c in item.get("chunks", []))
-        ]
-        
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(filtered_data, f, indent=4, default=str)
-        print(f"Saved {len(filtered_data)} high-signal items to {filepath} (Filtered {len(data) - len(filtered_data)} low-signal items)")
 
     # entrypoint 
 

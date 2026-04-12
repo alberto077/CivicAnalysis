@@ -131,9 +131,9 @@ The New York State Legislature operates on a **biennial (two-year) cycle**. This
 
 ### High-Density Signal Recovery
 Capturing 8-10 years of civic history in a limited-storage environment (like Neon Free Tier) requires a shift from "Scrape Everything" to **"Signal Recovery"**:
-- **Lossy Compression for RAG:** Verbose transcripts (often 50+ pages) must be summarized by AI (Groq/Llama 3.1) into "Civic Briefings" *before* storage.
-- **Procedural Noise Filtering:** Up to 30% of civic records are procedural noise. Identifying "High-Signal" items is a domain requirement for historical scalability.
-- **Precision vs. Quantity:** A 16-bit vector (`halfvec`) provides sufficient semantic precision for policy search while doubling the number of years we can store.
+- **Verbatim RAG Fidelity:** We preserve original source text instead of summarizing, because LLM summaries degrade cosine similarity matches. Batching (n=32) prevents processing crashes on huge transcripts.
+- **Fail-Open Noise Filtering:** Rather than aggressive spaCy keyword matching which drops legitimate context, we utilize a narrow `is_junk_content` filter to only discard explicit placeholders or blank files.
+- **Semantic Precision Targeting:** Standard 384-dimensional vectors are used to ensure the highest semantic match capability.
 
 ---
 
