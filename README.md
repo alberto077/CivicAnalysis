@@ -7,9 +7,10 @@ Instead of reading confusing government documents, users receive simple, persona
 Most residents don’t know:
 
 ❖ what policies exist  
-❖ what their local representatives are actually voting on
+❖ what their local representatives are actually voting on  
+❖ what the impacts might be  
 ❖ how those decisions affect their neighborhood and daily life  
-❖ what the impacts might be
+
 
 ---
 
