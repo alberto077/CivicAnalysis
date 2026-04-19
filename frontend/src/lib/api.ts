@@ -13,6 +13,10 @@ export type ChatExtra = {
   zip?: string;
   borough?: string;
   community_board?: string;
+  issue_area?: string;
+  timeframe?: string;
+  location_scope?: string;
+  profile_active?: string;
 };
 
 export type HealthResponse = {
@@ -27,10 +31,18 @@ const CIVIC_API = "/api/civic";
 
 function buildDemographics(extra?: ChatExtra): Record<string, string> {
   if (!extra) return {};
+
   const d: Record<string, string> = {};
+
   if (extra.zip?.trim()) d.zip = extra.zip.trim();
   if (extra.borough?.trim()) d.borough = extra.borough.trim();
   if (extra.community_board?.trim()) d.community_board = extra.community_board.trim();
+
+  if (extra.issue_area?.trim()) d.issue_area = extra.issue_area.trim();
+  if (extra.timeframe?.trim()) d.timeframe = extra.timeframe.trim();
+  if (extra.location_scope?.trim()) d.location_scope = extra.location_scope.trim();
+  if (extra.profile_active?.trim()) d.profile_active = extra.profile_active.trim();
+
   return d;
 }
 
