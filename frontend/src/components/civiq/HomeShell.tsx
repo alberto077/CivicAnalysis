@@ -1,5 +1,5 @@
 "use client";
-
+import { ChatPanel } from "@/components/civiq/ChatPanel";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/civiq/Header";
@@ -75,6 +75,7 @@ export function HomeShell() {
       await checkHealth();
       const extra = (isPersonalized && profile) ? { borough: profile.borough } : undefined;
       const data = await sendChat(q, extra);
+      console.log("CHAT RESPONSE", data);
       setResponse(data);
       setLastBriefingQuery(q);
     } catch (e) {
@@ -138,6 +139,14 @@ export function HomeShell() {
             briefingQuery={lastBriefingQuery}
           />
         </div>
+        {lastBriefingQuery && (
+        <ChatPanel
+          briefingQuery={lastBriefingQuery}
+          borough={selectedLocation !== "All NYC" ? selectedLocation : profile?.borough}
+          selectedArea={selectedArea}
+          selectedTime={selectedTime}
+        />
+      )}
         <NeighborhoodInsights />
         <div id="map">
           <MapPanel />
