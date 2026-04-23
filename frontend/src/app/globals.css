@@ -44,9 +44,13 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 12% -5%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at 88% 8%, rgba(168, 218, 220, 0.22) 0%, rgba(168, 218, 220, 0) 30%),
+    linear-gradient(180deg, #f5f8fc 0%, #eef3f8 42%, #eaf0f7 100%);
   color: var(--foreground);
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
 }
 
 .font-display {
@@ -100,6 +104,26 @@ body {
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow-glass);
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(56px);
+  pointer-events: none;
+}
+
+.surface-float {
+  box-shadow:
+    0 10px 24px -14px rgba(20, 39, 64, 0.24),
+    0 24px 50px -24px rgba(69, 101, 138, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.68) inset;
+}
+
+.soft-inset {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 -1px 0 rgba(91, 127, 163, 0.06) inset;
 }
 
 .glass-card-strong {
