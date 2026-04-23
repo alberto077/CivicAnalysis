@@ -22,6 +22,23 @@ export type HealthResponse = {
   error?: string;
 };
 
+export type Politician = {
+  id?: number | null;
+  name: string;
+  office: string;
+  borough: string;
+  district?: string | null;
+  party?: string | null;
+  political_stance: string;
+  bio_url?: string | null;
+  data_source?: string;
+};
+
+export type PoliticianFilterOptions = {
+  boroughs: string[];
+  stances: string[];
+};
+
 
 const CIVIC_API = "/api/civic";
 
@@ -136,4 +153,76 @@ export async function sendChat(
   };
 
   return safe;
+}
+
+export async function getPoliticians(filters?: {
+  borough?: string;
+  stance?: string;
+}): Promise<Politician[]> {
+  const params = new URLSearchParams();
+  const borough = filters?.borough?.trim();
+  if (borough && borough.toLowerCase() !== "all") {
+    params.set("borough", borough);
+  }
+  const stance = filters?.stance?.trim();
+  if (stance && stance.toLowerCase() !== "all") {
+    params.set("stance", stance);
+  }
+
+  const url = `${CIVIC_API}/politicians${params.toString() ? `?${params.toString()}` : ""}`;
+  const res = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const data = (await res.json()) as {
+    politicians?: unknown;
+    detail?: string;
+    error?: string;
+  };
+
+  if (!res.ok) {
+    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+  }
+
+  if (!Array.isArray(data.politicians)) {
+    return [];
+  }
+
+  return data.politicians.filter(
+    (item): item is Politician =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof (item as Record<string, unknown>).name === "string" &&
+      typeof (item as Record<string, unknown>).office === "string" &&
+      typeof (item as Record<string, unknown>).borough === "string" &&
+      typeof (item as Record<string, unknown>).political_stance === "string",
+  );
+}
+
+export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
+  const res = await fetch(`${CIVIC_API}/politicians/filters`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const data = (await res.json()) as {
+    boroughs?: unknown;
+    stances?: unknown;
+    detail?: string;
+    error?: string;
+  };
+
+  if (!res.ok) {
+    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+  }
+
+  const boroughs = Array.isArray(data.boroughs)
+    ? data.boroughs.filter((v): v is string => typeof v === "string")
+    : [];
+  const stances = Array.isArray(data.stances)
+    ? data.stances.filter((v): v is string => typeof v === "string")
+    : [];
+
+  return { boroughs, stances };
 }

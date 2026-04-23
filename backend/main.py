@@ -7,7 +7,7 @@ import logging
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
 from db import engine
-from schema import DocumentChunk, PolicyDocument
+from schema import DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
 from llm_engine import LLMEngine
 
@@ -29,6 +29,81 @@ app.add_middleware(
 )
 
 llm = LLMEngine()
+
+FALLBACK_POLITICIANS = [
+    {
+        "id": None,
+        "name": "Julie Won",
+        "office": "City Council Member",
+        "borough": "Queens",
+        "district": "26",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/julie-won/",
+    },
+    {
+        "id": None,
+        "name": "Carlina Rivera",
+        "office": "City Council Member",
+        "borough": "Manhattan",
+        "district": "2",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/carlina-rivera/",
+    },
+    {
+        "id": None,
+        "name": "Justin Brannan",
+        "office": "City Council Member",
+        "borough": "Brooklyn",
+        "district": "47",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/justin-brannan/",
+    },
+    {
+        "id": None,
+        "name": "Gale A. Brewer",
+        "office": "City Council Member",
+        "borough": "Manhattan",
+        "district": "6",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/gale-a-brewer/",
+    },
+    {
+        "id": None,
+        "name": "Vickie Paladino",
+        "office": "City Council Member",
+        "borough": "Queens",
+        "district": "19",
+        "party": "Republican",
+        "bio_url": "https://council.nyc.gov/vickie-paladino/",
+    },
+    {
+        "id": None,
+        "name": "Rita Joseph",
+        "office": "City Council Member",
+        "borough": "Brooklyn",
+        "district": "40",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/rita-joseph/",
+    },
+    {
+        "id": None,
+        "name": "Kevin C. Riley",
+        "office": "City Council Member",
+        "borough": "Bronx",
+        "district": "12",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/kevin-c-riley/",
+    },
+    {
+        "id": None,
+        "name": "Kamillah Hanks",
+        "office": "City Council Member",
+        "borough": "Staten Island",
+        "district": "49",
+        "party": "Democrat",
+        "bio_url": "https://council.nyc.gov/kamillah-hanks/",
+    },
+]
 
 
 class ChatRequest(BaseModel):
@@ -235,3 +310,131 @@ async def health_check():
         return {"status": "ok", "db_connected": True, "has_data": count > 0}
     except Exception as e:
         return {"status": "degraded", "db_connected": False, "error": str(e)}
+
+
+@app.get("/api/politicians")
+async def get_politicians(
+    borough: Optional[str] = None,
+    stance: Optional[str] = None,
+):
+    def infer_stance(party: Optional[str]) -> str:
+        normalized = (party or "").strip().lower()
+        if normalized in {"democrat", "working families"}:
+            return "Progressive"
+        if normalized in {"republican", "conservative"}:
+            return "Conservative"
+        if normalized in {"independent", "no party"}:
+            return "Independent"
+        return "Moderate"
+
+    try:
+        with Session(engine) as session:
+            query = select(Politician)
+            normalized_borough = (borough or "").strip().lower()
+            normalized_stance = (stance or "").strip().lower()
+
+            if normalized_borough and normalized_borough != "all":
+                query = query.where(
+                    func.lower(Politician.location_borough) == normalized_borough
+                )
+
+            rows = session.exec(query.order_by(Politician.full_name.asc())).all()
+
+            payload = []
+            for p in rows:
+                computed_stance = infer_stance(p.party)
+                if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
+                    continue
+
+                payload.append(
+                    {
+                        "id": p.id,
+                        "name": p.full_name,
+                        "office": p.role or "Representative",
+                        "borough": p.location_borough or "Unknown",
+                        "district": p.district_number,
+                        "party": p.party,
+                        "political_stance": computed_stance,
+                        "bio_url": p.bio_url,
+                        "data_source": "database",
+                    }
+                )
+
+            if payload:
+                return {
+                    "politicians": payload,
+                    "available_fields": [
+                        "name",
+                        "office",
+                        "borough",
+                        "district",
+                        "party",
+                        "political_stance",
+                        "bio_url",
+                    ],
+                }
+
+            fallback = []
+            for p in FALLBACK_POLITICIANS:
+                computed_stance = infer_stance(p.get("party"))
+                if normalized_borough and normalized_borough != "all" and p["borough"].lower() != normalized_borough:
+                    continue
+                if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
+                    continue
+                fallback.append(
+                    {
+                        **p,
+                        "political_stance": computed_stance,
+                        "data_source": "fallback_seed",
+                    }
+                )
+
+            return {
+                "politicians": fallback,
+                "available_fields": [
+                    "name",
+                    "office",
+                    "borough",
+                    "district",
+                    "party",
+                    "political_stance",
+                    "bio_url",
+                ],
+            }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Unable to load politicians: {e}")
+
+
+@app.get("/api/politicians/filters")
+async def get_politician_filters():
+    def infer_stance(party: Optional[str]) -> str:
+        normalized = (party or "").strip().lower()
+        if normalized in {"democrat", "working families"}:
+            return "Progressive"
+        if normalized in {"republican", "conservative"}:
+            return "Conservative"
+        if normalized in {"independent", "no party"}:
+            return "Independent"
+        return "Moderate"
+
+    try:
+        with Session(engine) as session:
+            rows = session.exec(select(Politician)).all()
+            if rows:
+                boroughs = sorted(
+                    {
+                        p.location_borough.strip()
+                        for p in rows
+                        if p.location_borough and p.location_borough.strip()
+                    }
+                )
+                stances = sorted({infer_stance(p.party) for p in rows})
+            else:
+                boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
+                stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
+            return {
+                "boroughs": boroughs,
+                "stances": stances,
+            }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")

@@ -102,7 +102,7 @@ export function PolicyBriefingPanel({
       ) : null}
 
       <MotionReveal>
-        <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
+        <h2 className="font-display text-2xl font-semibold tracking-[1.5px] text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
           {showBriefing ? "Policy Briefing" : "Policy briefing panel"}
         </h2>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">

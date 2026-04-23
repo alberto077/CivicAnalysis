@@ -17,17 +17,17 @@ export function DashboardFilters({
 }) {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 mb-8">
-      <div className="glass-card rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between border-[var(--border)] shadow-sm">
+      <div className="glass-card surface-float soft-inset rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row gap-4 items-center justify-between border-[var(--border)]">
         <div className="flex items-center gap-2 overflow-x-auto w-full pb-2 md:pb-0 scrollbar-hide py-1">
           <span className="text-sm font-semibold text-[var(--muted)] mr-2 tracking-widest font-condensed uppercase shrink-0">Topic:</span>
           {POLICY_AREAS.map(area => (
             <button
               key={area}
               onClick={() => setSelectedArea(area)}
-              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
+              className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-300 ${
                 selectedArea === area 
-                  ? 'bg-[var(--accent)] text-white shadow-sm' 
-                  : 'bg-white/60 text-[var(--foreground)] hover:bg-white border border-[var(--border)]'
+                  ? 'bg-[linear-gradient(135deg,var(--accent)_0%,#2f5f96_100%)] text-white shadow-[0_8px_20px_-12px_rgba(26,54,93,0.55)]' 
+                  : 'bg-white/65 text-[var(--foreground)] hover:bg-white border border-[var(--border)] hover:-translate-y-0.5'
               }`}
             >
               {area}
@@ -49,14 +49,14 @@ export function DashboardFilters({
              <select 
                value={selectedLocation} 
                onChange={(e) => setSelectedLocation(e.target.value)}
-               className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+               className="bg-white/85 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] shadow-[0_8px_18px_-14px_rgba(20,39,64,0.6)]"
              >
                 {LOCATIONS.map(l => <option key={l}>{l}</option>)}
              </select>
              <select 
                value={selectedTime} 
                onChange={(e) => setSelectedTime(e.target.value)}
-               className="bg-white/80 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+               className="bg-white/85 border border-[var(--border)] text-[13px] font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] shadow-[0_8px_18px_-14px_rgba(20,39,64,0.6)]"
              >
                 {TIME_RANGES.map(t => <option key={t}>{t}</option>)}
              </select>

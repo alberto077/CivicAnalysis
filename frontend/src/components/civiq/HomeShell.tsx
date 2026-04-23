@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
 import { PolicyBriefingPanel } from "@/components/civiq/PolicyBriefingPanel";
@@ -11,12 +12,25 @@ import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { DashboardFilters } from "@/components/civiq/DashboardFilters";
 import { useProfile } from "@/lib/useProfile";
-import { PoliticianCards } from "@/components/civiq/PoliticianCards";
 import {
   checkHealth,
   sendChat,
   type PolicyResponse,
 } from "@/lib/api";
+
+const PoliticianCards = dynamic(
+  () => import("@/components/civiq/PoliticianCards").then((m) => m.PoliticianCards),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-[var(--border)] bg-white/70 px-4 py-6 text-sm text-[var(--muted)]">
+          Loading representatives...
+        </div>
+      </section>
+    ),
+  },
+);
 
 export function HomeShell() {
   const [query, setQuery] = useState("");
@@ -72,7 +86,19 @@ export function HomeShell() {
   };
 
   return (
-    <div className="relative flex min-h-full flex-1 flex-col">
+    <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
+      <div
+        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)]"
+        aria-hidden
+      />
+      <div
+        className="ambient-orb top-[28%] -right-24 h-80 w-80 bg-[rgba(230,57,70,0.12)]"
+        aria-hidden
+      />
+      <div
+        className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)]"
+        aria-hidden
+      />
       <OnboardingModal 
         isOpen={showOnboarding} 
         initialProfile={profile}
