@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect,useCallback } from "react";
-import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
