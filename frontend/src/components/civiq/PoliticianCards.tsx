@@ -37,13 +37,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     async function loadFilterOptions() {
       const requestId = ++filterRequestIdRef.current;
       setError(null);
+
       try {
         const data = await getPoliticianFilters();
+
         if (requestId === filterRequestIdRef.current) {
           const options = new Set<string>(["All"]);
           for (const borough of data.boroughs) {
-            if (borough?.trim()) options.add(normalizeBorough(borough));
+            if (borough?.trim()) {
+              options.add(normalizeBorough(borough));
+            }
           }
+
           setLocationOptions(
             Array.from(options).sort((a, b) => {
               if (a === "All") return -1;
@@ -54,7 +59,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         }
       } catch (e) {
         if (requestId === filterRequestIdRef.current) {
-          setError(e instanceof Error ? e.message : "Unable to load filter options");
+          setError(
+            e instanceof Error ? e.message : "Unable to load filter options",
+          );
         }
       }
     }
@@ -67,16 +74,21 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       const requestId = ++politicianRequestIdRef.current;
       setLoading(true);
       setError(null);
+
       try {
         const data = await getPoliticians({
           borough: selectedLocation,
         });
+
         if (requestId === politicianRequestIdRef.current) {
           setPoliticians(data);
         }
       } catch (e) {
         if (requestId === politicianRequestIdRef.current) {
-          setError(e instanceof Error ? e.message : "Unable to load representatives");
+          setError(
+            e instanceof Error ? e.message : "Unable to load representatives",
+          );
+          setPoliticians([]);
         }
       } finally {
         if (requestId === politicianRequestIdRef.current) {
@@ -95,13 +107,15 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Local Representatives
           </h2>
+
           {selectedLocation !== "All" && (
-            <span className="text-xs font-semibold px-3 py-1 bg-[var(--accent)] text-white rounded-full uppercase tracking-widest shadow-sm">
+            <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white shadow-sm">
               Filtered for {selectedLocation}
             </span>
           )}
         </div>
-        <p className="mt-3 text-[var(--muted)] text-[15px] max-w-2xl">
+
+        <p className="mt-3 max-w-2xl text-[15px] text-[var(--muted)]">
           Browse representatives connected to backend data, filtered by borough.
         </p>
       </MotionReveal>
@@ -112,6 +126,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
               Borough
             </span>
+
             <select
               className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] shadow-sm outline-none focus:border-[var(--accent)]"
               value={selectedLocation}
@@ -142,68 +157,89 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
         ) : null}
 
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-40px" }}
-          variants={staggerContainer}
-        >
-          {politicians.map((p) => (
-            <motion.div key={p.name} variants={staggerItem} className="glass-card p-6 flex flex-col rounded-2xl border border-[var(--border)] relative overflow-hidden group hover:-translate-y-1 transition duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-sans font-bold text-xl text-[var(--foreground)] leading-tight">{p.name}</h3>
-                  <p className="text-sm font-medium text-[var(--muted)]">
-                    {p.office}
-                    {p.district ? `, District ${p.district}` : ""}
+        {!loading && !error && politicians.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+            No representatives matched this borough.
+          </div>
+        ) : null}
+
+        {!loading && !error && politicians.length > 0 ? (
+          <motion.div
+            key={selectedLocation}
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            animate="show"
+            variants={staggerContainer}
+          >
+            {politicians.map((p) => (
+              <motion.div
+                key={`${p.name}-${p.borough}-${p.district ?? "na"}`}
+                variants={staggerItem}
+                className="glass-card group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] p-6 transition duration-300 hover:-translate-y-1"
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <div>
+                    <h3 className="font-sans text-xl font-bold leading-tight text-[var(--foreground)]">
+                      {p.name}
+                    </h3>
+                    <p className="text-sm font-medium text-[var(--muted)]">
+                      {p.office}
+                      {p.district ? `, District ${p.district}` : ""}
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-[70px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-white px-2 py-2">
+                    <span className="text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
+                      Stance
+                    </span>
+                    <span className="mt-1 text-center text-xs font-semibold leading-tight text-[var(--foreground)]">
+                      {p.political_stance}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      Borough
+                    </p>
+                    <p className="text-[13px] leading-snug text-[var(--foreground)]">
+                      {p.borough}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-[var(--border)] pt-4">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      Party
+                    </p>
+                    <p className="text-[13px] leading-snug text-[var(--foreground)]">
+                      {p.party || "Unknown"}
+                    </p>
+                  </div>
+
+                  {p.bio_url ? (
+                    <a
+                      href={p.bio_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex text-xs font-semibold text-[var(--accent)] hover:underline"
+                    >
+                      Official profile
+                    </a>
+                  ) : null}
+
+                  <p className="text-[11px] text-[var(--muted)]">
+                    Source:{" "}
+                    {p.data_source === "database"
+                      ? "Civic database"
+                      : "Seeded representative dataset"}
                   </p>
                 </div>
-                <div className="flex flex-col items-center justify-center min-w-[70px] rounded-xl border border-[var(--border)] bg-white px-2 py-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] leading-none">
-                    Stance
-                  </span>
-                  <span className="mt-1 text-xs font-semibold text-[var(--foreground)] leading-tight text-center">
-                    {p.political_stance}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1">Borough</p>
-                  <p className="text-[13px] leading-snug text-[var(--foreground)]">{p.borough}</p>
-                </div>
-
-                <div className="pt-4 border-t border-[var(--border)]">
-                  <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-1">Party</p>
-                  <p className="text-[13px] leading-snug text-[var(--foreground)]">{p.party || "Unknown"}</p>
-                </div>
-
-                {p.bio_url ? (
-                  <a
-                    href={p.bio_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex text-xs font-semibold text-[var(--accent)] hover:underline"
-                  >
-                    Official profile
-                  </a>
-                ) : null}
-
-                <p className="text-[11px] text-[var(--muted)]">
-                  Source: {p.data_source === "database" ? "Civic database" : "Seeded representative dataset"}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-        {!loading && !error && politicians.length === 0 ? (
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            No representatives matched this borough.
-          </p>
+              </motion.div>
+            ))}
+          </motion.div>
         ) : null}
       </MotionReveal>
     </section>
-  )
+  );
 }

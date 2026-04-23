@@ -10,7 +10,9 @@ type ChatPanelProps = {
   selectedTime?: string;
 };
 
-function normalizeSource(source: unknown): { title: string; description?: string } {
+function normalizeSource(
+  source: unknown
+): { title: string; description?: string } {
   if (Array.isArray(source)) {
     const [title, description] = source;
     return {
@@ -56,7 +58,7 @@ function Section({
       <h3 className="mb-3 text-lg font-semibold text-slate-900">{title}</h3>
       <ul className="space-y-2 text-sm text-slate-700">
         {items.map((item, index) => (
-          <li key={`${title}-${index}`} className="list-disc ml-5">
+          <li key={`${title}-${index}`} className="ml-5 list-disc">
             {item}
           </li>
         ))}
@@ -72,6 +74,7 @@ export function ChatPanel({
   selectedTime,
 }: ChatPanelProps) {
   const [message, setMessage] = useState("");
+  const [lastQuestion, setLastQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<PolicyResponse | null>(null);
@@ -86,12 +89,26 @@ export function ChatPanel({
     try {
       const context: string[] = [];
 
-      if (briefingQuery) context.push(`Current briefing topic: ${briefingQuery}`);
-      if (selectedArea && selectedArea !== "All") context.push(`Issue area: ${selectedArea}`);
-      if (borough && borough !== "All NYC") context.push(`Borough: ${borough}`);
-      if (selectedTime && selectedTime !== "All Time") context.push(`Timeframe: ${selectedTime}`);
+      if (briefingQuery) {
+        context.push(`Current briefing topic: ${briefingQuery}`);
+      }
 
-      const fullQuery = [...context, `Follow-up question: ${trimmed}`].join(". ");
+      if (selectedArea && selectedArea !== "All") {
+        context.push(`Issue area: ${selectedArea}`);
+      }
+
+      if (borough && borough !== "All NYC") {
+        context.push(`Borough: ${borough}`);
+      }
+
+      if (selectedTime && selectedTime !== "All Time") {
+        context.push(`Timeframe: ${selectedTime}`);
+      }
+
+      const fullQuery = [
+        ...context,
+        `Follow-up question: ${trimmed}`,
+      ].join(". ");
 
       const data = await sendChat(
         fullQuery,
@@ -99,10 +116,15 @@ export function ChatPanel({
       );
 
       console.log("CHAT PANEL RESPONSE", data);
+
+      setLastQuestion(trimmed);
+      setMessage("");
       setResponse(data);
     } catch (e) {
       console.error("Chat request failed:", e);
-      setError(e instanceof Error ? e.message : "Unable to load chat response");
+      setError(
+        e instanceof Error ? e.message : "Unable to load chat response"
+      );
     } finally {
       setLoading(false);
     }
@@ -112,15 +134,39 @@ export function ChatPanel({
     ? response.sources.map(normalizeSource)
     : [];
 
+  const hasContent =
+    !!response?.at_a_glance?.length ||
+    !!response?.key_takeaways?.length ||
+    !!response?.what_this_means?.length ||
+    !!response?.relevant_actions?.length;
+
   return (
     <section className="mx-auto mt-8 w-full max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
       <div className="rounded-[32px] border border-white/60 bg-white/70 p-6 shadow-xl backdrop-blur">
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
           Follow-up Chat
         </h2>
+
         <p className="mt-2 text-sm text-slate-600">
           Ask a follow-up question about the current briefing.
         </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            "Summarize this in simple terms.",
+            "What should residents do next?",
+            "Which sources support this briefing?",
+          ].map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => setMessage(prompt)}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
 
         <div className="mt-5 flex flex-col gap-3 md:flex-row">
           <input
@@ -137,19 +183,39 @@ export function ChatPanel({
             placeholder="What should residents do next?"
             className="h-12 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none"
           />
+
           <button
             type="button"
             onClick={handleAsk}
-            disabled={loading}
+            disabled={loading || !message.trim()}
             className="h-12 rounded-2xl bg-slate-900 px-5 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {loading ? "Asking..." : "Ask"}
+            {loading ? "Generating..." : "Ask"}
           </button>
         </div>
+
+        {loading && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            Generating follow-up response...
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {lastQuestion && !loading && (
+          <div className="mt-4 text-sm text-slate-500">
+            Last question:{" "}
+            <span className="font-medium text-slate-700">{lastQuestion}</span>
+          </div>
+        )}
+
+        {response && !hasContent && (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+           No relevant follow-up insights are available for this question at the moment. Please try a more specific query or explore the main briefing content for more information.
           </div>
         )}
 
@@ -158,17 +224,31 @@ export function ChatPanel({
             <Section title="At a glance" items={response.at_a_glance} />
             <Section title="Key takeaways" items={response.key_takeaways} />
             <Section title="What this means" items={response.what_this_means} />
-            <Section title="Relevant actions" items={response.relevant_actions} />
+            <Section
+              title="Relevant actions"
+              items={response.relevant_actions}
+            />
 
             {sources.length > 0 && (
               <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm">
-                <h3 className="mb-3 text-lg font-semibold text-slate-900">Sources</h3>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">
+                  Sources
+                </h3>
+
                 <div className="space-y-3 text-sm text-slate-700">
                   {sources.map((source, index) => (
-                    <div key={`${source.title}-${index}`} className="rounded-2xl border border-slate-200 p-3">
-                      <div className="font-medium text-slate-900">{source.title}</div>
+                    <div
+                      key={`${source.title}-${index}`}
+                      className="rounded-2xl border border-slate-200 p-3"
+                    >
+                      <div className="font-medium text-slate-900">
+                        {source.title}
+                      </div>
+
                       {source.description && (
-                        <div className="mt-1 text-slate-600">{source.description}</div>
+                        <div className="mt-1 text-slate-600">
+                          {source.description}
+                        </div>
                       )}
                     </div>
                   ))}
