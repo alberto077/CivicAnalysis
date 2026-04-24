@@ -40,7 +40,7 @@ export function DashboardFilters({
                <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-transform ${isPersonalized ? "left-4" : "left-0.5"}`} />
              </div>
              <span className="text-[13px] font-semibold text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors uppercase tracking-tight hidden sm:block">
-               {isPersonalized ? "Profile Active" : "Generic Data"}
+               {isPersonalized ? "Profile Active" : "PROFILE UNACTIVE"}
              </span>
              <input type="checkbox" className="hidden" checked={isPersonalized} onChange={(e) => setIsPersonalized(e.target.checked)} />
            </label>

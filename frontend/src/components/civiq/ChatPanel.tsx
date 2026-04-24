@@ -11,7 +11,7 @@ type ChatPanelProps = {
 };
 
 function normalizeSource(
-  source: unknown
+  source: unknown,
 ): { title: string; description?: string } {
   if (Array.isArray(source)) {
     const [title, description] = source;
@@ -87,32 +87,66 @@ export function ChatPanel({
     setError(null);
 
     try {
-      const context: string[] = [];
+      const lower = trimmed.toLowerCase();
 
-      if (briefingQuery) {
-        context.push(`Current briefing topic: ${briefingQuery}`);
+      let fullQuery = "";
+
+      if (lower.includes("summarize")) {
+        fullQuery = `
+Current briefing topic: ${briefingQuery || "Unknown"}.
+Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
+Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
+Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
+
+User request:
+Summarize the current briefing in simple terms.
+
+Instructions:
+- Give a short plain-English summary.
+- Focus only on the current briefing topic and selected borough.
+- Do not add unrelated facts.
+- Do not repeat the full briefing word-for-word.
+- If the evidence is limited, say that briefly.
+        `.trim();
+      } else if (lower.includes("sources")) {
+        fullQuery = `
+Current briefing topic: ${briefingQuery || "Unknown"}.
+Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
+Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
+Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
+
+User request:
+Identify which sources support the current briefing.
+
+Instructions:
+- Focus on the most relevant supporting sources.
+- Briefly explain why each source matters.
+- Do not restate the entire briefing.
+- Keep the answer concise and evidence-based.
+        `.trim();
+      } else {
+        fullQuery = `
+Current briefing topic: ${briefingQuery || "Unknown"}.
+Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
+Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
+Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
+
+User follow-up question:
+${trimmed}
+
+Instructions:
+- Answer the follow-up question directly.
+- Keep the response focused on the selected issue area, borough, and timeframe.
+- Do not repeat the full briefing unless the user explicitly asks for a summary.
+- Avoid unrelated facts.
+- If evidence is limited, say so briefly and then provide the most relevant answer available.
+- Keep recommendations practical and specific.
+        `.trim();
       }
-
-      if (selectedArea && selectedArea !== "All") {
-        context.push(`Issue area: ${selectedArea}`);
-      }
-
-      if (borough && borough !== "All NYC") {
-        context.push(`Borough: ${borough}`);
-      }
-
-      if (selectedTime && selectedTime !== "All Time") {
-        context.push(`Timeframe: ${selectedTime}`);
-      }
-
-      const fullQuery = [
-        ...context,
-        `Follow-up question: ${trimmed}`,
-      ].join(". ");
 
       const data = await sendChat(
         fullQuery,
-        borough && borough !== "All NYC" ? { borough } : undefined
+        borough && borough !== "All NYC" ? { borough } : undefined,
       );
 
       console.log("CHAT PANEL RESPONSE", data);
@@ -123,7 +157,7 @@ export function ChatPanel({
     } catch (e) {
       console.error("Chat request failed:", e);
       setError(
-        e instanceof Error ? e.message : "Unable to load chat response"
+        e instanceof Error ? e.message : "Unable to load chat response",
       );
     } finally {
       setLoading(false);
@@ -153,7 +187,7 @@ export function ChatPanel({
 
         <div className="mt-4 flex flex-wrap gap-2">
           {[
-            "Summarize this in simple terms.",
+            "Summarize the current briefing in simple terms.",
             "What should residents do next?",
             "Which sources support this briefing?",
           ].map((prompt) => (
@@ -215,7 +249,9 @@ export function ChatPanel({
 
         {response && !hasContent && (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-           No relevant follow-up insights are available for this question at the moment. Please try a more specific query or explore the main briefing content for more information.
+            No relevant follow-up insights are available for this question at the
+            moment. Please try a more specific query or explore the main
+            briefing content for more information.
           </div>
         )}
 
