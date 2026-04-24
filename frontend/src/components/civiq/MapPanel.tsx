@@ -1,6 +1,7 @@
 "use client";
 
 import { CivicMap } from "./CivicMap";
+import { MotionReveal } from "./MotionReveal";
 
 export function MapPanel() {
   return (
