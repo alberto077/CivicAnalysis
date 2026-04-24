@@ -97,7 +97,7 @@ export function PolicyBriefingPanel({
           </h2>
           {showBriefing && (
             <p className="mt-3 max-w-2xl text-[15px] text-slate-500">
-              Personalized analysis for: <span className="font-bold text-slate-900">"{briefingQuery}"</span>
+              Personalized analysis for: <span className="font-bold text-slate-900">&quot;{briefingQuery}&quot;</span>
             </p>
           )}
         </div>

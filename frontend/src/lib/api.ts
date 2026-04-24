@@ -44,7 +44,7 @@ export async function getDistricts(): Promise<District[]> {
   }
 }
 
-export async function getDistrictsMap(): Promise<any> {
+export async function getDistrictsMap(): Promise<unknown> {
   try {
     const res = await fetch(`${CIVIC_API}/districts/map`, { cache: "no-store", signal: AbortSignal.timeout(2000) });
     if (!res.ok) throw new Error("Failed to load map data from backend");
