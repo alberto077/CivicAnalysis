@@ -1,8 +1,7 @@
 const links = [
-  { label: "About", href: "#" },
-  { label: "Data Sources", href: "#" },
-  { label: "NYC Open Data", href: "https://opendata.cityofnewyork.us/" },
-  { label: "Contact", href: "#" },
+  { label: "About", href: "/about" },
+  { label: "Data Sources", href: "/data-sources" },
+  { label: "Search", href: "/chat" },
 ] as const;
 
 export function SiteFooter() {

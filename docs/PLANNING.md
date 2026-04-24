@@ -228,7 +228,7 @@
 | Geography & Boundaries | NYC Open Data (Boroughs/ZIPs), Redistricting Data Hub (District Maps) |
 | Budgets & finance | Published municipal budgets, budget hearings, line-item PDFs or CSVs |
 | Public datasets | Open Data portals, Census data, housing, crime, transportation, school stats |
-| Local news | RSS feeds, local newspaper sites, Gothmist, community blogs |
+| Local news | RSS feeds, local newspaper sites, community blogs |
 | Government comms | Mayor's office releases, press conferences, transcripts |
 
 #### Key API Sources for NYC / NY:
@@ -239,7 +239,7 @@
 | NY State Senate API | State Senate and Assembly bills, sponsors, committees, calendars | https://www.nysenate.gov/ |
 | Redistricting Data Hub | District boundary files (Congressional and State Legislative) | https://redistrictingdatahub.org/ |
 | NYC DCP / Geocoding | Mapping ZIP codes to relevant council/legislative districts | https://www.nyc.gov/site/planning/data-maps/open-data.page |
-| Local News | RSS feeds from curated outlets (Gothamist, NYT NYC) |  |
+| Local News | RSS feeds from curated outlets | [NO LONGER IN USE] |
 
 
 ### 7. Data Pipeline: RAG & ML/LLM
@@ -321,11 +321,11 @@ CivicAnalysis/
 | | Create `GitHub Actions` orchestration for daily scraping pipeline | DevOps | ✅ |
 | | OnboardingModal + Dashboard Filters (UI) | FE | ✅ |
 | | Personalization toggle + Advanced Filters on Dashboard | FE | ✅ |
-| **Apr 23** | **CLASSROOM DEMO DEADLINE** | ALL | ⏳ Pending |
+| **Apr 23** | **CLASS DEMO** | ALL | ⏳ Pending |
 | | Connect Dashboard to Live Data (Filters: Borough, Issue, Time) | FE | ⏳ Pending |
-| | Multi-page Migration: Separate routes for Map, Politicians, Chat, etc. | FE | ⏳ Pending |
-| | Politician Cards: Live data + activity signals | FE | ⏳ Pending |
-| | About Page: Project + 15s Demo Video | FE | ⏳ Pending |
+| | Multi-page Migration: Separate routes for Map, Politicians, Chat, etc. | FE | ✅ |
+| | Politician Cards: Live data + activity signals | FE | ✅ |
+| | About Page: Project | FE | ✅ |
 | | Map Geography Model: Borough, Neighborhood, ZIP-to-District mapping | BE/ML | ⏳ Pending |
 | **May 01** | **Interactive Map & Chatbot Polish** | ALL | ⏳ Pending |
 | | Interactive Map: Neighborhoods, Districts, Zip codes | FE | ⏳ Pending |

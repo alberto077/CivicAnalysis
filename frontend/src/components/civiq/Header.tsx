@@ -2,37 +2,38 @@
 import Link from "next/link";
 import { useState } from "react";
 import { SettingsModal } from "./SettingsModal";
-import { useProfile } from "@/lib/useProfile";
 
 export function Header() {
   const [showSettings, setShowSettings] = useState(false);
-  const { profile } = useProfile();
 
   return (
     <>
-      <header className="sticky top-3 z-50 px-3 sm:px-5 lg:px-7">
-        <div className="surface-float mx-auto flex h-[3.35rem] w-full max-w-6xl items-center justify-between rounded-2xl border border-white/70 bg-[linear-gradient(150deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.72)_100%)] px-4 sm:h-14 sm:px-6 lg:px-8 backdrop-blur-2xl backdrop-saturate-150">
+      <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between rounded-[2rem] border border-white/40 bg-white/60 px-8 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
           <Link
             href="/"
-            className="flex items-center gap-2 transition hover:opacity-85"
+            className="flex items-center gap-3 transition hover:opacity-80 group"
           >
-            <span className="logo-clip flex-shrink-0"></span>
-            <span className="font-display text-2xl tracking-widest text-[var(--foreground)] uppercase mt-1">
+            <div className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,var(--accent)_0%,#2f5f96_100%)] shadow-inner transition group-hover:rotate-12" />
+            <span className="font-display text-xl font-bold tracking-[0.15em] text-slate-900 uppercase">
               Civic <span className="text-[var(--accent)]">Spiegel</span>
             </span>
           </Link>
-          <div className="flex items-center gap-6">
-            <nav className="hidden lg:flex items-center gap-5 text-[13px] font-semibold text-[var(--muted)] tracking-wide uppercase">
-              <a href="#briefings" className="hover:text-[var(--accent)] transition-colors">Briefings</a>
-              <a href="#politicians" className="hover:text-[var(--accent)] transition-colors">Politicians</a>
+
+          <div className="flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-8 text-[11px] font-bold text-slate-500 tracking-[0.25em] uppercase">
+              <Link href="/" className="hover:text-[var(--accent)] transition-colors">Briefings</Link>
+              <Link href="/representatives" className="hover:text-[var(--accent)] transition-colors">Representatives</Link>
+              <Link href="/map" className="hover:text-[var(--accent)] transition-colors">Map</Link>
+              <Link href="/chat" className="hover:text-[var(--accent)] transition-colors">Civic Assistant</Link>
+              <Link href="/about" className="hover:text-[var(--accent)] transition-colors">About</Link>
             </nav>
-            <div className="h-4 w-px bg-[var(--border)] hidden lg:block" />
-            <p className="hidden font-condensed text-sm font-bold tracking-wide uppercase text-[var(--accent-mid)] sm:block">
-              NY Data Sync
-            </p>
-            <button 
+
+            <div className="h-5 w-px bg-slate-200 hidden md:block" />
+
+            <button
               onClick={() => setShowSettings(true)}
-              className="btn-premium text-xs font-semibold text-white bg-[var(--accent)] rounded-full px-4 py-1.5 hover:bg-[var(--accent-mid)] transition tracking-wide uppercase shadow-sm"
+              className="text-[10px] font-extrabold text-white bg-slate-900 rounded-full px-6 py-2.5 hover:bg-slate-800 transition tracking-[0.2em] uppercase shadow-lg shadow-slate-200"
             >
               Settings
             </button>
