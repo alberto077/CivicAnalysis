@@ -43,11 +43,8 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
   useEffect(() => {
     if (isOpen) {
       setStep(1);
-      if (initialProfile) {
-        setData(initialProfile);
-      } else {
-        setData({ borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
-      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setData(initialProfile || { borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
     }
   }, [isOpen, initialProfile]);
 
@@ -75,7 +72,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1b2a]/60 backdrop-blur-sm p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onSkip();
@@ -97,11 +94,10 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                 <button
                   key={b}
                   onClick={() => setData({ ...data, borough: data.borough === b ? "" : b })}
-                  className={`rounded-xl border p-3 text-left font-sans text-sm font-medium transition ${
-                    data.borough === b
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
-                      : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
-                  }`}
+                  className={`rounded-xl border p-3 text-left font-sans text-sm font-medium transition ${data.borough === b
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
+                    : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
+                    }`}
                 >
                   {b}
                 </button>
@@ -121,9 +117,8 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                     <button
                       key={h}
                       onClick={() => setData({ ...data, housing: data.housing === h ? "" : h })}
-                      className={`rounded-lg border px-4 py-2 text-sm transition ${
-                        data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
-                      }`}
+                      className={`rounded-lg border px-4 py-2 text-sm transition ${data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                        }`}
                     >
                       {h}
                     </button>
@@ -137,9 +132,8 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                     <button
                       key={i}
                       onClick={() => setData({ ...data, income: data.income === i ? "" : i })}
-                      className={`rounded-lg border px-4 py-2 text-sm transition ${
-                        data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
-                      }`}
+                      className={`rounded-lg border px-4 py-2 text-sm transition ${data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                        }`}
                     >
                       {i}
                     </button>
@@ -158,11 +152,10 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                 <button
                   key={issue}
                   onClick={() => toggleIssue(issue)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    data.issues.includes(issue)
-                      ? "border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white shadow-md"
-                      : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent)]"
-                  }`}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${data.issues.includes(issue)
+                    ? "border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white shadow-md"
+                    : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent)]"
+                    }`}
                 >
                   {issue}
                 </button>
@@ -179,9 +172,8 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                 <button
                   key={a}
                   onClick={() => setData({ ...data, age: data.age === a ? "" : a })}
-                  className={`rounded-lg border px-4 py-2 text-sm transition ${
-                    data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
-                  }`}
+                  className={`rounded-lg border px-4 py-2 text-sm transition ${data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                    }`}
                 >
                   {a}
                 </button>
@@ -199,11 +191,10 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                 <button
                   key={demo}
                   onClick={() => toggleDemographic(demo)}
-                  className={`rounded-xl border px-4 py-2 text-[13px] font-medium transition ${
-                    data.demographics.includes(demo)
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
-                      : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
-                  }`}
+                  className={`rounded-xl border px-4 py-2 text-[13px] font-medium transition ${data.demographics.includes(demo)
+                    ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
+                    : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
+                    }`}
                 >
                   {demo}
                 </button>
@@ -220,7 +211,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
           ) : (
             <div className="w-1"></div>
           )}
-          
+
           {step < 5 ? (
             <button onClick={handleNext} className="rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--accent-mid)]">
               Next

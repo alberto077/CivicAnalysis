@@ -254,7 +254,7 @@ export function ChatPanel({
         {lastQuestion && !loading && (
           <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
             <span className="font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
-            <span className="font-medium italic">"{lastQuestion}"</span>
+            <span className="font-medium italic">&quot;{lastQuestion}&quot;</span>
           </div>
         )}
 

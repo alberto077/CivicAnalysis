@@ -27,7 +27,7 @@ export function CivicMap({
   // NYC Tab State
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(null);
   const [districts, setDistricts] = useState<District[]>([]);
-  const [geoData, setGeoData] = useState<any>(null);
+  const [geoData, setGeoData] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
