@@ -88,8 +88,10 @@ cp .env.example .env  # Fill in your keys
 cd backend
 pip install -r requirements.txt
 python init_db.py  # Initialize Neon tables
+uvicorn main:app --reload
 
 # 3. Populate Historical Data (required for context)
+# Run from project root
 python pipeline/backfill_history.py 
 ```
 

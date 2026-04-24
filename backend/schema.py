@@ -12,6 +12,8 @@ class Politician(SQLModel, table=True):
     location_borough: Optional[str] = None
     district_number: Optional[str] = None
     bio_url: Optional[str] = None
+    term_end: Optional[datetime] = None
+    office_id: Optional[str] = None
     
     votes: List["VoteRecord"] = Relationship(back_populates="politician")
 

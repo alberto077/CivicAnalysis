@@ -13,9 +13,10 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   useEffect(() => {
     if (isOpen) {
-      if (profile) setData(profile);
-      else setData({ borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setData(profile || { borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
       setActiveTab("Profile");
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen, profile]);
 
@@ -43,7 +44,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1b2a]/60 backdrop-blur-sm p-4 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -57,13 +58,13 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             <button onClick={onClose} className="text-[var(--muted)] hover:text-black font-bold p-2 text-xl">&times;</button>
           </div>
           <div className="flex border-b border-gray-200">
-            <button 
+            <button
               onClick={() => setActiveTab("Profile")}
               className={`flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
             >
               Demographics
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("Interests")}
               className={`flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Interests" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
             >
@@ -82,9 +83,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={b}
                       onClick={() => setSingle("borough", b)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                        data.borough === b ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                      }`}
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.borough === b ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
+                        }`}
                     >
                       {b}
                     </button>
@@ -99,9 +99,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={h}
                       onClick={() => setSingle("housing", h)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                        data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                      }`}
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
+                        }`}
                     >
                       {h}
                     </button>
@@ -112,9 +111,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={i}
                       onClick={() => setSingle("income", i)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                        data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                      }`}
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
+                        }`}
                     >
                       {i}
                     </button>
@@ -129,9 +127,8 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={a}
                       onClick={() => setSingle("age", a)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                        data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
-                      }`}
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)]"
+                        }`}
                     >
                       {a}
                     </button>
@@ -146,11 +143,10 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={demo}
                       onClick={() => toggleArray("demographics", demo)}
-                      className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${
-                        data.demographics.includes(demo)
+                      className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${data.demographics.includes(demo)
                           ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
                           : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-mid)]"
-                      }`}
+                        }`}
                     >
                       {demo}
                     </button>
@@ -169,11 +165,10 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                   <button
                     key={issue}
                     onClick={() => toggleArray("issues", issue)}
-                    className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${
-                      data.issues.includes(issue)
+                    className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${data.issues.includes(issue)
                         ? "border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white shadow-sm"
                         : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent)]"
-                    }`}
+                      }`}
                   >
                     {issue}
                   </button>
@@ -188,12 +183,12 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             Clear all
           </button>
           <div className="flex gap-3">
-             <button onClick={onClose} className="rounded-xl bg-gray-100 hover:bg-gray-200 text-[var(--foreground)] px-5 py-2.5 text-sm font-semibold transition">
-               Cancel
-             </button>
-             <button onClick={handleSave} className="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-mid)] text-white px-6 py-2.5 text-sm font-semibold shadow-sm transition">
-               Save Profile
-             </button>
+            <button onClick={onClose} className="rounded-xl bg-gray-100 hover:bg-gray-200 text-[var(--foreground)] px-5 py-2.5 text-sm font-semibold transition">
+              Cancel
+            </button>
+            <button onClick={handleSave} className="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-mid)] text-white px-6 py-2.5 text-sm font-semibold shadow-sm transition">
+              Save Profile
+            </button>
           </div>
         </div>
       </div>

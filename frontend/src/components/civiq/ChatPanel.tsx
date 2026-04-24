@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { sendChat, type PolicyResponse } from "@/lib/api";
+import { Sparkles, Send, MessageSquare, UserCircle2, Globe2 } from "lucide-react";
+import { useProfile } from "@/lib/useProfile";
 
 type ChatPanelProps = {
   briefingQuery?: string;
   borough?: string;
   selectedArea?: string;
   selectedTime?: string;
+  isStandalone?: boolean;
 };
 
 function normalizeSource(
@@ -54,14 +57,15 @@ function Section({
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm">
-      <h3 className="mb-3 text-[15px] font-semibold tracking-[0.08em] text-black">
+    <div className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-sm transition hover:shadow-md">
+      <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
         {title}
       </h3>
-      <ul className="space-y-2 text-[15px] text-black">
+      <ul className="space-y-3 text-[15px] text-slate-800 leading-relaxed">
         {items.map((item, index) => (
-          <li key={`${title}-${index}`} className="ml-5 list-disc">
-            {item}
+          <li key={`${title}-${index}`} className="flex gap-3">
+            <span className="shrink-0 text-[var(--accent)]">•</span>
+            <span>{item}</span>
           </li>
         ))}
       </ul>
@@ -74,12 +78,22 @@ export function ChatPanel({
   borough,
   selectedArea,
   selectedTime,
+  isStandalone = false,
 }: ChatPanelProps) {
   const [message, setMessage] = useState("");
   const [lastQuestion, setLastQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<PolicyResponse | null>(null);
+  const { profile, isLoaded } = useProfile();
+  const [isPersonalized, setIsPersonalized] = useState(true);
+
+  // Default to false if no profile is found
+  useEffect(() => {
+    if (isLoaded && !profile) {
+      setIsPersonalized(false);
+    }
+  }, [isLoaded, profile]);
 
   const handleAsk = async () => {
     const trimmed = message.trim();
@@ -90,77 +104,44 @@ export function ChatPanel({
 
     try {
       const lower = trimmed.toLowerCase();
-
       let fullQuery = "";
 
-      if (lower.includes("summarize")) {
-        fullQuery = `
-Current briefing topic: ${briefingQuery || "Unknown"}.
-Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
-Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
-Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
-
-User request:
-Summarize the current briefing in simple terms.
-
-Instructions:
-- Give a short plain-English summary.
-- Focus only on the current briefing topic and selected borough.
-- Do not add unrelated facts.
-- Do not repeat the full briefing word-for-word.
-- If the evidence is limited, say that briefly.
-        `.trim();
-      } else if (lower.includes("sources")) {
-        fullQuery = `
-Current briefing topic: ${briefingQuery || "Unknown"}.
-Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
-Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
-Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
-
-User request:
-Identify which sources support the current briefing.
-
-Instructions:
-- Focus on the most relevant supporting sources.
-- Briefly explain why each source matters.
-- Do not restate the entire briefing.
-- Keep the answer concise and evidence-based.
-        `.trim();
+      if (isStandalone) {
+          fullQuery = trimmed;
       } else {
-        fullQuery = `
-Current briefing topic: ${briefingQuery || "Unknown"}.
-Selected issue area: ${selectedArea && selectedArea !== "All" ? selectedArea : "General"}.
-Selected borough: ${borough && borough !== "All NYC" ? borough : "All NYC"}.
-Selected timeframe: ${selectedTime && selectedTime !== "All Time" ? selectedTime : "Last 30 Days"}.
-
-User follow-up question:
-${trimmed}
-
-Instructions:
-- Answer the follow-up question directly.
-- Keep the response focused on the selected issue area, borough, and timeframe.
-- Do not repeat the full briefing unless the user explicitly asks for a summary.
-- Avoid unrelated facts.
-- If evidence is limited, say so briefly and then provide the most relevant answer available.
-- Keep recommendations practical and specific.
-        `.trim();
+          // Context-aware follow-up
+          if (lower.includes("summarize")) {
+            fullQuery = `Summarize current briefing on ${briefingQuery}. ${trimmed}`;
+          } else if (lower.includes("sources")) {
+            fullQuery = `Which sources support the briefing on ${briefingQuery}?`;
+          } else {
+            // Keep the query clean for vector search, only append the main topic
+            fullQuery = `[Focus Topic: ${briefingQuery}] ${trimmed}`;
+          }
       }
+
+      // Extract ZIP for direct filter if present
+      const zipMatch = trimmed.match(/\b\d{5}\b/);
+      
+      const effectiveBorough = borough && borough !== "All NYC" ? borough : (isPersonalized && profile?.borough ? profile.borough : undefined);
 
       const data = await sendChat(
         fullQuery,
-        borough && borough !== "All NYC" ? { borough } : undefined,
+        { 
+          borough: effectiveBorough,
+          zip: zipMatch ? zipMatch[0] : undefined,
+          issue_area: selectedArea,
+          timeframe: selectedTime,
+          profile_active: isPersonalized ? "true" : "false"
+        }
       );
-
-      console.log("CHAT PANEL RESPONSE", data);
 
       setLastQuestion(trimmed);
       setMessage("");
       setResponse(data);
     } catch (e) {
       console.error("Chat request failed:", e);
-      setError(
-        e instanceof Error ? e.message : "Unable to load chat response",
-      );
+      setError(e instanceof Error ? e.message : "Unable to load chat response");
     } finally {
       setLoading(false);
     }
@@ -177,121 +158,138 @@ Instructions:
     !!response?.relevant_actions?.length;
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
-      <div className="rounded-[32px] border border-white/60 bg-white/70 p-6 shadow-xl backdrop-blur">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Follow-up Chat
-        </h2>
+    <section className={`mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6 lg:px-8 ${isStandalone ? "pt-12" : "mt-8"}`}>
+      <div className="rounded-[40px] border border-white/60 bg-white/40 p-8 shadow-2xl backdrop-blur-xl md:p-12">
+        <div className="flex items-center gap-3 mb-6">
+           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
+             <MessageSquare className="h-5 w-5" />
+           </div>
+           <div>
+              <h2 className="text-3xl font-display font-bold tracking-tight text-slate-900">
+                {isStandalone ? "Policy AI Explorer" : "Briefing Assistant"}
+              </h2>
+              <p className="text-slate-600 text-sm">
+                {isStandalone 
+                  ? "Ask anything about NYC policy, legislation, or city services." 
+                  : `Deeper insights for "${briefingQuery}"`}
+              </p>
+           </div>
+        </div>
 
-        <p className="mt-2 text-sm text-slate-600">
-          Ask a follow-up question about the current briefing.
-        </p>
+        {/* Personalization Toggle */}
+        <div className="flex items-center gap-3 mb-6 bg-slate-50 border border-slate-100 p-2 rounded-2xl w-fit">
+          <button
+            onClick={() => setIsPersonalized(false)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              !isPersonalized
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+            }`}
+          >
+            <Globe2 className="h-4 w-4" />
+            General Info
+          </button>
+          <button
+            onClick={() => setIsPersonalized(true)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              isPersonalized
+                ? "bg-[var(--accent)] text-white shadow-sm border border-[var(--accent-soft)]"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+            }`}
+          >
+            <UserCircle2 className="h-4 w-4" />
+            Personalized for You
+            {profile?.borough && isPersonalized && (
+               <span className="ml-1 opacity-70 font-normal">({profile.borough})</span>
+            )}
+          </button>
+        </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[
-            "Summarize the current briefing in simple terms.",
-            "What should residents do next?",
-            "Which sources support this briefing?",
-          ].map((prompt) => (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {(isStandalone 
+            ? ["What are the new rules for e-bikes?", "How to apply for affordable housing?", "Recent transit changes in Brooklyn?"]
+            : ["Summarize in simple terms.", "What should I do next?", "Which sources support this?"]
+          ).map((prompt) => (
             <button
               key={prompt}
               type="button"
               onClick={() => setMessage(prompt)}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-slate-200 bg-white shadow-sm px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-[var(--accent-soft)] hover:text-[var(--accent)] transition-all"
             >
               {prompt}
             </button>
           ))}
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 md:flex-row">
-          <input
-            id="followup-chat"
-            name="followup-chat"
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                void handleAsk();
-              }
-            }}
-            placeholder="What should residents do next?"
-            className="h-12 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none"
-          />
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+             <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void handleAsk()}
+              placeholder={isStandalone ? "Ask a policy question..." : "Ask a follow-up..."}
+              className="w-full h-14 pl-5 pr-14 rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all"
+            />
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors ${message.trim() ? "text-[var(--accent)]" : "text-slate-300"}`}>
+               <Sparkles className="h-5 w-5" />
+            </div>
+          </div>
 
           <button
-            type="button"
             onClick={handleAsk}
             disabled={loading || !message.trim()}
-            className="h-12 rounded-2xl bg-slate-900 px-5 text-sm font-semibold text-white disabled:opacity-60"
+            className="h-14 aspect-square flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg transition hover:bg-slate-800 disabled:opacity-40"
           >
-            {loading ? "Generating..." : "Ask"}
+            {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send className="h-5 w-5" />}
           </button>
         </div>
 
-        {loading && (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            Generating follow-up response...
-          </div>
-        )}
-
         {error && (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-6 rounded-2xl bg-red-50 p-4 text-sm text-red-700 border border-red-100 italic">
             {error}
           </div>
         )}
 
         {lastQuestion && !loading && (
-          <div className="mt-4 text-sm text-slate-500">
-            Last question:{" "}
-            <span className="font-medium text-slate-700">{lastQuestion}</span>
-          </div>
-        )}
-
-        {response && !hasContent && (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            No relevant follow-up insights are available for this question at the
-            moment. Please try a more specific query or explore the main
-            briefing content for more information.
+          <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
+            <span className="font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
+            <span className="font-medium italic">&quot;{lastQuestion}&quot;</span>
           </div>
         )}
 
         {response && (
-          <div className="mt-6 space-y-4">
-            <Section title="Policy overview" items={response.at_a_glance} />
-            <Section title="Key takeaways" items={response.key_takeaways} />
-            <Section title="What this means" items={response.what_this_means} />
-            <Section
-              title="Relevant actions"
-              items={response.relevant_actions}
-            />
-
-            {sources.length > 0 && (
-              <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm">
-                <h3 className="mb-3 text-[15px] font-semibold tracking-[0.08em] text-black">
-                  Sources
-                </h3>
-
-                <div className="space-y-3 text-[15px] text-black">
-                  {sources.map((source, index) => (
-                    <div
-                      key={`${source.title}-${index}`}
-                      className="rounded-2xl border border-slate-200 p-3"
-                    >
-                      <div className="font-medium text-black">
-                        {source.title}
-                      </div>
-
-                      {source.description && (
-                        <div className="mt-1 text-[15px] text-black">
-                          {source.description}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <div className="mt-12 space-y-6">
+            {!hasContent ? (
+              <div className="rounded-3xl border border-amber-100 bg-amber-50 p-8 text-center text-amber-900">
+                 <p className="font-medium">No specific policy facts found for this query.</p>
+                 <p className="mt-1 text-sm opacity-80">Try asking about recent legislation, borough programs, or city council actions.</p>
               </div>
+            ) : (
+              <>
+                <Section title="Synthesis" items={response.at_a_glance} />
+                <Section title="Strategic Analysis" items={response.key_takeaways} />
+                <Section title="Your Local Impact" items={response.what_this_means} />
+                <Section title="Recommended Steps" items={response.relevant_actions} />
+
+                {sources.length > 0 && (
+                  <div className="rounded-[32px] border border-white/60 bg-white/80 p-8 shadow-sm">
+                    <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
+                      Evidence Library
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {sources.map((source, index) => (
+                        <div key={index} className="rounded-2xl border border-slate-100 bg-white p-5 transition hover:border-[var(--accent-soft)]">
+                          <div className="font-bold text-slate-900 text-sm mb-1">{source.title}</div>
+                          {source.description && (
+                            <div className="text-[13px] text-slate-600 leading-relaxed italic">{source.description}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

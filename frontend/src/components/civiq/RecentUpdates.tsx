@@ -1,31 +1,37 @@
 "use client";
 
 import { Rss } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
+import { getRecentPolicies, type PolicyBriefing } from "@/lib/api";
 
-const updates = [
-  {
-    title: "Commercial waste zone pilot extension",
-    neighborhood: "Brooklyn CB6",
-    summary:
-      "City sanitation is extending-comment deadlines on commercial carting routes affecting Atlantic Ave corridors.",
-  },
-  {
-    title: "School seat planning hearing",
-    neighborhood: "Queens District 26",
-    summary:
-      "DOE capacity study cites enrollment growth; a hearing schedule placeholder is posted for spring.",
-  },
-  {
-    title: "Parks capital project scoping",
-    neighborhood: "Bronx CB4",
-    summary:
-      "A playground renovation and greenway link are in early design; trees and ADA paths flagged in draft scope.",
-  },
-] as const;
+type RecentUpdatesProps = {
+  selectedArea?: string;
+  selectedLocation?: string;
+};
 
-export function RecentUpdates() {
+export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesProps) {
+  const [policies, setPolicies] = useState<PolicyBriefing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const area = selectedArea === "All" ? undefined : selectedArea;
+        const borough = selectedLocation === "All NYC" ? undefined : selectedLocation;
+        const data = await getRecentPolicies(borough, area);
+        setPolicies(data.policies);
+      } catch (e) {
+        console.error("Failed to load recent policies", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [selectedArea, selectedLocation]);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <MotionReveal>
@@ -38,33 +44,75 @@ export function RecentUpdates() {
           </h2>
         </div>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">
-          Placeholder feed—wire to your retrieval layer or RSS-style ingest.
+          Live feed of official legislation, meeting transcripts, and city decisions.
         </p>
       </MotionReveal>
+
       <MotionReveal className="mt-10">
-        <motion.ul
-          className="glass-card divide-y divide-[var(--border)] overflow-hidden rounded-2xl md:rounded-3xl"
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-40px" }}
-          variants={staggerContainer}
-        >
-          {updates.map((u) => (
-            <motion.li
-              key={u.title}
-              variants={staggerItem}
-              className="lift-row flex flex-col gap-2 px-6 py-6 transition-colors hover:bg-white/45 sm:flex-row sm:items-start sm:gap-8 md:px-8"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="font-display font-semibold text-[var(--foreground)]">{u.title}</p>
-                <p className="mt-1 text-sm font-medium text-[var(--accent)]">{u.neighborhood}</p>
-              </div>
-              <p className="max-w-xl text-sm leading-relaxed text-[var(--muted)] sm:text-right">
-                {u.summary}
-              </p>
-            </motion.li>
-          ))}
-        </motion.ul>
+        <div className="glass-card overflow-hidden rounded-2xl md:rounded-3xl">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center py-20"
+              >
+                <p className="text-sm text-[var(--muted)] animate-pulse">Loading updates...</p>
+              </motion.div>
+            ) : policies.length > 0 ? (
+              <motion.ul
+                key="list"
+                className="divide-y divide-[var(--border)]"
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: "-40px" }}
+                variants={staggerContainer}
+              >
+                {policies.map((p) => (
+                  <motion.li
+                    key={p.id}
+                    variants={staggerItem}
+                    className="lift-row flex flex-col gap-2 px-6 py-6 transition-colors hover:bg-white/45 sm:flex-row sm:items-start sm:gap-8 md:px-8"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <a 
+                        href={p.source_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-display font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                      >
+                        {p.title}
+                      </a>
+                      <div className="mt-1 flex items-center gap-3">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent-soft)]/20 px-2 py-0.5 rounded">
+                          {p.source_type}
+                        </span>
+                        {p.published_date && (
+                          <span className="text-xs text-[var(--muted)]">
+                            {new Date(p.published_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-20 text-center px-6"
+              >
+                <p className="text-sm font-medium text-[var(--foreground)]">No recent updates found</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </MotionReveal>
     </section>
   );

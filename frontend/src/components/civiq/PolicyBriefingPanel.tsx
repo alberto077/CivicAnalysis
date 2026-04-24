@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import {
   FileText,
@@ -6,10 +7,12 @@ import {
   Lightbulb,
   ListChecks,
   Users,
+  Share2,
+  Download
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
+import { MotionReveal } from "./MotionReveal";
 import type { PolicyResponse } from "@/lib/api";
 
 type PolicyBriefingPanelProps = {
@@ -59,50 +62,12 @@ export function PolicyBriefingPanel({
   ] as const;
 
   useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7325/ingest/a1f542d3-daba-482f-ae57-9ad654187441", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "438df4",
-      },
-      body: JSON.stringify({
-        sessionId: "438df4",
-        runId: "pre-fix",
-        hypothesisId: "H2",
-        location: "PolicyBriefingPanel.tsx:observerEffect",
-        message: "Observer effect evaluated",
-        data: { loading, showBriefing, shouldLoadSkyline, hasTarget: Boolean(emptyStateRef.current) },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
     if (loading || showBriefing || shouldLoadSkyline) return;
     const target = emptyStateRef.current;
     if (!target) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // #region agent log
-        fetch("http://127.0.0.1:7325/ingest/a1f542d3-daba-482f-ae57-9ad654187441", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "438df4",
-          },
-          body: JSON.stringify({
-            sessionId: "438df4",
-            runId: "pre-fix",
-            hypothesisId: "H3",
-            location: "PolicyBriefingPanel.tsx:intersectionCallback",
-            message: "Intersection observer callback",
-            data: { isIntersecting: entry.isIntersecting, ratio: entry.intersectionRatio },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
-
         if (!entry.isIntersecting) return;
         setShouldLoadSkyline(true);
         observer.disconnect();
@@ -115,7 +80,7 @@ export function PolicyBriefingPanel({
   }, [loading, showBriefing, shouldLoadSkyline]);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {error ? (
         <div
           className="mb-6 rounded-2xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-900 shadow-[0_4px_20px_-8px_rgba(180,40,40,0.12)] backdrop-blur-sm"
@@ -123,35 +88,36 @@ export function PolicyBriefingPanel({
         >
           <span className="font-semibold">Policy data unavailable. </span>
           <span className="font-normal">{error}</span>
-          {process.env.NODE_ENV === "development" ? (
-            <p className="mt-2 text-xs font-normal text-red-800/90">
-              Tip: start FastAPI{" "}
-              <code className="rounded bg-red-100 px-1">python -m uvicorn main:app --reload</code>{" "}
-              in <code className="rounded bg-red-100 px-1">backend/</code> (port 8000). Set{" "}
-              <code className="rounded bg-red-100 px-1">API_INTERNAL_BASE_URL</code> (or{" "}
-              <code className="rounded bg-red-100 px-1">NEXT_PUBLIC_API_BASE_URL</code>) in{" "}
-              <code className="rounded bg-red-100 px-1">frontend/.env.local</code> for the proxy.
-            </p>
-          ) : null}
         </div>
       ) : null}
 
-      <MotionReveal>
-        <h2 className="font-display text-2xl font-semibold tracking-[1.5px] text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
-          {showBriefing ? "Policy Briefing" : "Policy briefing"}
-        </h2>
-        {showBriefing ? (
-          <p className="mt-3 max-w-2xl text-[var(--muted)]">
-            Based on your question:{" "}
-            <span className="font-medium text-[var(--foreground)]">
-              {briefingQuery}
-            </span>
-          </p>
-        ) : null}
+      <MotionReveal className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900">
+            {showBriefing ? "Live Policy Briefing" : "Neighborhood Intel"}
+          </h2>
+          {showBriefing && (
+            <p className="mt-3 max-w-2xl text-[15px] text-slate-500">
+              Personalized analysis for: <span className="font-bold text-slate-900">&quot;{briefingQuery}&quot;</span>
+            </p>
+          )}
+        </div>
+
+        {showBriefing && (
+          <div className="flex gap-2">
+            <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shadow-sm">
+              <Share2 className="h-4 w-4" />
+            </button>
+            <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition shadow-md">
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </button>
+          </div>
+        )}
       </MotionReveal>
 
       <MotionReveal className="mt-10">
-        <div className="glass-card-strong lift-card rounded-3xl p-6 sm:p-10 md:rounded-[1.75rem]">
+        <div className="glass-card-strong lift-card rounded-[3rem] p-8 sm:p-12 border border-white/60 bg-white/40 shadow-2xl backdrop-blur-2xl">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -160,111 +126,91 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex min-h-[200px] flex-col items-center justify-center gap-3 py-12 text-center"
+                className="flex min-h-[400px] flex-col items-center justify-center gap-6 py-12 text-center"
               >
-                <p className="font-display text-lg font-semibold text-[var(--foreground)]">
-                  Generating your policy briefing...
-                </p>
-                <p className="max-w-md text-[15px] text-black">
-                  Gathering relevant policy context and local insights.
-                </p>
+                <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent shadow-xl" />
+                <div>
+                  <p className="font-display text-2xl font-bold text-slate-900">
+                    Generating Intelligent Briefing...
+                  </p>
+                  <p className="mt-2 text-slate-500">
+                    Scanning city records and cross-referencing neighborhood impacts.
+                  </p>
+                </div>
               </motion.div>
             ) : showBriefing ? (
               <motion.div
                 key="briefing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.35 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-12"
               >
-              <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] pb-6">
-                <span className="rounded-full bg-[linear-gradient(135deg,rgba(91,127,163,0.18)_0%,rgba(167,139,250,0.12)_100%)] px-3.5 py-1.5 text-xs font-semibold text-[var(--accent)] ring-1 ring-white/50">
-                  Briefing ready
-                </span>
-              </div>
-
-              <div className="mt-8 border-b border-[var(--border)] pb-10">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 text-[var(--accent)] shadow-[0_2px_12px_-4px_rgba(91,127,163,0.2)] ring-1 ring-white/80">
-                    <FileText className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.65} aria-hidden />
-                  </span>
-                  <h3 className="text-[15px] font-semibold tracking-[0.08em] text-black">
-                    Policy overview
-                  </h3>
-                </div>
-                <ul className="mt-4 space-y-2 pl-[3.25rem] text-[15px] leading-relaxed text-black">
-                  {safe.at_a_glance.map((item, index) => (
-                    <li key={`glance-${index}`} className="flex gap-2 leading-relaxed">
-                      <span className="mt-1 text-[var(--accent)]">•</span>
-                      <span className="text-[var(--color-black)]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <motion.div
-                className="mt-10 grid gap-10 sm:gap-12"
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true, margin: "-40px" }}
-                variants={staggerContainer}
-              >
-                {structuredSections.map((s, i) => (
-                    <motion.div key={s.title} variants={staggerItem}>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 text-[var(--accent)] shadow-[0_2px_12px_-4px_rgba(91,127,163,0.2)] ring-1 ring-white/80">
-                          <s.Icon
-                            className="h-[1.125rem] w-[1.125rem]"
-                            strokeWidth={1.65}
-                            aria-hidden
-                          />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-[15px] font-semibold tracking-[0.08em] text-black">
-                            {s.title}
-                          </h3>
-                          <ul className="mt-3 max-w-3xl space-y-2 text-[15px] leading-relaxed text-black">
-                            {s.items.map((item, itemIndex) => (
-                              <li key={`${s.key}-${itemIndex}`} className="flex gap-2">
-                                <span className="text-[var(--accent)]">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                      {i < structuredSections.length - 1 ? (
-                        <div className="mt-10 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-                      ) : null}
-                    </motion.div>
-                ))}
-              </motion.div>
-
-              {safe.sources.length > 0 ? (
-                <div className="mt-10 border-t border-[var(--border)] pt-10">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 text-[var(--accent)] shadow-[0_2px_12px_-4px_rgba(91,127,163,0.2)] ring-1 ring-white/80">
-                      <Globe2 className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.65} aria-hidden />
+                <div className="border-b border-slate-200 pb-10">
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
+                      <FileText className="h-5 w-5" />
                     </span>
-                    <h3 className="text-[15px] font-semibold tracking-[0.08em] text-black">
-                      Sources
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Policy Synthesis
                     </h3>
                   </div>
-                  <ul className="mt-4 space-y-3 pl-[3.25rem] text-[15px] text-black">
-                    {safe.sources.map((source, i) => (
-                      <li
-                        key={i}
-                        className="border-l-2 border-[var(--accent)]/25 pl-3"
-                      >
-                        <p className="font-semibold text-black">{source.title}</p>
-                        <p className="mt-1 text-[15px] leading-relaxed text-black">
-                          {source.description}
-                        </p>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {safe.at_a_glance.map((item, index) => (
+                      <li key={`glance-${index}`} className="flex gap-3 bg-white/50 p-4 rounded-2xl border border-white shadow-sm transition hover:shadow-md">
+                        <span className="shrink-0 text-[var(--accent)] font-bold">•</span>
+                        <span className="text-[15px] leading-relaxed text-slate-800">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-              ) : null}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {structuredSections.map((s) => (
+                    <div key={s.title} className="flex flex-col">
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                          <s.Icon className="h-[1.125rem] w-[1.125rem]" />
+                        </span>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">
+                          {s.title}
+                        </h3>
+                      </div>
+                      <ul className="space-y-4">
+                        {s.items.map((item, itemIndex) => (
+                          <li key={`${s.key}-${itemIndex}`} className="flex gap-3 text-[14px] leading-relaxed text-slate-700">
+                            <span className="text-[var(--accent)] font-bold">»</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                {safe.sources.length > 0 && (
+                  <div className="border-t border-slate-200 pt-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        <Globe2 className="h-5 w-5" />
+                      </span>
+                      <h3 className="text-[15px] font-bold uppercase tracking-widest text-slate-400">
+                        Evidence & Sources
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {safe.sources.map((source, i) => (
+                        <div key={i} className="rounded-2xl border border-slate-100 bg-white/50 p-4 transition hover:border-indigo-200">
+                          <p className="font-bold text-slate-900 text-sm">{source.title}</p>
+                          <p className="mt-1 text-[13px] leading-relaxed text-slate-500 italic">
+                            {source.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -274,58 +220,20 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto flex h-full w-full max-w-[960px] items-center justify-center py-4 sm:py-6"
+                className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-center py-12"
               >
                 {shouldLoadSkyline ? (
-                  <img
+                  <Image
                     src={skylineGifSrc}
-                    alt="Animated skyline"
-                    className="h-full w-full rounded-2xl object-cover object-center"
-                    style={{ width: "900px", height: "620px" }}
-                    onLoad={() => {
-                          // #region agent log
-                          fetch("http://127.0.0.1:7325/ingest/a1f542d3-daba-482f-ae57-9ad654187441", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "X-Debug-Session-Id": "438df4",
-                            },
-                            body: JSON.stringify({
-                              sessionId: "438df4",
-                              runId: "pre-fix",
-                              hypothesisId: "H4",
-                              location: "PolicyBriefingPanel.tsx:imgOnLoad",
-                              message: "Skyline image loaded",
-                              data: { src: skylineGifSrc },
-                              timestamp: Date.now(),
-                            }),
-                          }).catch(() => {});
-                          // #endregion
-                        }}
-                    onError={() => {
-                          // #region agent log
-                          fetch("http://127.0.0.1:7325/ingest/a1f542d3-daba-482f-ae57-9ad654187441", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "X-Debug-Session-Id": "438df4",
-                            },
-                            body: JSON.stringify({
-                              sessionId: "438df4",
-                              runId: "pre-fix",
-                              hypothesisId: "H1",
-                              location: "PolicyBriefingPanel.tsx:imgOnError",
-                              message: "Skyline image failed to load",
-                              data: { src: skylineGifSrc },
-                              timestamp: Date.now(),
-                            }),
-                          }).catch(() => {});
-                          // #endregion
-                    }}
+                    alt="Animated NYC Skyline"
+                    className="h-full w-full rounded-[2.5rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] transition duration-700"
+                    style={{ width: "100%", maxHeight: "600px" }}
                   />
                 ) : (
-                  <div className="p-6 text-center text-sm text-[var(--muted)]">
-                    Scroll to start skyline preview
+                  <div className="p-20 text-center border-4 border-dashed border-slate-100 rounded-[3rem]">
+                    <p className="text-2xl font-display font-bold text-slate-300">
+                      Generating Intelligent Briefing...
+                    </p>
                   </div>
                 )}
               </motion.div>

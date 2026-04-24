@@ -353,44 +353,16 @@ async def get_politicians(
                         "office": p.role or "Representative",
                         "borough": p.location_borough or "Unknown",
                         "district": p.district_number,
-                        "party": p.party,
+                        "party": p.party or "Unknown",
                         "political_stance": computed_stance,
                         "bio_url": p.bio_url,
-                        "data_source": "database",
-                    }
-                )
-
-            if payload:
-                return {
-                    "politicians": payload,
-                    "available_fields": [
-                        "name",
-                        "office",
-                        "borough",
-                        "district",
-                        "party",
-                        "political_stance",
-                        "bio_url",
-                    ],
-                }
-
-            fallback = []
-            for p in FALLBACK_POLITICIANS:
-                computed_stance = infer_stance(p.get("party"))
-                if normalized_borough and normalized_borough != "all" and p["borough"].lower() != normalized_borough:
-                    continue
-                if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
-                    continue
-                fallback.append(
-                    {
-                        **p,
-                        "political_stance": computed_stance,
-                        "data_source": "fallback_seed",
+                        "term_end": p.term_end.isoformat() if p.term_end else None,
+                        "data_source": "live_database",
                     }
                 )
 
             return {
-                "politicians": fallback,
+                "politicians": payload,
                 "available_fields": [
                     "name",
                     "office",
@@ -399,10 +371,42 @@ async def get_politicians(
                     "party",
                     "political_stance",
                     "bio_url",
+                    "term_end"
                 ],
             }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Unable to load politicians: {e}")
+
+
+@app.get("/api/policies")
+async def get_recent_policies(
+    borough: Optional[str] = None,
+    area: Optional[str] = None,
+    limit: int = 10
+):
+    try:
+        with Session(engine) as session:
+            statement = select(PolicyDocument).order_by(PolicyDocument.published_date.desc())
+            
+            # Temporary: remove filtering to isolate the connection issue
+            results = session.exec(statement.limit(limit)).all()
+            
+            return {
+                "policies": [
+                    {
+                        "id": p.id,
+                        "title": p.title,
+                        "source_url": p.source_url,
+                        "source_type": p.source_type,
+                        "published_date": p.published_date.isoformat() if p.published_date else None,
+                        "metadata": p.metadata_tags
+                    }
+                    for p in results
+                ]
+            }
+    except Exception as e:
+        logger.error(f"Error fetching recent policies: {e}")
+        return {"policies": [], "error": str(e)}
 
 
 @app.get("/api/politicians/filters")
@@ -438,3 +442,34 @@ async def get_politician_filters():
             }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")
+
+@app.get("/api/districts/map")
+async def get_districts_map():
+    import json
+    import os
+    
+    file_path = os.path.join(os.path.dirname(__file__), "districts.geojson")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="GeoJSON map data not found. Please run sync script.")
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+@app.get("/api/districts")
+async def get_districts():
+    try:
+        with Session(engine) as session:
+            rows = session.exec(select(Politician).where(Politician.role == "Council Member")).all()
+            districts = []
+            for p in rows:
+                if not p.district_number: continue
+                districts.append({
+                    "id": int(p.district_number),
+                    "name": f"District {p.district_number} ({p.location_borough})",
+                    "rep": p.full_name,
+                    "issues": ["Infrastructure", "Policy"]
+                })
+            return {"districts": sorted(districts, key=lambda x: x["id"])}
+    except:
+        return {"districts": []}
