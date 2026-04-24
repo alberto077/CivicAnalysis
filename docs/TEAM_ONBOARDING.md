@@ -99,8 +99,8 @@ Without these, the backend runs in full mock mode — which is fine for local de
 - [x] Backend RAG endpoints (Decoupled from Pipeline)
 
 **What Needs to Happen Next:**
-- [ ] Frontend Team: Connect Chat UI to `POST /api/chat`
-- [ ] Frontend Team: Build Dashboard filters connected to search
+- [x] Frontend Team: Connect Chat UI to `POST /api/chat`
+- [x] Frontend Team: Build Dashboard filters connected to search
 - [ ] Frontend Team: Implement interactive Map geography (Borough/District/ZIP)
 - [x] DevOps: Set up GitHub Action (run_pipeline.yml) and Secrets.
 - [x] DevOps: Set up [cron-job.org](https://cron-job.org) for backend Keep-Alive.

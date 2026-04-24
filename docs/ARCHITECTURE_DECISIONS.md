@@ -107,7 +107,7 @@ Given the NYC/NYS civic domain (see `DOMAINS_AND_NUANCES.md`), our scraping prio
 | 🥇 High | NYC Council Legistar (API + Scraping) | Full transcripts and meeting minutes | Extremely high — raw testimony |
 | 🥇 High | NYC Open Data (Socrata API) | Structured metadata for `LegislationEvent` tables | High — official record |
 | 🥈 Medium | NYC Mayor's Office press releases | Executive branch position statements | Medium — curated messaging |
-| Low/None | Local news RSS (NYT NYC, Gothamist) | Journalistic context and political impact analysis | Medium — interpreted |
+| Low/None | Local news RSS (NYT NYC, Gothamist) | Journalistic context and political impact analysis | Medium/Low — interpreted |
 
 **Current State:** **[COMPLETE]** The pipeline now integrates real NYC Legistar data (including transcripts) and NYS Senate records. No placeholder RSS feeds are used for core legislative data.
 

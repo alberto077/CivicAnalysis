@@ -1,5 +1,5 @@
 import sys
-from scrapers.gothamist_rss import GothamistRSSScraper
+
 from scrapers.nyc_council_meetings import NYCCouncilMeetingsScraper
 from scrapers.nyc_council_legistar import NYCCouncilLegistarScraper
 from scrapers.nys_senate_bills import NYSSenateBillsScraper
@@ -17,7 +17,7 @@ def run_full_pipeline(use_json: bool = False):
         use_json = "--json" in sys.argv
 
     scrapers = [
-        # GothamistRSSScraper(),  # Skip Gothamist for now as per user request to avoid 403s
+
         NYCCouncilMeetingsScraper(),
         NYCCouncilLegistarScraper(),
         NYSSenateBillsScraper(),
