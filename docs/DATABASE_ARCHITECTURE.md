@@ -29,13 +29,13 @@ Our schema is fully defined in Python using `SQLModel` in `backend/schema.py`. S
 2. **`LegislationEvent`** - Core tracking unit for bills or acts (eg., "Intro 42-A", "Passage of Bill 123", "Vote on S.1234", etc). Stores jurisdiction, status, date, and event URL.
 3. **`VoteRecord`** - Join table linking a `Politician` to a `LegislationEvent` with `vote_cast` ("Yea", "Nay", "Abstain", "Absent"). Note: Naive vote mapping is limited/nuanced - we use RAG context to explain *why* votes happened (eg. "Why did Council Member X vote Nay on Bill Y?")
 4. **`PolicyDocument`** - Represents a scraped source (eg., committee minutes, news article, press release). Contains `source_type`, `published_date`, `scraped_at`, and a `metadata_tags` JSON field for ML classification output (policy area, affected demographics).
-5. **`DocumentChunk`** - The RAG backbone. Each `PolicyDocument` is split into chunks (sentence-aware with overlap). Each chunk stores its `text_content` and a 384-dimension **`halfvec` (16-bit)** vector. By using 16-bit precision, we save **50% storage space**, enabling several years of historical data to fit within the Neon free tier.
+5. **`DocumentChunk`** - The RAG backbone. Each `PolicyDocument` is split into chunks (sentence-aware with overlap). Each chunk stores its `text_content` and a 384-dimension **`vector` (32-bit)**. Standard 32-bit precision ensures maximum semantic retrieval accuracy within the Neon free tier.
 
 ### High-Density Optimization
 Our storage strategy shifts from "Ingest All" to "Intelligence-First":
-1. **AI Summarization**: Long documents are condensed into high-signal briefings via Groq/Llama 3.1.
-2. **Half-Precision Vectors**: `halfvec` storage ensures we use the minimum bytes per dimension without sacrificing semantic accuracy.
-3. **Signal Filtering**: Procedural noise is discarded during ingestion to prioritize policy context.
+1. **Raw Text Retention**: We preserve original document text to ensure precise RAG retrieval and citation accuracy.
+2. **Standard Precision Vectors**: Using 32-bit vectors for stability across all Python database drivers.
+3. **Signal Filtering**: Procedural noise and explicitly empty chunks are discarded during ingestion.
 
 
 ## Visualizing the Schema

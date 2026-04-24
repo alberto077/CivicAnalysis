@@ -82,7 +82,7 @@ Without these, the backend runs in full mock mode — which is fine for local de
 | `backend/main.py` | FastAPI server — CORS, `/api/chat`, `/api/health` |
 | `backend/llm_engine.py` | Groq LLM wrapper with mock bypass |
 | `pipeline/base_scraper.py` | Abstract base class all scrapers must inherit |
-| `pipeline/embedding_engine.py` | Text chunker + FastEmbed stub (real model commented out) |
+| `pipeline/embedding_engine.py` | Text chunker + FastEmbed vector generation (BAAI/bge-small-en-v1.5) |
 | `pipeline/scrapers/nys_senate_bills.py` | Official NYS legislative records scraper |
 | `pipeline/scrapers/nys_senate_transcripts.py` | High-signal NYS transcript scraper |
 | `cron/` | Keep-alive heartbeat script |
@@ -100,6 +100,7 @@ Without these, the backend runs in full mock mode — which is fine for local de
 
 **What Needs to Happen Next:**
 - [ ] Frontend Team: Connect Chat UI to `POST /api/chat`
-- [ ] Frontend Team: Build Dashboard filters using `metadata_tags` schema (see `DATA_SYSTEM_INTEGRATION.md`)
+- [ ] Frontend Team: Build Dashboard filters connected to search
+- [ ] Frontend Team: Implement interactive Map geography (Borough/District/ZIP)
 - [x] DevOps: Set up GitHub Action (run_pipeline.yml) and Secrets.
 - [x] DevOps: Set up [cron-job.org](https://cron-job.org) for backend Keep-Alive.

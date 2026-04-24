@@ -61,7 +61,7 @@
 - [x] 5-table normalized schema (`Politician`, `LegislationEvent`, `VoteRecord`, `PolicyDocument`, `DocumentChunk`)
 - [x] FastAPI server (`main.py`) with CORS middleware
 - [x] `LLMEngine` with Groq SDK + **mock bypass switch** (no key needed to test)
-- [x] `POST /api/chat` endpoint — reads `pipeline/output/*.json`, sends top 5 chunks to LLM as RAG context
+- [x] `POST /api/chat` endpoint — RAG interface connected to Neon Postgres + Groq
 - [x] `GET /api/health` endpoint confirmed working
 - [x] Groq API key — set `GROQ_API_KEY` in `.env`
 - [x] Neon Postgres account + `DATABASE_URL` — create instance + run `init_db.py`
@@ -72,11 +72,11 @@
 - [x] Initial Next.js scaffolding with TypeScript + Tailwind
 - [x] User Onboarding Modal (save to `localStorage`)
 - [x] Advanced Filters Dashboard (UI Layout)
-- [ ] Connect Dashboard to Live Data Fetching (Live filters)
-- [ ] Civic Assistant Chat Interface (Dedicated standalone page)
-- [ ] Politician / Omnibus Breakdown Cards (Live API integration)
-- [x] Settings page (clear `localStorage`)
-- [ ] Multi-page Navigation Migration (Next.js App Router)
+- [x] Connect Dashboard to Live Data Fetching (Live filters)
+- [x] Civic Assistant Chat Interface (Dedicated standalone page at `/chat`)
+- [x] Politician Cards (Live API integration with borough filters)
+- [x] Settings page (accessible via header modal)
+- [x] Multi-page Navigation Migration (Next.js App Router: `/`, `/chat`)
 
 
 ## Big-Picture Scope
@@ -243,24 +243,19 @@
 
 
 ### 7. Data Pipeline: RAG & ML/LLM
-**Current flow (working):**
+**Current flow (ACTIVE):**
 ```
-RSS scrape (NYT placeholder) → chunk text → save to pipeline/output/*.json → FastAPI reads JSON → LLM mock response
-```
-
-**Target flow (via GitHub Actions):**
-```
-scrape real sources → chunk → classify (metadata_tags) → FastEmbed embeddings → Neon Postgres (pgvector) → semantic retrieval → Groq LLM → response
+Scrape real sources (Legistar/NYS Senate) → chunk → classify (metadata_tags) → FastEmbed (384-dim) → Neon Postgres (pgvector) → semantic retrieval → Groq LLM → response
 ```
 
 **Key files:**
-- `pipeline/base_scraper.py` - abstract interface all scrapers must implement
-- `pipeline/embedding_engine.py` - chunker + FastEmbed stub (real model commented out)
-- `pipeline/scrapers/nyc_council_rss.py` - NYT Regional RSS scraper (placeholder)
-- `pipeline/scrapers/sample_rss_scraper.py` - hardcoded mock data, shows expected output format
+- `pipeline/base_scraper.py` - abstract interface all scrapers implement
+- `pipeline/embedding_engine.py` - chunker + FastEmbed embeddings
+- `pipeline/scrapers/nyc_council_legistar.py` - Official Legistar API scraper
+- `pipeline/scrapers/nys_senate_bills.py` - Official NYS Senate API scraper
 - `backend/schema.py` - 5-table SQLModel schema (Postgres-ready)
-- `backend/main.py` - FastAPI server, reads mock JSON, exposes `/api/chat`
-- `backend/llm_engine.py` - Groq wrapper with mock bypass
+- `backend/main.py` - FastAPI server with `/api/chat` and `/api/politicians`
+- `backend/llm_engine.py` - Groq wrapper with RAG context support
 
 
 ### 8. User Flow
@@ -307,17 +302,17 @@ CivicAnalysis/
 | | Backend schema: 5-table DB schema (`backend/schema.py`) | PM, BE, ML | ✅ |
 | | FastAPI server setup (`backend/main.py`) with CORS | BE | ✅ |
 | | Github Setup `frontend/` (Next.js + TS + Tailwind) | FE | ✅ |
-| **Apr 10** | Frontend structural layouts (Navigation, Modals, Forms) | FE | ⏳ Pending |
-| | ChatWindow component (LLM RAG Chat UI, calls `/api/chat`) | FE | ⏳ Pending |
+| **Apr 10** | Frontend structural layouts (Navigation, Modals, Forms) | FE | ✅ |
+| | ChatWindow component (LLM RAG Chat UI, calls `/api/chat`) | FE | ✅ |
 | | Dashboard UI skeleton + Settings modal | FE | ✅ |
 | | Groq LLM bridge + mock bypass (`backend/llm_engine.py`) | BE | ✅ |
 | | Data Pipeline Setup: Offline Mock DB (JSON Export) | ML | ✅ |
 | | Build initial scraper & FastEmbed engine framework | ML | ✅ |
-| | `POST /api/chat` RAG endpoint (reads mock JSON) | BE | ✅ |
-| | `BaseScraper` abstract class + JSON export pipeline | ML | ✅ |
-| | `NYCCouncilRSSScraper` (NYT RSS placeholder, live scrape) | ML | ✅ |
-| | `SampleRSSScraper` mock data showing correct output format | ML | ✅ |
-| | `EmbeddingEngine` boilerplate (chunker + stub embeddings) | ML | ✅ |
+| | `POST /api/chat` RAG endpoint (reads Neon Postgres) | BE | ✅ |
+| | `BaseScraper` abstract class + Database persistence | ML | ✅ |
+| | `NYCCouncilLegistarScraper` (Official API, live scrape) | ML | ✅ |
+| | `NYSSenateScraper` (Official API, live scrape) | ML | ✅ |
+| | `EmbeddingEngine` (chunker + real FastEmbed models) | ML | ✅ |
 | | Activate real FastEmbed model in `embedding_engine.py` | ML | ✅ |
 | | Replace NYT RSS with real NYC data sources (Legistar / Open Data) | ML | ✅ |
 | | Set up Groq account + add `GROQ_API_KEY` to `.env` | BE | ✅ |
