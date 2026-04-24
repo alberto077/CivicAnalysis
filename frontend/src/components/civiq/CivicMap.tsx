@@ -200,7 +200,8 @@ export function CivicMap({
                 className="w-full h-full"
               >
                 <ZoomableGroup>
-                  <Geographies geography={geoData}>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <Geographies geography={geoData as any}>
                     {({ geographies }) =>
                       geographies.map((geo) => {
                         const distId = parseInt(geo.properties.coun_dist);

@@ -42,9 +42,10 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
   // Reset and pre-fill when opening
   useEffect(() => {
     if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setStep(1);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(initialProfile || { borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isOpen, initialProfile]);
 

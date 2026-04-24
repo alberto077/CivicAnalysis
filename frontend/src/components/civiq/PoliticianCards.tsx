@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, Filter, Search, X, RotateCcw } from "lucide-react";
+import { motion } from "framer-motion";
+import { Check, Search, X, RotateCcw } from "lucide-react";
 import {
   getPoliticians,
   getPoliticianFilters,

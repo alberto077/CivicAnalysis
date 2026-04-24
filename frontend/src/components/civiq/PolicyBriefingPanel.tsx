@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import {
   FileText,
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
+import { MotionReveal } from "./MotionReveal";
 import type { PolicyResponse } from "@/lib/api";
 
 type PolicyBriefingPanelProps = {
@@ -104,13 +105,13 @@ export function PolicyBriefingPanel({
 
         {showBriefing && (
           <div className="flex gap-2">
-             <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shadow-sm">
-                <Share2 className="h-4 w-4" />
-             </button>
-             <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition shadow-md">
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-             </button>
+            <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shadow-sm">
+              <Share2 className="h-4 w-4" />
+            </button>
+            <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition shadow-md">
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </button>
           </div>
         )}
       </MotionReveal>
@@ -146,70 +147,70 @@ export function PolicyBriefingPanel({
                 transition={{ duration: 0.4 }}
                 className="space-y-12"
               >
-              <div className="border-b border-slate-200 pb-10">
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                  <h3 className="text-xl font-bold text-slate-900">
-                    Policy Synthesis
-                  </h3>
-                </div>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {safe.at_a_glance.map((item, index) => (
-                    <li key={`glance-${index}`} className="flex gap-3 bg-white/50 p-4 rounded-2xl border border-white shadow-sm transition hover:shadow-md">
-                      <span className="shrink-0 text-[var(--accent)] font-bold">•</span>
-                      <span className="text-[15px] leading-relaxed text-slate-800">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {structuredSections.map((s) => (
-                    <div key={s.title} className="flex flex-col">
-                        <div className="flex items-center gap-3 mb-6">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
-                            <s.Icon className="h-[1.125rem] w-[1.125rem]" />
-                          </span>
-                          <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">
-                            {s.title}
-                          </h3>
-                        </div>
-                        <ul className="space-y-4">
-                          {s.items.map((item, itemIndex) => (
-                            <li key={`${s.key}-${itemIndex}`} className="flex gap-3 text-[14px] leading-relaxed text-slate-700">
-                              <span className="text-[var(--accent)] font-bold">»</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                    </div>
-                ))}
-              </div>
-
-              {safe.sources.length > 0 && (
-                <div className="border-t border-slate-200 pt-10">
+                <div className="border-b border-slate-200 pb-10">
                   <div className="flex items-center gap-4 mb-6">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                      <Globe2 className="h-5 w-5" />
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
+                      <FileText className="h-5 w-5" />
                     </span>
-                    <h3 className="text-[15px] font-bold uppercase tracking-widest text-slate-400">
-                      Evidence & Sources
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Policy Synthesis
                     </h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {safe.sources.map((source, i) => (
-                      <div key={i} className="rounded-2xl border border-slate-100 bg-white/50 p-4 transition hover:border-indigo-200">
-                        <p className="font-bold text-slate-900 text-sm">{source.title}</p>
-                        <p className="mt-1 text-[13px] leading-relaxed text-slate-500 italic">
-                          {source.description}
-                        </p>
-                      </div>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {safe.at_a_glance.map((item, index) => (
+                      <li key={`glance-${index}`} className="flex gap-3 bg-white/50 p-4 rounded-2xl border border-white shadow-sm transition hover:shadow-md">
+                        <span className="shrink-0 text-[var(--accent)] font-bold">•</span>
+                        <span className="text-[15px] leading-relaxed text-slate-800">{item}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {structuredSections.map((s) => (
+                    <div key={s.title} className="flex flex-col">
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                          <s.Icon className="h-[1.125rem] w-[1.125rem]" />
+                        </span>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">
+                          {s.title}
+                        </h3>
+                      </div>
+                      <ul className="space-y-4">
+                        {s.items.map((item, itemIndex) => (
+                          <li key={`${s.key}-${itemIndex}`} className="flex gap-3 text-[14px] leading-relaxed text-slate-700">
+                            <span className="text-[var(--accent)] font-bold">»</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                {safe.sources.length > 0 && (
+                  <div className="border-t border-slate-200 pt-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        <Globe2 className="h-5 w-5" />
+                      </span>
+                      <h3 className="text-[15px] font-bold uppercase tracking-widest text-slate-400">
+                        Evidence & Sources
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {safe.sources.map((source, i) => (
+                        <div key={i} className="rounded-2xl border border-slate-100 bg-white/50 p-4 transition hover:border-indigo-200">
+                          <p className="font-bold text-slate-900 text-sm">{source.title}</p>
+                          <p className="mt-1 text-[13px] leading-relaxed text-slate-500 italic">
+                            {source.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -222,7 +223,7 @@ export function PolicyBriefingPanel({
                 className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-center py-12"
               >
                 {shouldLoadSkyline ? (
-                  <img
+                  <Image
                     src={skylineGifSrc}
                     alt="Animated NYC Skyline"
                     className="h-full w-full rounded-[2.5rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] transition duration-700"
@@ -237,7 +238,7 @@ export function PolicyBriefingPanel({
                 )}
               </motion.div>
             )}
-           </AnimatePresence>
+          </AnimatePresence>
         </div>
       </MotionReveal>
     </section>
