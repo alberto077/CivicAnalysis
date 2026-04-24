@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { motion } from "framer-motion";
+
+import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import {
   getPoliticians,
   getPoliticianFilters,
@@ -19,9 +20,31 @@ const BOROUGH_CANONICAL: Record<string, string> = {
 
 function normalizeBorough(value?: string): string {
   if (!value) return "All";
+
   const normalized = value.trim().toLowerCase();
+
   if (!normalized || normalized === "all") return "All";
+
   return BOROUGH_CANONICAL[normalized] || value.trim();
+}
+
+function compareDistricts(a: string, b: string) {
+  const aNumber = Number(a);
+  const bNumber = Number(b);
+
+  if (!Number.isNaN(aNumber) && !Number.isNaN(bNumber)) {
+    return aNumber - bNumber;
+  }
+
+  return a.localeCompare(b);
+}
+
+function getLearnMoreUrl(p: Politician) {
+  if (p.bio_url?.trim()) return p.bio_url.trim();
+
+  return `https://www.google.com/search?q=${encodeURIComponent(
+    `${p.name} ${p.office} District ${p.district ?? ""} ${p.borough} official profile`,
+  )}`;
 }
 
 export function PoliticianCards({ userBorough }: { userBorough?: string }) {
@@ -29,13 +52,17 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [locationOptions, setLocationOptions] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [selectedLocation, setSelectedLocation] = useState("All");
+  const [selectedDistrict, setSelectedDistrict] = useState("All");
+
   const filterRequestIdRef = useRef(0);
   const politicianRequestIdRef = useRef(0);
 
   useEffect(() => {
     async function loadFilterOptions() {
       const requestId = ++filterRequestIdRef.current;
+
       setError(null);
 
       try {
@@ -43,6 +70,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
         if (requestId === filterRequestIdRef.current) {
           const options = new Set<string>(["All"]);
+
           for (const borough of data.boroughs) {
             if (borough?.trim()) {
               options.add(normalizeBorough(borough));
@@ -72,6 +100,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   useEffect(() => {
     async function loadPoliticiansForSelection() {
       const requestId = ++politicianRequestIdRef.current;
+
       setLoading(true);
       setError(null);
 
@@ -100,23 +129,44 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     void loadPoliticiansForSelection();
   }, [selectedLocation]);
 
+  const districtOptions = [
+    "All",
+    ...Array.from(
+      new Set(
+        politicians
+          .map((p) => p.district?.trim())
+          .filter((district): district is string => Boolean(district)),
+      ),
+    ).sort(compareDistricts),
+  ];
+
+  const filteredPoliticians =
+    selectedDistrict === "All"
+      ? politicians
+      : politicians.filter((p) => p.district?.trim() === selectedDistrict);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <MotionReveal>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Local Representatives
           </h2>
 
-          {selectedLocation !== "All" && (
+          {(selectedLocation !== "All" || selectedDistrict !== "All") && (
             <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white shadow-sm">
-              Filtered for {selectedLocation}
+              Filtered for{" "}
+              {selectedLocation !== "All" ? selectedLocation : "All Boroughs"}
+              {selectedDistrict !== "All"
+                ? ` • District ${selectedDistrict}`
+                : ""}
             </span>
           )}
         </div>
 
         <p className="mt-3 max-w-2xl text-[15px] text-[var(--muted)]">
-          Browse representatives connected to backend data, filtered by borough.
+          Browse representatives connected to backend data, filtered by borough
+          and district.
         </p>
       </MotionReveal>
 
@@ -132,11 +182,30 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               value={selectedLocation}
               onChange={(e) => {
                 setSelectedLocation(normalizeBorough(e.target.value));
+                setSelectedDistrict("All");
               }}
             >
               {locationOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              District
+            </span>
+
+            <select
+              className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] shadow-sm outline-none focus:border-[var(--accent)]"
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
+            >
+              {districtOptions.map((district) => (
+                <option key={district} value={district}>
+                  {district === "All" ? "All" : `District ${district}`}
                 </option>
               ))}
             </select>
@@ -157,31 +226,32 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
         ) : null}
 
-        {!loading && !error && politicians.length === 0 ? (
+        {!loading && !error && filteredPoliticians.length === 0 ? (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
-            No representatives matched this borough.
+            No representatives matched these filters.
           </div>
         ) : null}
 
-        {!loading && !error && politicians.length > 0 ? (
+        {!loading && !error && filteredPoliticians.length > 0 ? (
           <motion.div
-            key={selectedLocation}
+            key={`${selectedLocation}-${selectedDistrict}`}
             className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
             initial="hidden"
             animate="show"
             variants={staggerContainer}
           >
-            {politicians.map((p) => (
+            {filteredPoliticians.map((p) => (
               <motion.div
                 key={`${p.name}-${p.borough}-${p.district ?? "na"}`}
                 variants={staggerItem}
                 className="glass-card group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] p-6 transition duration-300 hover:-translate-y-1"
               >
-                <div className="mb-4 flex items-start justify-between">
+                <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
                     <h3 className="font-sans text-xl font-bold leading-tight text-[var(--foreground)]">
                       {p.name}
                     </h3>
+
                     <p className="text-sm font-medium text-[var(--muted)]">
                       {p.office}
                       {p.district ? `, District ${p.district}` : ""}
@@ -192,8 +262,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     <span className="text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
                       Stance
                     </span>
+
                     <span className="mt-1 text-center text-xs font-semibold leading-tight text-[var(--foreground)]">
-                      {p.political_stance}
+                      {p.political_stance || "Unknown"}
                     </span>
                   </div>
                 </div>
@@ -203,8 +274,19 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                       Borough
                     </p>
+
                     <p className="text-[13px] leading-snug text-[var(--foreground)]">
-                      {p.borough}
+                      {p.borough || "Unknown"}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-[var(--border)] pt-4">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      District
+                    </p>
+
+                    <p className="text-[13px] leading-snug text-[var(--foreground)]">
+                      {p.district ? `District ${p.district}` : "Not listed"}
                     </p>
                   </div>
 
@@ -212,11 +294,28 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                       Party
                     </p>
+
                     <p className="text-[13px] leading-snug text-[var(--foreground)]">
                       {p.party || "Unknown"}
                     </p>
                   </div>
+                </div>
 
+                <div className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
+                  <div className="min-w-0">
+                    <p className="text-xs text-[var(--muted)]">
+                      View official profile and details
+                    </p>
+                  </div>
+
+                  <a
+                    href={getLearnMoreUrl(p)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-90"
+                  >
+                    Learn More
+                  </a>
                 </div>
               </motion.div>
             ))}
