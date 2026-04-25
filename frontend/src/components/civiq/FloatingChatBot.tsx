@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+
 import { sendChat, type PolicyResponse } from "@/lib/api";
 
 type ChatMessage = {
@@ -44,8 +46,9 @@ function AssistantResponse({ response }: { response: PolicyResponse }) {
   if (!hasContent) {
     return (
       <p className="text-sm text-slate-700">
-        I could not find enough policy information for that question. Try asking
-        about a specific borough, issue, bill, or representative.
+        I could not find enough CivicAnalysis information for that question. Try
+        asking about a specific borough, district, policy topic, or
+        representative.
       </p>
     );
   }
@@ -54,8 +57,14 @@ function AssistantResponse({ response }: { response: PolicyResponse }) {
     <div>
       <ResponseSection title="At a glance" items={response.at_a_glance} />
       <ResponseSection title="Key takeaways" items={response.key_takeaways} />
-      <ResponseSection title="What this means" items={response.what_this_means} />
-      <ResponseSection title="Relevant actions" items={response.relevant_actions} />
+      <ResponseSection
+        title="What this means"
+        items={response.what_this_means}
+      />
+      <ResponseSection
+        title="Relevant actions"
+        items={response.relevant_actions}
+      />
 
       {response.sources.length > 0 ? (
         <div className="mt-3">
@@ -86,6 +95,8 @@ function AssistantResponse({ response }: { response: PolicyResponse }) {
 }
 
 export function FloatingChatBot() {
+  const pathname = usePathname();
+
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -100,9 +111,9 @@ export function FloatingChatBot() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const suggestedPrompts = [
-    "What should residents do next?",
-    "Summarize this in simple terms.",
-    "Who represents the Bronx?",
+    "Who represents District 16 in the Bronx?",
+    "What housing issues should Bronx residents watch?",
+    "What sources support this answer?",
   ];
 
   useEffect(() => {
@@ -127,18 +138,28 @@ export function FloatingChatBot() {
     ]);
 
     try {
-      const fullQuery = `
-User is asking through the floating CivicAnalysis chatbot.
+      const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "unknown";
 
-Question:
+      const fullQuery = `
+You are the CivicAnalysis floating assistant.
+
+Current page:
+${currentPath}
+
+User question:
 ${question}
 
-Instructions:
-- Answer directly.
-- Keep it useful for NYC residents.
-- Mention sources when available.
-- If the answer depends on borough or district and the user did not provide one, explain that briefly.
-- Keep the answer concise.
+Response rules:
+- Stay focused on NYC civic topics: local representatives, boroughs, districts, city policy, housing, public services, legislation, budgets, hearings, community issues, and official sources.
+- If the question is vague, ask one short clarifying question instead of guessing.
+- If the question could refer to multiple things, explain what extra detail is needed, such as borough, district, policy topic, or representative name.
+- Do not invent exact numbers, names, bills, or sources.
+- Use only information supported by CivicAnalysis data or retrieved source context.
+- If CivicAnalysis does not have enough information, say that clearly.
+- If the user asks something unrelated to civic policy, politely redirect them back to NYC civic topics.
+- Keep answers concise and useful for residents.
+- When possible, end with a practical next step.
 `.trim();
 
       const response = await sendChat(fullQuery);
@@ -159,6 +180,12 @@ Instructions:
     } finally {
       setLoading(false);
     }
+  }
+
+  const hideFloatingChat = pathname === "/chat";
+
+  if (hideFloatingChat) {
+    return null;
   }
 
   return (
@@ -191,7 +218,9 @@ Instructions:
                 return (
                   <div
                     key={index}
-                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                    className={`flex ${
+                      isUser ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <div
                       className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
@@ -201,7 +230,9 @@ Instructions:
                       }`}
                     >
                       {message.text ? (
-                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <p className="text-sm leading-relaxed">
+                          {message.text}
+                        </p>
                       ) : null}
 
                       {message.response ? (
