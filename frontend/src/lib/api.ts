@@ -1,13 +1,10 @@
-export type PolicyResponse = {
-  at_a_glance: string[];
-  key_takeaways: string[];
-  what_this_means: string[];
-  relevant_actions: string[];
-  sources: {
-    title: string;
-    description: string;
-  }[];
-};
+import {
+  normalizePolicyReply,
+  type PolicyResponse,
+  type RetrievalTier,
+} from "@/lib/policy-reply";
+
+export type { PolicyResponse, RetrievalTier } from "@/lib/policy-reply";
 
 export type PolicyBriefing = {
   id: string;
@@ -201,56 +198,141 @@ export async function sendChat(
       ? (data as { reply: unknown }).reply
       : data;
 
-  const safe: PolicyResponse = {
-    at_a_glance:
-      typeof payload === "object" &&
-      payload !== null &&
-      Array.isArray((payload as Record<string, unknown>).at_a_glance)
-        ? ((payload as Record<string, unknown>).at_a_glance as unknown[]).filter(
-            (item): item is string => typeof item === "string",
-          )
-        : [],
-    key_takeaways:
-      typeof payload === "object" &&
-      payload !== null &&
-      Array.isArray((payload as Record<string, unknown>).key_takeaways)
-        ? ((payload as Record<string, unknown>).key_takeaways as unknown[]).filter(
-            (item): item is string => typeof item === "string",
-          )
-        : [],
-    what_this_means:
-      typeof payload === "object" &&
-      payload !== null &&
-      Array.isArray((payload as Record<string, unknown>).what_this_means)
-        ? ((payload as Record<string, unknown>).what_this_means as unknown[]).filter(
-            (item): item is string => typeof item === "string",
-          )
-        : [],
-    relevant_actions:
-      typeof payload === "object" &&
-      payload !== null &&
-      Array.isArray((payload as Record<string, unknown>).relevant_actions)
-        ? ((payload as Record<string, unknown>).relevant_actions as unknown[]).filter(
-            (item): item is string => typeof item === "string",
-          )
-        : [],
-    sources:
-      typeof payload === "object" &&
-      payload !== null &&
-      Array.isArray((payload as Record<string, unknown>).sources)
-        ? ((payload as Record<string, unknown>).sources as unknown[])
-            .filter(
-              (item): item is { title: string; description: string } =>
-                typeof item === "object" &&
-                item !== null &&
-                typeof (item as Record<string, unknown>).title === "string" &&
-                typeof (item as Record<string, unknown>).description === "string",
-            )
-            .map((item) => ({ title: item.title, description: item.description }))
-        : [],
-  };
+  return normalizePolicyReply(payload);
+}
 
-  return safe;
+export type FloatingRetrievalSource = {
+  title: string;
+  source_url: string;
+  source_type: string;
+};
+
+function parseFloatingRetrievalSources(
+  data: Record<string, unknown>,
+): FloatingRetrievalSource[] {
+  const raw = data.retrieval_sources;
+  if (!Array.isArray(raw)) return [];
+  const out: FloatingRetrievalSource[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const r = item as Record<string, unknown>;
+    const title = typeof r.title === "string" ? r.title.trim() : "";
+    const source_url = typeof r.source_url === "string" ? r.source_url.trim() : "";
+    const source_type = typeof r.source_type === "string" ? r.source_type.trim() : "";
+    if (!source_url) continue;
+    out.push({
+      title: title || "Source",
+      source_url,
+      source_type,
+    });
+  }
+  return out.slice(0, 8);
+}
+
+export type FloatingChatRagResult = {
+  mode: "rag";
+  markdown: string;
+  sources_used: number;
+  retrieval_tier: RetrievalTier;
+  retrieval_sources: FloatingRetrievalSource[];
+};
+
+export type FloatingChatOpenAiResult = {
+  mode: "openai_fallback";
+  markdown: string;
+  sources_used: number;
+  retrieval_tier: RetrievalTier;
+  retrieval_sources: FloatingRetrievalSource[];
+};
+
+export type FloatingChatResult = FloatingChatRagResult | FloatingChatOpenAiResult;
+
+export type FloatingChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export async function postFloatingChatOrchestrated(params: {
+  messages: FloatingChatTurn[];
+  currentPath?: string;
+}): Promise<FloatingChatResult> {
+  if (!params.messages.length) {
+    throw new Error("At least one message is required.");
+  }
+
+  const res = await fetch(`${CIVIC_API}/floating-chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: params.messages,
+      currentPath: params.currentPath?.trim() || "/",
+    }),
+    cache: "no-store",
+  });
+
+  const data = (await res.json()) as unknown;
+
+  if (!res.ok) {
+    let message = `Request failed: ${res.status}`;
+    if (typeof data === "object" && data !== null && "detail" in data) {
+      const d = (data as { detail: unknown }).detail;
+      if (typeof d === "string") message = d;
+      else if (Array.isArray(d)) message = JSON.stringify(d);
+    }
+    throw new Error(message);
+  }
+
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    typeof (data as Record<string, unknown>).mode !== "string"
+  ) {
+    throw new Error("Invalid floating chat response.");
+  }
+
+  const mode = (data as Record<string, unknown>).mode;
+  const sources_used = Number((data as Record<string, unknown>).sources_used);
+  const retrieval_tier = (data as Record<string, unknown>).retrieval_tier;
+
+  const dataObj = data as Record<string, unknown>;
+  const retrieval_sources = parseFloatingRetrievalSources(dataObj);
+  const tier =
+    retrieval_tier === "vector" ||
+    retrieval_tier === "lexical" ||
+    retrieval_tier === "recent" ||
+    retrieval_tier === "none"
+      ? retrieval_tier
+      : "none";
+
+  if (mode === "rag") {
+    const md = dataObj.markdown;
+    if (typeof md !== "string" || !md.trim()) {
+      throw new Error("Invalid floating chat response: missing markdown.");
+    }
+    return {
+      mode: "rag",
+      markdown: md.trim(),
+      sources_used: Number.isFinite(sources_used) ? sources_used : 0,
+      retrieval_tier: tier,
+      retrieval_sources,
+    };
+  }
+
+  if (mode === "openai_fallback") {
+    const md = dataObj.markdown;
+    if (typeof md !== "string" || !md.trim()) {
+      throw new Error("Invalid floating chat response: missing markdown.");
+    }
+    return {
+      mode: "openai_fallback",
+      markdown: md.trim(),
+      sources_used: Number.isFinite(sources_used) ? sources_used : 0,
+      retrieval_tier: tier,
+      retrieval_sources,
+    };
+  }
+
+  throw new Error("Invalid floating chat response mode.");
 }
 
 export async function getPoliticians(filters?: {

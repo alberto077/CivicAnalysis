@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Khand, Atkinson_Hyperlegible } from "next/font/google";
+
+import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
+
 import "./globals.css";
 
 const inter = Inter({
@@ -41,7 +44,11 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=tanker@400&f[]=erode@400,600&display=swap"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+
+      <body className="flex min-h-full flex-col">
+        {children}
+        <FloatingChatBot />
+      </body>
     </html>
   );
 }
