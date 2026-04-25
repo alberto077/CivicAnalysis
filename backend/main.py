@@ -429,6 +429,14 @@ async def get_politicians(
             return "Independent"
         return "Moderate"
 
+    # Map politician role -> District.jurisdiction so we can join geography in.
+    # Only Council Members are populated today; other roles fall through with empty zips/neighborhoods.
+    role_to_jurisdiction = {
+        "Council Member": "NYC Council",
+        "State Senator": "NYS Senate",
+        "Assembly Member": "NYS Assembly",
+    }
+
     try:
         with Session(engine) as session:
             query = select(Politician)
@@ -442,11 +450,21 @@ async def get_politicians(
 
             rows = session.exec(query.order_by(Politician.full_name.asc())).all()
 
+            districts = session.exec(select(District)).all()
+            district_by_key = {(d.district_number, d.jurisdiction): d for d in districts}
+
             payload = []
             for p in rows:
                 computed_stance = infer_stance(p.party)
                 if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
                     continue
+
+                jurisdiction = role_to_jurisdiction.get(p.role or "")
+                district = (
+                    district_by_key.get((p.district_number, jurisdiction))
+                    if (p.district_number and jurisdiction)
+                    else None
+                )
 
                 payload.append(
                     {
@@ -459,6 +477,8 @@ async def get_politicians(
                         "political_stance": computed_stance,
                         "bio_url": p.bio_url,
                         "term_end": p.term_end.isoformat() if p.term_end else None,
+                        "zip_codes": district.zip_codes if district else [],
+                        "neighborhoods": district.neighborhoods if district else [],
                         "data_source": "live_database",
                     }
                 )
@@ -473,7 +493,9 @@ async def get_politicians(
                     "party",
                     "political_stance",
                     "bio_url",
-                    "term_end"
+                    "term_end",
+                    "zip_codes",
+                    "neighborhoods",
                 ],
             }
     except Exception as e:
