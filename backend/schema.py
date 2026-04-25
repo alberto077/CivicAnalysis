@@ -1,8 +1,18 @@
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, UniqueConstraint
 from typing import Optional, Dict, List
 from datetime import datetime, date
 from pgvector.sqlalchemy import Vector
+
+class District(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("district_number", "jurisdiction", name="uq_district_jurisdiction"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    district_number: str = Field(index=True)
+    jurisdiction: str = Field(default="NYC Council")  # "NYC Council" | "NYS Senate" | "NYS Assembly"
+    borough: Optional[str] = None
+    zip_codes: List[str] = Field(default_factory=list, sa_column=Column(JSON))
+    neighborhoods: List[str] = Field(default_factory=list, sa_column=Column(JSON))
 
 class Politician(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
