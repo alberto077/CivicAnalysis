@@ -7,7 +7,7 @@ import logging
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
 from db import engine
-from schema import DocumentChunk, PolicyDocument, Politician
+from schema import District, DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
 from llm_engine import LLMEngine
 
@@ -562,16 +562,32 @@ async def get_districts_map():
 async def get_districts():
     try:
         with Session(engine) as session:
-            rows = session.exec(select(Politician).where(Politician.role == "Council Member")).all()
-            districts = []
-            for p in rows:
-                if not p.district_number: continue
-                districts.append({
-                    "id": int(p.district_number),
-                    "name": f"District {p.district_number} ({p.location_borough})",
-                    "rep": p.full_name,
-                    "issues": ["Infrastructure", "Policy"]
+            districts = session.exec(
+                select(District).where(District.jurisdiction == "NYC Council")
+            ).all()
+            reps = session.exec(
+                select(Politician).where(Politician.role == "Council Member")
+            ).all()
+            rep_by_district = {p.district_number: p for p in reps if p.district_number}
+
+            out: List[Dict] = []
+            for d in districts:
+                if not d.district_number or not d.district_number.isdigit():
+                    continue
+                rep = rep_by_district.get(d.district_number)
+                borough = d.borough or (rep.location_borough if rep else None)
+                out.append({
+                    "id": int(d.district_number),
+                    "district_number": d.district_number,
+                    "jurisdiction": d.jurisdiction,
+                    "name": f"District {d.district_number}" + (f" ({borough})" if borough else ""),
+                    "borough": borough,
+                    "rep": rep.full_name if rep else None,
+                    "zip_codes": d.zip_codes or [],
+                    "neighborhoods": d.neighborhoods or [],
+                    "issues": [],
                 })
-            return {"districts": sorted(districts, key=lambda x: x["id"])}
-    except:
+            return {"districts": sorted(out, key=lambda x: x["id"])}
+    except Exception as e:
+        logger.warning(f"/api/districts failed: {e}")
         return {"districts": []}
