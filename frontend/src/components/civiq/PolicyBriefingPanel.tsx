@@ -223,12 +223,15 @@ export function PolicyBriefingPanel({
                 className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-center py-12"
               >
                 {shouldLoadSkyline ? (
-                  <Image
-                    src={skylineGifSrc}
-                    alt="Animated NYC Skyline"
-                    className="h-full w-full rounded-[2.5rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] transition duration-700"
-                    style={{ width: "100%", maxHeight: "600px" }}
-                  />
+                  <div className="relative h-[420px] w-full max-w-[1200px] md:h-[560px]">
+                    <Image
+                      src={skylineGifSrc}
+                      alt="Animated NYC Skyline"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 1200px"
+                      className="rounded-[2.5rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] transition duration-700"
+                    />
+                  </div>
                 ) : (
                   <div className="p-20 text-center border-4 border-dashed border-slate-100 rounded-[3rem]">
                     <p className="text-2xl font-display font-bold text-slate-300">

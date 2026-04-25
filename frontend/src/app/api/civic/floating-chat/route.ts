@@ -87,6 +87,53 @@ function parseRetrievalSourcesFromBackend(data: unknown): RetrievalSourcePayload
   return out.slice(0, 8);
 }
 
+function shouldExposeRetrievalSources(args: {
+  question: string;
+  markdown: string;
+  retrievalTier: RetrievalTier;
+  retrievalSources: RetrievalSourcePayload[];
+}): boolean {
+  const question = args.question.toLowerCase().trim();
+  const markdown = args.markdown.toLowerCase().trim();
+  if (!args.retrievalSources.length) return false;
+  if (args.retrievalTier === "none") return false;
+
+  const asksForSources =
+    /\b(source|sources|citation|citations|reference|references|resource|resources|link|links|where can i read)\b/.test(
+      question,
+    );
+  if (asksForSources) return true;
+
+  // Hide source panel for conversational/off-topic/simple utility prompts.
+  const conversational =
+    /^(hi|hello|hey|thanks|thank you|how are you|good morning|good afternoon|good evening)\b/.test(
+      question,
+    );
+  const smallTalk =
+    /\b(joke|fun fact|weather|recipe|movie|music|relationship|dating|travel tips)\b/.test(
+      question,
+    );
+  const mostlyMath =
+    /^\s*[\d\s+\-*/().%^=<>!]+\s*$/.test(question) ||
+    /\b(solve|calculate|what is|compute)\b/.test(question);
+  const civicIntent =
+    /\b(nyc|new york city|borough|district|council|policy|law|legislation|budget|rent|housing|hpd|rgb|dhcr|hearing|zoning|service|agency|311)\b/.test(
+      question,
+    );
+
+  // Hide when assistant is refusing/redirecting and didn't rely on evidence.
+  const refusalLike =
+    /\b(i can'?t help|cannot help|i’m unable|i am unable|not able to assist|outside (the )?scope|off-topic|i can only help)\b/.test(
+      markdown,
+    );
+
+  if (conversational || smallTalk || mostlyMath || refusalLike || !civicIntent) {
+    return false;
+  }
+
+  return true;
+}
+
 function readRetrievalTier(data: unknown, sourcesUsed: number): RetrievalTier {
   if (typeof data !== "object" || data === null) {
     return sourcesUsed > 0 ? "vector" : "none";
@@ -248,12 +295,20 @@ export async function POST(request: Request) {
   });
 
   if (!insufficient) {
+    const visibleSources = shouldExposeRetrievalSources({
+      question: lastUserContent,
+      markdown: ragMarkdown,
+      retrievalTier: retrieval_tier,
+      retrievalSources: retrieval_sources,
+    })
+      ? retrieval_sources
+      : [];
     return NextResponse.json({
       mode: "rag",
       markdown: ragMarkdown,
       sources_used,
       retrieval_tier,
-      retrieval_sources,
+      retrieval_sources: visibleSources,
     });
   }
 
@@ -318,12 +373,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const fallbackMarkdown = content.trim();
+    const visibleSources = shouldExposeRetrievalSources({
+      question: lastUserContent,
+      markdown: fallbackMarkdown,
+      retrievalTier: retrieval_tier,
+      retrievalSources: retrieval_sources,
+    })
+      ? retrieval_sources
+      : [];
+
     return NextResponse.json({
       mode: "openai_fallback",
-      markdown: content.trim(),
+      markdown: fallbackMarkdown,
       sources_used,
       retrieval_tier,
-      retrieval_sources,
+      retrieval_sources: visibleSources,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
