@@ -2,97 +2,90 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
 
-import { sendChat, type PolicyResponse } from "@/lib/api";
+import {
+  postFloatingChatOrchestrated,
+  type FloatingChatTurn,
+  type FloatingRetrievalSource,
+} from "@/lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
   text?: string;
-  response?: PolicyResponse;
+  markdown?: string;
+  retrieval_sources?: FloatingRetrievalSource[];
 };
 
-function ResponseSection({
-  title,
-  items,
-}: {
-  title: string;
-  items?: string[];
-}) {
-  if (!items || items.length === 0) return null;
-
-  return (
-    <div className="mt-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-        {title}
-      </p>
-
-      <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-slate-700">
-        {items.map((item, index) => (
-          <li key={`${title}-${index}`}>{item}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function AssistantResponse({ response }: { response: PolicyResponse }) {
-  const hasContent =
-    response.at_a_glance.length > 0 ||
-    response.key_takeaways.length > 0 ||
-    response.what_this_means.length > 0 ||
-    response.relevant_actions.length > 0 ||
-    response.sources.length > 0;
-
-  if (!hasContent) {
-    return (
-      <p className="text-sm text-slate-700">
-        I could not find enough CivicAnalysis information for that question. Try
-        asking about a specific borough, district, policy topic, or
-        representative.
-      </p>
-    );
+function buildFloatingApiMessages(
+  prior: ChatMessage[],
+  latestUserText: string,
+): FloatingChatTurn[] {
+  const out: FloatingChatTurn[] = [];
+  for (const m of prior) {
+    if (m.role === "user") {
+      const t = m.text?.trim();
+      if (t) out.push({ role: "user", content: t });
+    } else {
+      const c = (m.markdown ?? m.text)?.trim();
+      if (c) out.push({ role: "assistant", content: c });
+    }
   }
-
-  return (
-    <div>
-      <ResponseSection title="At a glance" items={response.at_a_glance} />
-      <ResponseSection title="Key takeaways" items={response.key_takeaways} />
-      <ResponseSection
-        title="What this means"
-        items={response.what_this_means}
-      />
-      <ResponseSection
-        title="Relevant actions"
-        items={response.relevant_actions}
-      />
-
-      {response.sources.length > 0 ? (
-        <div className="mt-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Sources
-          </p>
-
-          <div className="mt-2 space-y-2">
-            {response.sources.map((source, index) => (
-              <div
-                key={`${source.title}-${index}`}
-                className="rounded-xl border border-slate-200 bg-white p-3"
-              >
-                <p className="text-sm font-semibold text-slate-900">
-                  {source.title}
-                </p>
-
-                <p className="mt-1 text-xs text-slate-600">
-                  {source.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
+  out.push({ role: "user", content: latestUserText });
+  return out;
 }
+
+const floatingMarkdownComponents: Components = {
+  p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-snug">{children}</p>,
+  ul: ({ children }) => (
+    <ul className="mb-1.5 list-disc space-y-0.5 pl-4 last:mb-0 leading-snug">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="mb-1.5 list-decimal space-y-0.5 pl-4 last:mb-0 leading-snug">{children}</ol>
+  ),
+  li: ({ children }) => <li className="leading-snug">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      className="font-medium text-[var(--accent)] underline underline-offset-2 decoration-[var(--accent)]/40"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ className, children }) => {
+    const isBlock = typeof className === "string" && className.includes("language-");
+    if (isBlock) {
+      return (
+        <code className="my-1.5 block overflow-x-auto rounded-md bg-slate-100/90 p-1.5 text-[11px] leading-relaxed">
+          {children}
+        </code>
+      );
+    }
+    return (
+      <code className="rounded bg-slate-100 px-1 py-px text-[11px]">{children}</code>
+    );
+  },
+  blockquote: ({ children }) => (
+    <blockquote className="my-1.5 border-l-2 border-slate-200/90 pl-2.5 text-slate-600 leading-snug">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-2 border-slate-200/80" />,
+  h1: ({ children }) => (
+    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+  ),
+  h2: ({ children }) => (
+    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+  ),
+};
 
 export function FloatingChatBot() {
   const pathname = usePathname();
@@ -109,12 +102,6 @@ export function FloatingChatBot() {
   const [error, setError] = useState("");
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
-
-  const suggestedPrompts = [
-    "Who represents District 16 in the Bronx?",
-    "What housing issues should Bronx residents watch?",
-    "What sources support this answer?",
-  ];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -139,36 +126,22 @@ export function FloatingChatBot() {
 
     try {
       const currentPath =
-        typeof window !== "undefined" ? window.location.pathname : "unknown";
+        typeof window !== "undefined" ? window.location.pathname : pathname || "/";
 
-      const fullQuery = `
-You are the CivicAnalysis floating assistant.
+      const apiMessages = buildFloatingApiMessages(messages, question);
 
-Current page:
-${currentPath}
-
-User question:
-${question}
-
-Response rules:
-- Stay focused on NYC civic topics: local representatives, boroughs, districts, city policy, housing, public services, legislation, budgets, hearings, community issues, and official sources.
-- If the question is vague, ask one short clarifying question instead of guessing.
-- If the question could refer to multiple things, explain what extra detail is needed, such as borough, district, policy topic, or representative name.
-- Do not invent exact numbers, names, bills, or sources.
-- Use only information supported by CivicAnalysis data or retrieved source context.
-- If CivicAnalysis does not have enough information, say that clearly.
-- If the user asks something unrelated to civic policy, politely redirect them back to NYC civic topics.
-- Keep answers concise and useful for residents.
-- When possible, end with a practical next step.
-`.trim();
-
-      const response = await sendChat(fullQuery);
+      const result = await postFloatingChatOrchestrated({
+        messages: apiMessages,
+        currentPath,
+      });
 
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          response,
+          markdown: result.markdown,
+          retrieval_sources:
+            result.retrieval_sources.length > 0 ? result.retrieval_sources : undefined,
         },
       ]);
     } catch (e) {
@@ -191,27 +164,31 @@ Response rules:
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {isOpen ? (
-        <div className="mb-4 flex h-[620px] max-h-[calc(100vh-7rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl sm:w-[430px]">
-          <div className="flex items-center justify-between bg-[var(--accent)] px-5 py-4 text-white">
-            <div>
-              <h2 className="text-base font-bold">Civic Chat</h2>
-              <p className="text-xs text-white/80">
-                Ask about policies, reps, and sources
+        <div
+          className="mb-4 flex h-[min(560px,calc(100vh-5.5rem))] w-[calc(100vw-1.5rem)] max-w-[min(520px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_25px_50px_-12px_rgba(15,23,42,0.18)] ring-1 ring-slate-900/[0.04] sm:w-[min(520px,calc(100vw-2.5rem))]"
+          role="dialog"
+          aria-label="Civic chat"
+        >
+          <div className="flex shrink-0 items-center justify-between bg-[var(--accent)] px-4 py-3 text-white">
+            <div className="min-w-0 pr-2">
+              <h2 className="text-sm font-semibold tracking-tight">Civic Chat</h2>
+              <p className="mt-0.5 text-[11px] leading-tight text-white/85">
+                NYC policy &amp; local government
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded-full bg-white/15 px-3 py-1 text-sm font-bold text-white transition hover:bg-white/25"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/12 text-lg leading-none text-white transition hover:bg-white/22"
               aria-label="Close chatbot"
             >
               ×
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">
-            <div className="space-y-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-slate-50/95 to-slate-50 px-3 py-3">
+            <div className="space-y-2.5">
               {messages.map((message, index) => {
                 const isUser = message.role === "user";
 
@@ -223,20 +200,52 @@ Response rules:
                     }`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
+                      className={`max-w-[92%] rounded-xl px-3 py-2 text-[13px] leading-snug shadow-[0_1px_2px_rgba(15,23,42,0.06)] ${
                         isUser
-                          ? "bg-[var(--accent)] text-white"
-                          : "border border-slate-200 bg-white text-slate-900"
+                          ? "bg-[var(--accent)] text-white [&_a]:text-white [&_a]:underline-offset-2"
+                          : "border border-slate-200/80 bg-white text-slate-800"
                       }`}
                     >
                       {message.text ? (
-                        <p className="text-sm leading-relaxed">
-                          {message.text}
-                        </p>
+                        <p className="leading-snug">{message.text}</p>
                       ) : null}
 
-                      {message.response ? (
-                        <AssistantResponse response={message.response} />
+                      {message.markdown ? (
+                        <div className="break-words text-[13px] leading-snug [&_a]:font-medium [&_a]:text-[var(--accent)]">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={floatingMarkdownComponents}
+                          >
+                            {message.markdown}
+                          </ReactMarkdown>
+                        </div>
+                      ) : null}
+
+                      {message.retrieval_sources && message.retrieval_sources.length > 0 ? (
+                        <div className="mt-2 border-t border-slate-200/80 pt-2">
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Official sources
+                          </p>
+                          <ul className="space-y-1.5">
+                            {message.retrieval_sources.map((src) => (
+                              <li key={src.source_url} className="leading-snug">
+                                <a
+                                  href={src.source_url}
+                                  className="text-[12px] font-medium text-[var(--accent)] underline decoration-[var(--accent)]/35 underline-offset-2 hover:decoration-[var(--accent)]"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {src.title}
+                                </a>
+                                {src.source_type ? (
+                                  <span className="mt-0.5 block text-[10px] text-slate-500">
+                                    {src.source_type}
+                                  </span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -245,14 +254,20 @@ Response rules:
 
               {loading ? (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-                    Thinking...
+                  <div className="rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-[12px] text-slate-500 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400"
+                        aria-hidden
+                      />
+                      Thinking…
+                    </span>
                   </div>
                 </div>
               ) : null}
 
               {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200/90 bg-red-50/95 px-3 py-2 text-[12px] leading-snug text-red-800">
                   {error}
                 </div>
               ) : null}
@@ -261,20 +276,7 @@ Response rules:
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-white p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => void handleSend(prompt)}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 transition hover:bg-slate-50"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-
+          <div className="shrink-0 border-t border-slate-200/90 bg-white p-3">
             <div className="flex gap-2">
               <input
                 value={input}
@@ -284,17 +286,17 @@ Response rules:
                     void handleSend();
                   }
                 }}
-                placeholder="Ask a civic question..."
-                className="h-12 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[var(--accent)]"
+                placeholder="Ask a civic question…"
+                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[13px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--accent)] focus:bg-white focus:ring-2 focus:ring-[var(--accent)]/15"
               />
 
               <button
                 type="button"
                 onClick={() => void handleSend()}
                 disabled={loading || !input.trim()}
-                className="h-12 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 shrink-0 rounded-xl bg-[var(--accent)] px-4 text-[12px] font-semibold text-white shadow-sm transition hover:opacity-92 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
               >
-                Ask
+                Send
               </button>
             </div>
           </div>

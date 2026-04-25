@@ -106,9 +106,52 @@ FALLBACK_POLITICIANS = [
 ]
 
 
+class ChatMessagePayload(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     query: str
+    retrieval_query: Optional[str] = None
     demographics: Dict[str, Optional[str]] = {}
+    response_style: Optional[str] = None
+    messages: Optional[List[ChatMessagePayload]] = None
+    session_preamble: Optional[str] = None
+
+
+def _normalize_chat_messages(
+    raw: Optional[List[ChatMessagePayload]],
+) -> Optional[List[Dict[str, str]]]:
+    if not raw:
+        return None
+    out: List[Dict[str, str]] = []
+    for m in raw:
+        role = (m.role or "").strip().lower()
+        if role not in ("user", "assistant"):
+            continue
+        content = (m.content or "").strip()
+        if not content:
+            continue
+        out.append({"role": role, "content": content})
+    return out or None
+
+
+def _retrieval_query_from_request(request: ChatRequest) -> str:
+    """Embed using recent user turns so follow-ups keep topical context."""
+    if request.messages:
+        user_parts = [
+            (m.content or "").strip()
+            for m in request.messages
+            if (m.role or "").strip().lower() == "user" and (m.content or "").strip()
+        ]
+        if user_parts:
+            joined = "\n".join(user_parts)
+            return joined[:2000]
+    rq = (request.retrieval_query or "").strip()
+    if rq:
+        return rq
+    return (request.query or "").strip()
 
 
 def _has_meaningful_text(value: Optional[str]) -> bool:
@@ -169,6 +212,7 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
                 "title": doc.title,
                 "text_content": text,
                 "source_type": doc.source_type,
+                "source_url": doc.source_url,
                 "published_date": doc.published_date.isoformat() if doc.published_date else None,
                 "context_span": f"{span_start}-{span_end}",
             }
@@ -178,11 +222,12 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     return context
 
 
-def get_db_context(query: str, top_k: int = 8) -> List[Dict]:
+def get_db_context(query: str, top_k: int = 8) -> Tuple[List[Dict], str]:
     """
     Embed the user query and run a pgvector cosine similarity search
     against DocumentChunk. Returns the top_k most relevant chunks
-    joined with their parent PolicyDocument title.
+    joined with their parent PolicyDocument title, plus a retrieval tier:
+    vector | lexical | recent | none.
     """
     normalized_query = query.strip()
     effective_top_k = max(6, top_k)
@@ -226,8 +271,16 @@ def get_db_context(query: str, top_k: int = 8) -> List[Dict]:
             max(0, len(vector_results) - len(context)),
         )
 
+        if context:
+            logger.info(
+                "Final context count=%s sample_titles=%s",
+                len(context),
+                [item["title"] for item in context[:3]],
+            )
+            return context, "vector"
+
         # Fallback retrieval when vector search returns no usable context.
-        if not context and normalized_query:
+        if normalized_query:
             terms = [term for term in normalized_query.split() if len(term) >= 3][:6]
             lexical_filters = [DocumentChunk.text_content.ilike(f"%{normalized_query}%")]
             lexical_filters.extend(
@@ -247,18 +300,25 @@ def get_db_context(query: str, top_k: int = 8) -> List[Dict]:
             context = _map_context(session, lexical_results, effective_top_k)
             logger.info("Lexical fallback mapped_context=%s", len(context))
 
+        if context:
+            logger.info(
+                "Final context count=%s sample_titles=%s",
+                len(context),
+                [item["title"] for item in context[:3]],
+            )
+            return context, "lexical"
+
         # Final safety fallback: return latest raw documents if data exists.
-        if not context:
-            raw_results = session.exec(
-                select(DocumentChunk, PolicyDocument)
-                .join(PolicyDocument)
-                .where(DocumentChunk.text_content.is_not(None))
-                .order_by(PolicyDocument.published_date.desc(), DocumentChunk.id.desc())
-                .limit(effective_top_k * 8)
-            ).all()
-            logger.info("Raw fallback results=%s", len(raw_results))
-            context = _map_context(session, raw_results, effective_top_k)
-            logger.info("Raw fallback mapped_context=%s", len(context))
+        raw_results = session.exec(
+            select(DocumentChunk, PolicyDocument)
+            .join(PolicyDocument)
+            .where(DocumentChunk.text_content.is_not(None))
+            .order_by(PolicyDocument.published_date.desc(), DocumentChunk.id.desc())
+            .limit(effective_top_k * 8)
+        ).all()
+        logger.info("Raw fallback results=%s", len(raw_results))
+        context = _map_context(session, raw_results, effective_top_k)
+        logger.info("Raw fallback mapped_context=%s", len(context))
 
         if context:
             logger.info(
@@ -266,10 +326,33 @@ def get_db_context(query: str, top_k: int = 8) -> List[Dict]:
                 len(context),
                 [item["title"] for item in context[:3]],
             )
-        else:
-            logger.warning("Final context is empty after all retrieval steps")
+            return context, "recent"
 
-        return context
+        logger.warning("Final context is empty after all retrieval steps")
+        return [], "none"
+
+
+def build_retrieval_sources_payload(
+    context_chunks: List[Dict], max_items: int = 8
+) -> List[Dict]:
+    """Deduplicated official URLs from retrieved chunks for client UI."""
+    seen = set()
+    out: List[Dict] = []
+    for ch in context_chunks:
+        url = (ch.get("source_url") or "").strip()
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        out.append(
+            {
+                "title": (ch.get("title") or "Source").strip(),
+                "source_url": url,
+                "source_type": (ch.get("source_type") or "").strip(),
+            }
+        )
+        if len(out) >= max_items:
+            break
+    return out
 
 
 @app.post("/api/chat")
@@ -278,27 +361,46 @@ async def chat_endpoint(request: ChatRequest):
     Core RAG endpoint.
     1. Runs pgvector similarity search against Neon.
     2. Sends context + demographics + query to LLM.
+
+    Optional `messages` (user/assistant turns) enables multi-turn; optional
+    `session_preamble` is merged into the system prompt for plain responses.
     """
+    msg_list = _normalize_chat_messages(request.messages)
+    if msg_list and msg_list[-1]["role"] != "user":
+        raise HTTPException(
+            status_code=400,
+            detail="When `messages` is provided, the last message must have role `user`.",
+        )
+
+    retrieval_q = _retrieval_query_from_request(request)
     try:
-        context_chunks = get_db_context(request.query)
+        context_chunks, retrieval_tier = get_db_context(retrieval_q)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
 
     logger.info(
-        "Passing context_chunks to LLM count=%s query='%s'",
+        "Passing context_chunks to LLM count=%s retrieval_tier=%s msg_turns=%s",
         len(context_chunks),
-        request.query.strip(),
+        retrieval_tier,
+        len(msg_list) if msg_list else 0,
     )
 
+    style = (request.response_style or "structured").strip().lower()
+    preamble = (request.session_preamble or "").strip() or None
     response = llm.generate_response(
         query=request.query,
         demographics=request.demographics,
         context_chunks=context_chunks,
+        response_style=style,
+        messages=msg_list,
+        session_preamble=preamble,
     )
 
     return {
         "reply": response,
         "sources_used": len(context_chunks),
+        "retrieval_tier": retrieval_tier,
+        "retrieval_sources": build_retrieval_sources_payload(context_chunks),
     }
 
 
