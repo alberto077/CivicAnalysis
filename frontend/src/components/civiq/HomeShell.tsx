@@ -1,12 +1,9 @@
 "use client";
 import { ChatPanel } from "@/components/civiq/ChatPanel";
 import { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
 import { PolicyBriefingPanel } from "@/components/civiq/PolicyBriefingPanel";
-import { NeighborhoodInsights } from "@/components/civiq/NeighborhoodInsights";
-import { MapPanel } from "@/components/civiq/MapPanel";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
@@ -18,19 +15,7 @@ import {
   type PolicyResponse,
 } from "@/lib/api";
 
-const PoliticianCards = dynamic(
-  () => import("@/components/civiq/PoliticianCards").then((m) => m.PoliticianCards),
-  {
-    ssr: false,
-    loading: () => (
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-[var(--border)] bg-white/70 px-4 py-6 text-sm text-[var(--muted)]">
-          Loading representatives...
-        </div>
-      </section>
-    ),
-  },
-);
+
 
 export function HomeShell() {
   const [query, setQuery] = useState("");
@@ -57,46 +42,43 @@ export function HomeShell() {
     }
   }, [isLoaded, profile, showOnboarding]);
 
-  const buildEffectiveFilters = () => {
-    const effectiveBorough =
-      selectedLocation !== "All NYC"
-        ? selectedLocation
-        : isPersonalized && profile?.borough
-          ? profile.borough
-          : undefined;
-
-    return {
-      borough: effectiveBorough,
-      issue_area: selectedArea !== "All" ? selectedArea : undefined,
-      timeframe: selectedTime !== "All Time" ? selectedTime : undefined,
-      location_scope: selectedLocation !== "All NYC" ? selectedLocation : undefined,
-      profile_active: isPersonalized ? "true" : "false",
-    };
-  };
-
-  const buildAugmentedQuery = (baseQuery: string) => {
-    const q = baseQuery.trim();
-    const parts = [q];
-
-    // Auto-detect ZIP codes in search query
-    const zipMatch = q.match(/\b\d{5}\b/);
-    if (zipMatch) parts.push(`location: ZIP code ${zipMatch[0]}`);
-
-    if (selectedArea !== "All") parts.push(`focus area: ${selectedArea}`);
-    if (selectedLocation !== "All NYC") parts.push(`jurisdiction: ${selectedLocation}`);
-    if (selectedTime !== "All Time") parts.push(`period: ${selectedTime}`);
-    
-    if (isPersonalized && profile) {
-      if (profile.borough && selectedLocation === "All NYC") parts.push(`user borough: ${profile.borough}`);
-      if (profile.issues?.length) parts.push(`user interests: ${profile.issues.join(", ")}`);
-    }
-
-    return parts.join(" | ");
-  };
-
   const handleSearch = useCallback(async (searchQuery = query) => {
     const q = searchQuery.trim();
     if (!q) return;
+
+    const buildEffectiveFilters = () => {
+      const effectiveBorough =
+        selectedLocation !== "All NYC"
+          ? selectedLocation
+          : isPersonalized && profile?.borough
+            ? profile.borough
+            : undefined;
+
+      return {
+        borough: effectiveBorough,
+        issue_area: selectedArea !== "All" ? selectedArea : undefined,
+        timeframe: selectedTime !== "All Time" ? selectedTime : undefined,
+        location_scope: selectedLocation !== "All NYC" ? selectedLocation : undefined,
+        profile_active: isPersonalized ? "true" : "false",
+      };
+    };
+
+    const buildAugmentedQuery = (baseQuery: string) => {
+      const parts = [baseQuery.trim()];
+      const zMatch = baseQuery.match(/\b\d{5}\b/);
+      if (zMatch) parts.push(`location: ZIP code ${zMatch[0]}`);
+
+      if (selectedArea !== "All") parts.push(`focus area: ${selectedArea}`);
+      if (selectedLocation !== "All NYC") parts.push(`jurisdiction: ${selectedLocation}`);
+      if (selectedTime !== "All Time") parts.push(`period: ${selectedTime}`);
+      
+      if (isPersonalized && profile) {
+        if (profile.borough && selectedLocation === "All NYC") parts.push(`user borough: ${profile.borough}`);
+        if (profile.issues?.length) parts.push(`user interests: ${profile.issues.join(", ")}`);
+      }
+
+      return parts.join(" | ");
+    };
 
     setLoading(true);
     setError(null);
