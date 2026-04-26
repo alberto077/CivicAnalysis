@@ -410,6 +410,13 @@ async def chat_endpoint(request: Request, payload: ChatRequest):
         session_preamble=preamble,
     )
 
+    if isinstance(response, dict) and str(response.get("error", "")).startswith("Error connecting to LLM"):
+        logger.warning("Upstream LLM unavailable: %s", response.get("error"))
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily busy. Please try again in a moment.",
+        )
+
     return {
         "reply": response,
         "sources_used": len(context_chunks),
