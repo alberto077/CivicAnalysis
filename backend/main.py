@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Tuple
 import logging
 
@@ -27,6 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Per-IP rate limiter (in-memory; resets on process restart, fine for free-tier Render).
+# Uses X-Forwarded-For via get_remote_address so it works behind Render's proxy.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 llm = LLMEngine()
 
@@ -356,7 +365,8 @@ def build_retrieval_sources_payload(
 
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("10/minute")
+async def chat_endpoint(request: Request, payload: ChatRequest):
     """
     Core RAG endpoint.
     1. Runs pgvector similarity search against Neon.
@@ -365,14 +375,14 @@ async def chat_endpoint(request: ChatRequest):
     Optional `messages` (user/assistant turns) enables multi-turn; optional
     `session_preamble` is merged into the system prompt for plain responses.
     """
-    msg_list = _normalize_chat_messages(request.messages)
+    msg_list = _normalize_chat_messages(payload.messages)
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
             status_code=400,
             detail="When `messages` is provided, the last message must have role `user`.",
         )
 
-    retrieval_q = _retrieval_query_from_request(request)
+    retrieval_q = _retrieval_query_from_request(payload)
     try:
         context_chunks, retrieval_tier = get_db_context(retrieval_q)
     except Exception as e:
@@ -385,11 +395,11 @@ async def chat_endpoint(request: ChatRequest):
         len(msg_list) if msg_list else 0,
     )
 
-    style = (request.response_style or "structured").strip().lower()
-    preamble = (request.session_preamble or "").strip() or None
+    style = (payload.response_style or "structured").strip().lower()
+    preamble = (payload.session_preamble or "").strip() or None
     response = llm.generate_response(
-        query=request.query,
-        demographics=request.demographics,
+        query=payload.query,
+        demographics=payload.demographics,
         context_chunks=context_chunks,
         response_style=style,
         messages=msg_list,
