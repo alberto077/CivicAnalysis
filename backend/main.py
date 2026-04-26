@@ -166,6 +166,50 @@ def _derive_location_terms(demographics: Dict[str, Optional[str]]) -> List[str]:
     return terms
 
 
+def _expand_location_terms_with_zip(
+    session: Session,
+    terms: List[str],
+    zip_code: Optional[str],
+) -> List[str]:
+    if not zip_code:
+        return terms
+    z = zip_code.strip()
+    if not (z.isdigit() and len(z) == 5):
+        return terms
+    if len(terms) >= MAX_LOCATION_TERMS:
+        return terms
+
+    seen = {t.lower() for t in terms}
+    out = list(terms)
+
+    districts = session.exec(select(District)).all()
+    matching = [d for d in districts if z in (d.zip_codes or [])]
+    if not matching:
+        return out
+
+    for d in matching:
+        if d.borough and d.borough.lower() not in seen:
+            out.append(d.borough)
+            seen.add(d.borough.lower())
+            if len(out) >= MAX_LOCATION_TERMS:
+                return out
+            break  # one borough is enough — multiple matching districts usually share it
+
+    for d in matching:
+        for nta in (d.neighborhoods or []):
+            if not nta:
+                continue
+            key = nta.lower()
+            if key in seen:
+                continue
+            out.append(nta)
+            seen.add(key)
+            if len(out) >= MAX_LOCATION_TERMS:
+                return out
+
+    return out
+
+
 def _retrieval_query_from_request(request: ChatRequest) -> str:
     """Embed using recent user turns so follow-ups keep topical context."""
     if request.messages:
