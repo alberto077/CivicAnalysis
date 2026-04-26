@@ -1,6 +1,7 @@
 import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
+import { HeroKpiStrip } from "@/components/civiq/HeroKpiStrip";
 import { Database, FileText, Globe, Link2, Cpu, Zap, Layers, ShieldCheck } from "lucide-react";
 
 export default function DataSourcesPage() {
@@ -89,6 +90,8 @@ export default function DataSourcesPage() {
             <h1 className="font-display text-4xl font-bold text-slate-900 mb-4">Data Transparency</h1>
             <p className="text-lg text-slate-600 mb-12">Civic Spiegel is built on publicly available, primary data sources. We do not use third-party analysis; we go straight to the official record.</p>
           </MotionReveal>
+
+          <HeroKpiStrip />
 
           <section className="mb-20">
             <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">

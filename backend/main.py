@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timezone
 import logging
 
 from sqlmodel import Session, select
@@ -412,6 +413,42 @@ async def health_check():
         return {"status": "ok", "db_connected": True, "has_data": count > 0}
     except Exception as e:
         return {"status": "degraded", "db_connected": False, "error": str(e)}
+
+
+@app.get("/api/dashboard/metrics")
+async def get_dashboard_metrics():
+    now = datetime.now(timezone.utc)
+    month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+    try:
+        with Session(engine) as session:
+            total_documents = session.exec(select(func.count(PolicyDocument.id))).one() or 0
+            boroughs_covered = 5
+
+            policies_published_this_month = session.exec(
+                select(func.count(PolicyDocument.id)).where(
+                    PolicyDocument.published_date.is_not(None),
+                    PolicyDocument.published_date >= month_start,
+                )
+            ).one() or 0
+            policies_scraped_this_month = session.exec(
+                select(func.count(PolicyDocument.id)).where(
+                    PolicyDocument.published_date.is_(None),
+                    PolicyDocument.scraped_at >= month_start,
+                )
+            ).one() or 0
+            policies_added_this_month = policies_published_this_month + policies_scraped_this_month
+            latest_scraped_at = session.exec(select(func.max(PolicyDocument.scraped_at))).one()
+
+        return {
+            "total_documents": int(total_documents),
+            "policies_added_this_month": int(policies_added_this_month),
+            "boroughs_covered": int(boroughs_covered),
+            "live_status": "Continuously Updated",
+            "last_updated_at": latest_scraped_at.isoformat() if latest_scraped_at else None,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Unable to load dashboard metrics: {e}")
 
 
 @app.get("/api/politicians")

@@ -118,6 +118,14 @@ export type PoliticianFilterOptions = {
   stances: string[];
 };
 
+export type HeroKpiMetrics = {
+  total_documents: number;
+  policies_added_this_month: number;
+  boroughs_covered: number;
+  live_status: string;
+  last_updated_at: string | null;
+};
+
 export type OpenAiChatRole = "system" | "user" | "assistant";
 
 export type OpenAiChatMessage = {
@@ -155,6 +163,54 @@ export async function checkHealth(): Promise<HealthResponse> {
   }
 
   return json;
+}
+
+export async function getHeroKpiMetrics(): Promise<HeroKpiMetrics> {
+  const fallback: HeroKpiMetrics = {
+    total_documents: 0,
+    policies_added_this_month: 0,
+    boroughs_covered: 0,
+    live_status: "Continuously Updated",
+    last_updated_at: null,
+  };
+
+  try {
+    const res = await fetch(`${CIVIC_API}/dashboard/metrics`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = (await res.json()) as Record<string, unknown>;
+    if (!res.ok) {
+      throw new Error(
+        typeof data.detail === "string"
+          ? data.detail
+          : typeof data.error === "string"
+            ? data.error
+            : `HTTP ${res.status}`,
+      );
+    }
+    const total = Number(data.total_documents);
+    const monthly = Number(data.policies_added_this_month);
+    const boroughs = Number(data.boroughs_covered);
+    const liveStatus =
+      typeof data.live_status === "string" && data.live_status.trim()
+        ? data.live_status.trim()
+        : "Continuously Updated";
+    const lastUpdated =
+      typeof data.last_updated_at === "string" && data.last_updated_at.trim()
+        ? data.last_updated_at
+        : null;
+    return {
+      total_documents: Number.isFinite(total) ? total : 0,
+      policies_added_this_month: Number.isFinite(monthly) ? monthly : 0,
+      boroughs_covered: Number.isFinite(boroughs) ? boroughs : 0,
+      live_status: liveStatus,
+      last_updated_at: lastUpdated,
+    };
+  } catch (e) {
+    console.warn("Failed to fetch hero KPI metrics", e);
+    return fallback;
+  }
 }
 
 export async function sendChat(
