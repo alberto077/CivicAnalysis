@@ -326,7 +326,7 @@ CivicAnalysis/
 | | Multi-page Migration: Separate routes for Map, Politicians, Chat, etc. | FE | ✅ |
 | | Politician Cards: Live data + activity signals | FE | ✅ |
 | | About Page: Project | FE | ✅ |
-| | Map Geography Model: Borough, Neighborhood, ZIP-to-District mapping | BE/ML | ⏳ Pending |
+| | Map Geography Model: Borough, Neighborhood, ZIP-to-District mapping | BE/ML | ✅ |
 | **May 01** | **Interactive Map & Chatbot Polish** | ALL | ⏳ Pending |
 | | Interactive Map: Neighborhoods, Districts, Zip codes | FE | ⏳ Pending |
 | | LLM Chatbot - RAG + user context | FE | ⏳ Pending |

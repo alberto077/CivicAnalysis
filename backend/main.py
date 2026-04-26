@@ -7,7 +7,7 @@ import logging
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
 from db import engine
-from schema import DocumentChunk, PolicyDocument, Politician
+from schema import District, DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
 from llm_engine import LLMEngine
 
@@ -429,6 +429,14 @@ async def get_politicians(
             return "Independent"
         return "Moderate"
 
+    # Map politician role -> District.jurisdiction so we can join geography in.
+    # Only Council Members are populated today; other roles fall through with empty zips/neighborhoods.
+    role_to_jurisdiction = {
+        "Council Member": "NYC Council",
+        "State Senator": "NYS Senate",
+        "Assembly Member": "NYS Assembly",
+    }
+
     try:
         with Session(engine) as session:
             query = select(Politician)
@@ -442,11 +450,21 @@ async def get_politicians(
 
             rows = session.exec(query.order_by(Politician.full_name.asc())).all()
 
+            districts = session.exec(select(District)).all()
+            district_by_key = {(d.district_number, d.jurisdiction): d for d in districts}
+
             payload = []
             for p in rows:
                 computed_stance = infer_stance(p.party)
                 if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
                     continue
+
+                jurisdiction = role_to_jurisdiction.get(p.role or "")
+                district = (
+                    district_by_key.get((p.district_number, jurisdiction))
+                    if (p.district_number and jurisdiction)
+                    else None
+                )
 
                 payload.append(
                     {
@@ -459,6 +477,8 @@ async def get_politicians(
                         "political_stance": computed_stance,
                         "bio_url": p.bio_url,
                         "term_end": p.term_end.isoformat() if p.term_end else None,
+                        "zip_codes": district.zip_codes if district else [],
+                        "neighborhoods": district.neighborhoods if district else [],
                         "data_source": "live_database",
                     }
                 )
@@ -473,7 +493,9 @@ async def get_politicians(
                     "party",
                     "political_stance",
                     "bio_url",
-                    "term_end"
+                    "term_end",
+                    "zip_codes",
+                    "neighborhoods",
                 ],
             }
     except Exception as e:
@@ -558,20 +580,49 @@ async def get_districts_map():
         data = json.load(f)
     return data
 
+@app.get("/api/neighborhoods/map")
+async def get_neighborhoods_map():
+    import json
+    import os
+
+    file_path = os.path.join(os.path.dirname(__file__), "neighborhoods.geojson")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Neighborhood GeoJSON not found.")
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
 @app.get("/api/districts")
 async def get_districts():
     try:
         with Session(engine) as session:
-            rows = session.exec(select(Politician).where(Politician.role == "Council Member")).all()
-            districts = []
-            for p in rows:
-                if not p.district_number: continue
-                districts.append({
-                    "id": int(p.district_number),
-                    "name": f"District {p.district_number} ({p.location_borough})",
-                    "rep": p.full_name,
-                    "issues": ["Infrastructure", "Policy"]
+            districts = session.exec(
+                select(District).where(District.jurisdiction == "NYC Council")
+            ).all()
+            reps = session.exec(
+                select(Politician).where(Politician.role == "Council Member")
+            ).all()
+            rep_by_district = {p.district_number: p for p in reps if p.district_number}
+
+            out: List[Dict] = []
+            for d in districts:
+                if not d.district_number or not d.district_number.isdigit():
+                    continue
+                rep = rep_by_district.get(d.district_number)
+                borough = d.borough or (rep.location_borough if rep else None)
+                out.append({
+                    "id": int(d.district_number),
+                    "district_number": d.district_number,
+                    "jurisdiction": d.jurisdiction,
+                    "name": f"District {d.district_number}" + (f" ({borough})" if borough else ""),
+                    "borough": borough,
+                    "rep": rep.full_name if rep else None,
+                    "zip_codes": d.zip_codes or [],
+                    "neighborhoods": d.neighborhoods or [],
+                    "issues": [],
                 })
-            return {"districts": sorted(districts, key=lambda x: x["id"])}
-    except:
+            return {"districts": sorted(out, key=lambda x: x["id"])}
+    except Exception as e:
+        logger.warning(f"/api/districts failed: {e}")
         return {"districts": []}

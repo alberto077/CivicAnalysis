@@ -32,12 +32,8 @@ export async function getDistricts(): Promise<District[]> {
     const data = await res.json();
     return data.districts || [];
   } catch (e) {
-    console.warn("Using mock district data fallback", e);
-    return [
-        { id: 26, name: "LIC, Sunnyside, Woodside", rep: "Julie Won", issues: ["Housing", "Transit"], zip_codes: ["11101", "11104"] },
-        { id: 47, name: "Coney Island, Bensonhurst", rep: "Justin Brannan", issues: ["Education", "Environment"], zip_codes: ["11209", "11228"] },
-        { id: 19, name: "Bayside, Whitestone", rep: "Vickie Paladino", issues: ["Public Safety", "Zoning"], zip_codes: ["11357", "11358"] },
-    ];
+    console.warn("Failed to fetch districts", e);
+    return [];
   }
 }
 
@@ -382,29 +378,19 @@ export async function getPoliticians(filters?: {
   const enriched = livePoliticians.map((p, index) => {
       const stances = ["Progressive", "Moderate Democrat", "Liberal", "Moderate", "Conservative"];
       const parties = ["Democrat", "Democrat", "Republican", "Working Families", "Democrat"];
-      
-      const stance = p.political_stance && p.political_stance !== "Moderate" 
-         ? p.political_stance 
+
+      const stance = p.political_stance && p.political_stance !== "Moderate"
+         ? p.political_stance
          : stances[index % stances.length];
-      
+
       const party = p.party && p.party.trim() !== "Unknown" && p.party.trim() !== ""
          ? p.party
          : parties[index % parties.length];
-         
-      // Mock neighborhoods for searchability based on borough
-      const neighborhoodMap: Record<string, string[]> = {
-         "Manhattan": ["Harlem", "Upper West Side", "Chelsea", "Lower East Side", "Midtown"],
-         "Brooklyn": ["Williamsburg", "Bensonhurst", "Park Slope", "Bushwick", "Bay Ridge"],
-         "Queens": ["Astoria", "Flushing", "Jamaica", "Long Island City", "Bayside"],
-         "Bronx": ["Riverdale", "Mott Haven", "Pelham Bay", "Fordham"],
-         "Staten Island": ["St. George", "Tottenville", "New Dorp"]
-      };
 
       return {
           ...p,
           political_stance: stance,
           party: party,
-          neighborhoods: neighborhoodMap[p.borough] || []
       };
   });
 

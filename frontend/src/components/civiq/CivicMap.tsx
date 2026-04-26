@@ -57,12 +57,12 @@ export function CivicMap({
     const found = districts.find(d => d.id === selectedDistrictId);
     if (found) return found;
 
-    // Dynamic fallback for districts not in the mock database
+    // Fallback when a clicked district hasn't been loaded from the API yet
     return {
       id: selectedDistrictId,
       name: `NYC Council District ${selectedDistrictId}`,
       rep: "Council Member",
-      issues: ["Local Development", "Community Issues"],
+      issues: [],
       zip_codes: []
     } as District;
   }, [districts, selectedDistrictId]);
@@ -285,16 +285,18 @@ export function CivicMap({
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-100 pt-6">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-4">Focus Areas</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDistrict.issues.map(issue => (
-                        <span key={issue} className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-600">
-                          {issue}
-                        </span>
-                      ))}
+                  {selectedDistrict.issues.length > 0 && (
+                    <div className="border-t border-slate-100 pt-6">
+                      <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-4">Focus Areas</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedDistrict.issues.map(issue => (
+                          <span key={issue} className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-600">
+                            {issue}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               ) : (
                 <div className="bg-slate-100/50 rounded-[2rem] border-2 border-dashed border-slate-200 p-12 text-center h-[400px] flex flex-col items-center justify-center">
