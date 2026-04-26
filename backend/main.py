@@ -137,6 +137,35 @@ def _normalize_chat_messages(
     return out or None
 
 
+MAX_LOCATION_TERMS = 3
+
+
+def _derive_location_terms(demographics: Dict[str, Optional[str]]) -> List[str]:
+    """Extract location terms already present in the demographics dict.
+
+    Pure: no DB access. Returns at most MAX_LOCATION_TERMS terms. Callers can
+    expand further (e.g. ZIP -> districts/neighborhoods) and re-cap.
+    """
+    if not demographics:
+        return []
+    terms: List[str] = []
+    seen: set = set()
+    for key in ("borough", "community_board"):
+        raw = demographics.get(key)
+        if not raw:
+            continue
+        value = raw.strip()
+        if not value:
+            continue
+        if value.lower() in seen:
+            continue
+        seen.add(value.lower())
+        terms.append(value)
+        if len(terms) >= MAX_LOCATION_TERMS:
+            break
+    return terms
+
+
 def _retrieval_query_from_request(request: ChatRequest) -> str:
     """Embed using recent user turns so follow-ups keep topical context."""
     if request.messages:
