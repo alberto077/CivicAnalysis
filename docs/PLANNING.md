@@ -330,7 +330,7 @@ CivicAnalysis/
 | **May 01** | **Interactive Map & Chatbot Polish** | ALL | ⏳ Pending |
 | | Interactive Map: Neighborhoods, Districts, Zip codes | FE | ⏳ Pending |
 | | LLM Chatbot - RAG + user context | FE | ⏳ Pending |
-| | [STRETCH] Error handling & Rate limiting for public demo | BE | ⏳ Pending |
+| | [STRETCH] Error handling & Rate limiting for public demo | BE | ✅ |
 | | [STRETCH] Voyage AI Reranker integration | ML | ⏳ Pending |
 | | [STRETCH] Extensive WCAG AAA Accessibility Overhaul / Multi-language support | FE | ⏳ Pending |
 | **May 08** | **Working MVP end-to-end integration** | ALL | ⏳ Pending |
