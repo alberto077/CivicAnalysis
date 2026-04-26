@@ -295,25 +295,45 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     return context
 
 
-def get_db_context(query: str, top_k: int = 8) -> Tuple[List[Dict], str]:
+def get_db_context(
+    query: str,
+    top_k: int = 8,
+    demographics: Optional[Dict[str, Optional[str]]] = None,
+) -> Tuple[List[Dict], str]:
     """
     Embed the user query and run a pgvector cosine similarity search
     against DocumentChunk. Returns the top_k most relevant chunks
     joined with their parent PolicyDocument title, plus a retrieval tier:
     vector | lexical | recent | none.
+
+    When `demographics` is provided, the embedded query is augmented with up
+    to MAX_LOCATION_TERMS location terms (borough, neighborhoods derived from
+    ZIP) to bias retrieval toward locally-relevant chunks. The original query
+    is preserved for the lexical fallback.
     """
     normalized_query = query.strip()
     effective_top_k = max(6, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
-    query_embedding = get_query_embedding(normalized_query)
-    embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
-    logger.info(
-        "Query embedding generated dim=%s sample=%s",
-        embedding_dim,
-        query_embedding[:5] if isinstance(query_embedding, list) else [],
-    )
 
     with Session(engine) as session:
+        location_terms = _derive_location_terms(demographics or {})
+        location_terms = _expand_location_terms_with_zip(
+            session, location_terms, (demographics or {}).get("zip")
+        )
+        if location_terms:
+            embed_query = f"{normalized_query} {' '.join(location_terms)}".strip()
+            logger.info("Retrieval augmented terms=%s", len(location_terms))
+        else:
+            embed_query = normalized_query
+
+        query_embedding = get_query_embedding(embed_query)
+        embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
+        logger.info(
+            "Query embedding generated dim=%s sample=%s",
+            embedding_dim,
+            query_embedding[:5] if isinstance(query_embedding, list) else [],
+        )
+
         total_chunks = session.exec(select(func.count(DocumentChunk.id))).one()
         chunks_with_text = session.exec(
             select(func.count(DocumentChunk.id)).where(DocumentChunk.text_content.is_not(None))
@@ -447,7 +467,9 @@ async def chat_endpoint(request: ChatRequest):
 
     retrieval_q = _retrieval_query_from_request(request)
     try:
-        context_chunks, retrieval_tier = get_db_context(retrieval_q)
+        context_chunks, retrieval_tier = get_db_context(
+            retrieval_q, demographics=request.demographics
+        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
 
