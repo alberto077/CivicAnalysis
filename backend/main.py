@@ -231,15 +231,19 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     return context
 
 
-def get_db_context(query: str, top_k: int = 8) -> Tuple[List[Dict], str]:
+def get_db_context(query: str, top_k: int = 5) -> Tuple[List[Dict], str]:
     """
     Embed the user query and run a pgvector cosine similarity search
     against DocumentChunk. Returns the top_k most relevant chunks
     joined with their parent PolicyDocument title, plus a retrieval tier:
     vector | lexical | recent | none.
+
+    Default top_k=5 is tuned to keep token usage under Groq's 6K TPM ceiling.
+    Each chunk is expanded with neighbors via _expand_chunk_window, so the
+    LLM sees roughly 3x this many raw chunks of text.
     """
     normalized_query = query.strip()
-    effective_top_k = max(6, top_k)
+    effective_top_k = max(4, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
     query_embedding = get_query_embedding(normalized_query)
     embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
