@@ -28,6 +28,14 @@ function normalizeBorough(value?: string): string {
   return BOROUGH_CANONICAL[normalized] || value.trim();
 }
 
+function splitBoroughs(value?: string): string[] {
+  if (!value) return [];
+  return value
+    .split(/[\/,|]/)
+    .map((part) => normalizeBorough(part))
+    .filter((part) => part !== "All" && Boolean(part));
+}
+
 function compareDistricts(a: string, b: string) {
   const aNumber = Number(a);
   const bNumber = Number(b);
@@ -73,7 +81,12 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
           for (const borough of data.boroughs) {
             if (borough?.trim()) {
-              options.add(normalizeBorough(borough));
+              const parts = splitBoroughs(borough);
+              if (parts.length === 0) {
+                options.add(normalizeBorough(borough));
+              } else {
+                for (const part of parts) options.add(part);
+              }
             }
           }
 
@@ -133,7 +146,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     selectedLocation === "All"
       ? politicians
       : politicians.filter(
-          (p) => normalizeBorough(p.borough) === selectedLocation,
+          (p) => splitBoroughs(p.borough).includes(selectedLocation),
         );
 
   const districtOptions = [
