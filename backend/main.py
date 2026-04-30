@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 
 from sqlmodel import Session, select
-from sqlalchemy import func, inspect, or_
+from sqlalchemy import func, or_
 from db import engine
 from schema import District, DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
@@ -29,81 +29,6 @@ app.add_middleware(
 )
 
 llm = LLMEngine()
-
-FALLBACK_POLITICIANS = [
-    {
-        "id": None,
-        "name": "Julie Won",
-        "office": "City Council Member",
-        "borough": "Queens",
-        "district": "26",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/julie-won/",
-    },
-    {
-        "id": None,
-        "name": "Carlina Rivera",
-        "office": "City Council Member",
-        "borough": "Manhattan",
-        "district": "2",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/carlina-rivera/",
-    },
-    {
-        "id": None,
-        "name": "Justin Brannan",
-        "office": "City Council Member",
-        "borough": "Brooklyn",
-        "district": "47",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/justin-brannan/",
-    },
-    {
-        "id": None,
-        "name": "Gale A. Brewer",
-        "office": "City Council Member",
-        "borough": "Manhattan",
-        "district": "6",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/gale-a-brewer/",
-    },
-    {
-        "id": None,
-        "name": "Vickie Paladino",
-        "office": "City Council Member",
-        "borough": "Queens",
-        "district": "19",
-        "party": "Republican",
-        "bio_url": "https://council.nyc.gov/vickie-paladino/",
-    },
-    {
-        "id": None,
-        "name": "Rita Joseph",
-        "office": "City Council Member",
-        "borough": "Brooklyn",
-        "district": "40",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/rita-joseph/",
-    },
-    {
-        "id": None,
-        "name": "Kevin C. Riley",
-        "office": "City Council Member",
-        "borough": "Bronx",
-        "district": "12",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/kevin-c-riley/",
-    },
-    {
-        "id": None,
-        "name": "Kamillah Hanks",
-        "office": "City Council Member",
-        "borough": "Staten Island",
-        "district": "49",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/kamillah-hanks/",
-    },
-]
 
 
 class ChatMessagePayload(BaseModel):
@@ -158,15 +83,6 @@ def _has_meaningful_text(value: Optional[str]) -> bool:
     if not value:
         return False
     return bool(value.strip())
-
-
-def _table_columns(table_name: str) -> set[str]:
-    try:
-        inspector = inspect(engine)
-        return {c["name"] for c in inspector.get_columns(table_name)}
-    except Exception as e:
-        logger.warning("Unable to inspect table '%s': %s", table_name, e)
-        return set()
 
 
 def _expand_chunk_window(
@@ -447,24 +363,8 @@ async def get_politicians(
     }
 
     try:
-        politician_columns = _table_columns("politician")
-        has_district_table = bool(_table_columns("district"))
-
-        required_live_columns = {
-            "id",
-            "full_name",
-            "party",
-            "role",
-            "location_borough",
-            "district_number",
-            "bio_url",
-        }
-        if not required_live_columns.issubset(politician_columns):
-            missing = sorted(required_live_columns - politician_columns)
-            raise RuntimeError(f"politician table missing required columns: {missing}")
-
         with Session(engine) as session:
-            selected_politician_columns = [
+            selected_cols = [
                 "id",
                 "full_name",
                 "party",
@@ -473,9 +373,7 @@ async def get_politicians(
                 "district_number",
                 "bio_url",
             ]
-            query = select(
-                *[getattr(Politician, c) for c in selected_politician_columns]
-            )
+            query = select(*[getattr(Politician, c) for c in selected_cols])
             normalized_borough = (borough or "").strip().lower()
             normalized_stance = (stance or "").strip().lower()
 
@@ -486,49 +384,33 @@ async def get_politicians(
 
             rows = session.exec(query.order_by(Politician.full_name.asc())).all()
 
-            districts = []
-            if has_district_table:
-                try:
-                    districts = session.exec(select(District)).all()
-                except Exception as district_error:
-                    # Some deployments haven't run district table migrations yet.
-                    logger.warning(
-                        "District table unavailable; serving politicians without district geo: %s",
-                        district_error,
-                    )
+            districts = session.exec(select(District)).all()
             district_by_key = {(d.district_number, d.jurisdiction): d for d in districts}
 
             payload = []
             for p in rows:
-                row = dict(zip(selected_politician_columns, p))
-                politician_id = row.get("id")
-                full_name = row.get("full_name")
-                party = row.get("party")
-                role = row.get("role")
-                location_borough = row.get("location_borough")
-                district_number = row.get("district_number")
-                bio_url = row.get("bio_url")
-                computed_stance = infer_stance(party)
+                row = dict(zip(selected_cols, p))
+                computed_stance = infer_stance(row.get("party"))
                 if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
                     continue
 
-                jurisdiction = role_to_jurisdiction.get(role or "")
+                jurisdiction = role_to_jurisdiction.get((row.get("role") or ""))
                 district = (
-                    district_by_key.get((district_number, jurisdiction))
-                    if (district_number and jurisdiction)
+                    district_by_key.get((row.get("district_number"), jurisdiction))
+                    if (row.get("district_number") and jurisdiction)
                     else None
                 )
 
                 payload.append(
                     {
-                        "id": politician_id,
-                        "name": full_name,
-                        "office": role or "Representative",
-                        "borough": location_borough or "Unknown",
-                        "district": district_number,
-                        "party": party or "Unknown",
+                        "id": row.get("id"),
+                        "name": row.get("full_name"),
+                        "office": row.get("role") or "Representative",
+                        "borough": row.get("location_borough") or "Unknown",
+                        "district": row.get("district_number"),
+                        "party": row.get("party") or "Unknown",
                         "political_stance": computed_stance,
-                        "bio_url": bio_url,
+                        "bio_url": row.get("bio_url"),
                         "zip_codes": district.zip_codes if district else [],
                         "neighborhoods": district.neighborhoods if district else [],
                         "data_source": "live_database",
@@ -550,46 +432,6 @@ async def get_politicians(
                 ],
             }
     except Exception as e:
-        err = str(e)
-        if "UndefinedColumn" in err or "UndefinedTable" in err or "does not exist" in err:
-            logger.warning("Politicians schema mismatch; serving fallback data: %s", err)
-            normalized_borough = (borough or "").strip().lower()
-            normalized_stance = (stance or "").strip().lower()
-            payload = []
-            for p in FALLBACK_POLITICIANS:
-                computed_stance = infer_stance(p.get("party"))
-                fallback_borough = (p.get("borough") or "").strip().lower()
-                if normalized_borough and normalized_borough != "all" and fallback_borough != normalized_borough:
-                    continue
-                if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
-                    continue
-                payload.append(
-                    {
-                        **p,
-                        "office": p.get("office") or "Representative",
-                        "borough": p.get("borough") or "Unknown",
-                        "district": p.get("district"),
-                        "party": p.get("party") or "Unknown",
-                        "political_stance": computed_stance,
-                        "zip_codes": [],
-                        "neighborhoods": [],
-                        "data_source": "fallback_mock",
-                    }
-                )
-            return {
-                "politicians": payload,
-                "available_fields": [
-                    "name",
-                    "office",
-                    "borough",
-                    "district",
-                    "party",
-                    "political_stance",
-                    "bio_url",
-                    "zip_codes",
-                    "neighborhoods",
-                ],
-            }
         raise HTTPException(status_code=503, detail=f"Unable to load politicians: {e}")
 
 
@@ -637,44 +479,23 @@ async def get_politician_filters():
         return "Moderate"
 
     try:
-        politician_columns = _table_columns("politician")
-        if not {"location_borough", "party"}.issubset(politician_columns):
-            missing = sorted({"location_borough", "party"} - politician_columns)
-            raise RuntimeError(f"politician table missing filter columns: {missing}")
-
         with Session(engine) as session:
             rows = session.exec(
-                select(
-                    Politician.location_borough,
-                    Politician.party,
-                )
+                select(Politician.location_borough, Politician.party)
             ).all()
-            if rows:
-                boroughs = sorted(
-                    {
-                        location_borough.strip()
-                        for location_borough, _party in rows
-                        if location_borough and location_borough.strip()
-                    }
-                )
-                stances = sorted({infer_stance(party) for _location_borough, party in rows})
-            else:
-                boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
-                stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
+            boroughs = sorted(
+                {
+                    location_borough.strip()
+                    for location_borough, _party in rows
+                    if location_borough and location_borough.strip()
+                }
+            )
+            stances = sorted({infer_stance(party) for _location_borough, party in rows})
             return {
                 "boroughs": boroughs,
                 "stances": stances,
             }
     except Exception as e:
-        err = str(e)
-        if "UndefinedColumn" in err or "UndefinedTable" in err or "does not exist" in err:
-            logger.warning("Politician filters schema mismatch; serving fallback filters: %s", err)
-            boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
-            stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
-            return {
-                "boroughs": boroughs,
-                "stances": stances,
-            }
         raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")
 
 @app.get("/api/districts/map")
@@ -711,23 +532,31 @@ async def get_districts():
                 select(District).where(District.jurisdiction == "NYC Council")
             ).all()
             reps = session.exec(
-                select(Politician).where(Politician.role == "Council Member")
+                select(
+                    Politician.full_name,
+                    Politician.location_borough,
+                    Politician.district_number,
+                ).where(Politician.role == "Council Member")
             ).all()
-            rep_by_district = {p.district_number: p for p in reps if p.district_number}
+            rep_by_district = {
+                district_number: (full_name, location_borough)
+                for full_name, location_borough, district_number in reps
+                if district_number
+            }
 
             out: List[Dict] = []
             for d in districts:
                 if not d.district_number or not d.district_number.isdigit():
                     continue
                 rep = rep_by_district.get(d.district_number)
-                borough = d.borough or (rep.location_borough if rep else None)
+                borough = d.borough or (rep[1] if rep else None)
                 out.append({
                     "id": int(d.district_number),
                     "district_number": d.district_number,
                     "jurisdiction": d.jurisdiction,
                     "name": f"District {d.district_number}" + (f" ({borough})" if borough else ""),
                     "borough": borough,
-                    "rep": rep.full_name if rep else None,
+                    "rep": rep[0] if rep else None,
                     "zip_codes": d.zip_codes or [],
                     "neighborhoods": d.neighborhoods or [],
                     "issues": [],
