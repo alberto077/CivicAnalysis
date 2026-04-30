@@ -105,9 +105,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       setError(null);
 
       try {
-        const data = await getPoliticians({
-          borough: selectedLocation,
-        });
+        // Always fetch the full representative set once;
+        // borough/district filters are applied locally for consistent behavior.
+        const data = await getPoliticians();
 
         if (requestId === politicianRequestIdRef.current) {
           setPoliticians(data);
@@ -127,13 +127,20 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     }
 
     void loadPoliticiansForSelection();
-  }, [selectedLocation]);
+  }, []);
+
+  const boroughFilteredPoliticians =
+    selectedLocation === "All"
+      ? politicians
+      : politicians.filter(
+          (p) => normalizeBorough(p.borough) === selectedLocation,
+        );
 
   const districtOptions = [
     "All",
     ...Array.from(
       new Set(
-        politicians
+        boroughFilteredPoliticians
           .map((p) => p.district?.trim())
           .filter((district): district is string => Boolean(district)),
       ),
@@ -142,8 +149,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
   const filteredPoliticians =
     selectedDistrict === "All"
-      ? politicians
-      : politicians.filter((p) => p.district?.trim() === selectedDistrict);
+      ? boroughFilteredPoliticians
+      : boroughFilteredPoliticians.filter(
+          (p) => p.district?.trim() === selectedDistrict,
+        );
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -254,7 +263,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
                     <p className="text-sm font-medium text-[var(--muted)]">
                       {p.office}
-                      {p.district ? `, District ${p.district}` : ""}
                     </p>
                   </div>
 
@@ -286,7 +294,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     </p>
 
                     <p className="text-[13px] leading-snug text-[var(--foreground)]">
-                      {p.district ? `District ${p.district}` : "Not listed"}
+                      {p.district ? p.district : "Not listed"}
                     </p>
                   </div>
 

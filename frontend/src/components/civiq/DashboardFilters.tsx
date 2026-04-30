@@ -1,8 +1,29 @@
 "use client";
+import {
+  Building2,
+  BusFront,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  Leaf,
+  Scale,
+  Shield,
+} from "lucide-react";
 
 const POLICY_AREAS = ["All", "Housing", "Education", "Policing", "Transit", "Environment", "Health", "Immigration"];
 const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "Current Session", "All Time"];
 const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+
+const AREA_ICONS = {
+  All: Building2,
+  Housing: Home,
+  Education: GraduationCap,
+  Policing: Shield,
+  Transit: BusFront,
+  Environment: Leaf,
+  Health: HeartPulse,
+  Immigration: Scale,
+} as const;
 
 export function DashboardFilters({
   selectedArea, setSelectedArea,
@@ -40,25 +61,29 @@ export function DashboardFilters({
               <input type="checkbox" className="hidden" checked={isPersonalized} onChange={(e) => setIsPersonalized(e.target.checked)} />
             </label>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
             {POLICY_AREAS.map(area => (
               <button
                 key={area}
                 type="button"
                 onClick={() => setSelectedArea(area)}
-                className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 ${
+                className={`filter-pill inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-[13px] font-medium ${
                   selectedArea === area
-                    ? "bg-[var(--accent)] text-white shadow-lg"
-                    : "bg-white/50 text-[var(--foreground)] hover:bg-white border border-[var(--border)]"
+                    ? "filter-pill-active border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white"
+                    : "border-[var(--border)] bg-white/50 text-[var(--foreground)] hover:bg-white"
                 }`}
               >
+                {(() => {
+                  const Icon = AREA_ICONS[area as keyof typeof AREA_ICONS];
+                  return <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />;
+                })()}
                 {area}
               </button>
             ))}
             <button
               type="button"
               onClick={onEditProfile}
-              className="ml-auto shrink-0 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              className="ml-auto shrink-0 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition duration-300 hover:translate-y-[-1px] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             >
               Edit profile
             </button>

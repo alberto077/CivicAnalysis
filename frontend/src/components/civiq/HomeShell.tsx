@@ -2,7 +2,6 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "@/components/civiq/Header";
-import { Hero } from "@/components/civiq/Hero";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
@@ -23,6 +22,24 @@ const DashboardFilters = dynamic(
       <div className="w-full mb-2 sm:mb-4" aria-hidden>
         <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40" />
       </div>
+    ),
+  },
+);
+
+const Hero = dynamic(
+  () => import("@/components/civiq/Hero").then((mod) => mod.Hero),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16" aria-hidden>
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
+          <div>
+            <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24" />
+            <div className="mt-6 h-6 w-3/4 animate-pulse rounded-lg bg-slate-200/80 sm:h-7" />
+            <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl border border-[var(--border)] bg-white/65 sm:h-24" />
+          </div>
+        </div>
+      </section>
     ),
   },
 );
@@ -193,7 +210,7 @@ export function HomeShell() {
           onSearch={() => handleSearch(query)}
         />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-8">
+        <div className="mx-auto mt-2 max-w-7xl px-4 sm:mt-4 sm:px-6 lg:px-8">
           <DashboardFilters
             selectedArea={selectedArea}
             setSelectedArea={setSelectedArea}
