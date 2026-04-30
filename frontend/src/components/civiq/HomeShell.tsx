@@ -1,19 +1,48 @@
 "use client";
-import { ChatPanel } from "@/components/civiq/ChatPanel";
-import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "@/components/civiq/Header";
 import { Hero } from "@/components/civiq/Hero";
-import { PolicyBriefingPanel } from "@/components/civiq/PolicyBriefingPanel";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
-import { DashboardFilters } from "@/components/civiq/DashboardFilters";
+import { SettingsModal } from "@/components/civiq/SettingsModal";
 import { useProfile } from "@/lib/useProfile";
 import {
   checkHealth,
   sendChat,
   type PolicyResponse,
 } from "@/lib/api";
+
+const DashboardFilters = dynamic(
+  () =>
+    import("@/components/civiq/DashboardFilters").then((mod) => mod.DashboardFilters),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full mb-2 sm:mb-4" aria-hidden>
+        <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40" />
+      </div>
+    ),
+  },
+);
+
+/** Client-only: avoids RSC/cache drift vs live bundle (hydration mismatches on empty/loading markup). */
+const PolicyBriefingPanel = dynamic(
+  () =>
+    import("@/components/civiq/PolicyBriefingPanel").then((mod) => mod.PolicyBriefingPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-hidden>
+        <div className="mt-10 h-11 w-64 max-w-[80%] animate-pulse rounded-xl bg-slate-200/90" />
+        <div className="mt-10 overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl sm:p-12">
+          <div className="min-h-[280px] animate-pulse rounded-2xl bg-slate-100/90" />
+        </div>
+      </section>
+    ),
+  },
+);
 
 
 
@@ -32,6 +61,7 @@ export function HomeShell() {
 
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   // Show onboarding on first load if profile doesn't exist
   useEffect(() => {
@@ -42,7 +72,7 @@ export function HomeShell() {
     }
   }, [isLoaded, profile, showOnboarding]);
 
-  const handleSearch = useCallback(async (searchQuery = query) => {
+  const handleSearch = useCallback(async (searchQuery: string) => {
     const q = searchQuery.trim();
     if (!q) return;
 
@@ -115,14 +145,17 @@ export function HomeShell() {
     } finally {
       setLoading(false);
     }
-  }, [query, selectedArea, selectedLocation, selectedTime, isPersonalized, profile]);
+  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile]);
 
-  // Auto-refetch if filters change AFTER an initial search
+  const lastBriefingQueryRef = useRef(lastBriefingQuery);
+  lastBriefingQueryRef.current = lastBriefingQuery;
+
+  // Re-run the last successful briefing when dashboard filters / profile change — not when the hero search box text changes
   useEffect(() => {
-    if (lastBriefingQuery) {
-      void handleSearch(lastBriefingQuery);
-    }
-  }, [lastBriefingQuery, handleSearch]);
+    const q = lastBriefingQueryRef.current.trim();
+    if (!q) return;
+    void handleSearch(q);
+  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile, handleSearch]);
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
@@ -157,11 +190,30 @@ export function HomeShell() {
           query={query}
           onQueryChange={setQuery}
           loading={loading}
-          onSearch={handleSearch}
+          onSearch={() => handleSearch(query)}
         />
 
-        {/* 1. Policy Briefing (Search Results) - Appears immediately after Hero */}
-        <div id="results" className="scroll-mt-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-8">
+          <DashboardFilters
+            selectedArea={selectedArea}
+            setSelectedArea={setSelectedArea}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+            selectedTime={selectedTime}
+            setSelectedTime={setSelectedTime}
+            isPersonalized={isPersonalized}
+            setIsPersonalized={setIsPersonalized}
+            onEditProfile={() => setShowEditProfile(true)}
+          />
+        </div>
+
+        <SettingsModal
+          isOpen={showEditProfile}
+          onClose={() => setShowEditProfile(false)}
+        />
+
+        {/* 1. Policy Briefing (Search Results) */}
+        <div id="results" className="scroll-mt-20 mt-6 sm:mt-8">
           <PolicyBriefingPanel
             loading={loading}
             error={error}
@@ -170,7 +222,7 @@ export function HomeShell() {
           />
         </div>
 
-        {/* 2. Dashboard Section - Filters + Feed */}
+        {/* 2. Dashboard feed */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
           <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
             Live City Dashboard
@@ -178,19 +230,8 @@ export function HomeShell() {
           <p className="mt-2 text-[var(--muted)]">
             Explore recent policy updates, meeting transcripts, and official city actions.
           </p>
-          
-          <DashboardFilters 
-            selectedArea={selectedArea} 
-            setSelectedArea={setSelectedArea} 
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            selectedTime={selectedTime}
-            setSelectedTime={setSelectedTime}
-            isPersonalized={isPersonalized}
-            setIsPersonalized={setIsPersonalized}
-          />
 
-          <div id="updates" className="-mt-16">
+          <div id="updates" className="mt-8">
             <RecentUpdates 
               selectedArea={selectedArea} 
               selectedLocation={selectedLocation} 

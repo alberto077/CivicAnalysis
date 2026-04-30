@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, type HTMLMotionProps } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -11,12 +11,26 @@ type MotionRevealProps = {
   delay?: number;
 } & Omit<HTMLMotionProps<"div">, "children" | "initial" | "animate">;
 
+/**
+ * Framer Motion applies different initial props on the server vs client, which breaks hydration.
+ * We render a static div for SSR + the first client pass, then swap to motion.div after mount.
+ */
 export function MotionReveal({
   children,
   className = "",
   delay = 0,
   ...rest
 }: MotionRevealProps) {
+  const [motionReady, setMotionReady] = useState(false);
+
+  useEffect(() => {
+    setMotionReady(true);
+  }, []);
+
+  if (!motionReady) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       className={className}

@@ -127,9 +127,10 @@ body {
 .glass-card-strong {
   background: linear-gradient(
     165deg,
-    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 1) 0%,
     rgba(255, 255, 255, 0.58) 100%
   );
+  background-color: var(--background);
   backdrop-filter: blur(28px) saturate(150%);
   -webkit-backdrop-filter: blur(28px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.95);

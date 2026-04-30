@@ -52,7 +52,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
         <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-[var(--border)] shrink-0 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-sans text-xl font-bold text-[var(--foreground)] tracking-tight">Settings</h2>
+              <h2 className="font-sans text-xl font-bold text-[var(--foreground)] tracking-tight">Edit profile</h2>
               <p className="text-xs text-[var(--muted)] mt-1">Configure your personalized assistant details.</p>
             </div>
             <button onClick={onClose} className="text-[var(--muted)] hover:text-black font-bold p-2 text-xl">&times;</button>
