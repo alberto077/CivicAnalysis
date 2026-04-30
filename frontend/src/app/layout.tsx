@@ -45,7 +45,7 @@ export default function RootLayout({
         />
       </head>
 
-      <body className="flex min-h-full flex-col">
+      <body suppressHydrationWarning className="flex min-h-full flex-col">
         {children}
         <FloatingChatBot />
       </body>

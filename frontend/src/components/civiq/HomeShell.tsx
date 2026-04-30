@@ -181,10 +181,6 @@ export function HomeShell() {
         aria-hidden
       />
       <div
-        className="ambient-orb top-[28%] -right-24 h-80 w-80 bg-[rgba(230,57,70,0.12)]"
-        aria-hidden
-      />
-      <div
         className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)]"
         aria-hidden
       />
