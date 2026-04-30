@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 
 from sqlmodel import Session, select
-from sqlalchemy import func, or_
+from sqlalchemy import func, inspect, or_
 from db import engine
 from schema import District, DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
@@ -158,6 +158,15 @@ def _has_meaningful_text(value: Optional[str]) -> bool:
     if not value:
         return False
     return bool(value.strip())
+
+
+def _table_columns(table_name: str) -> set[str]:
+    try:
+        inspector = inspect(engine)
+        return {c["name"] for c in inspector.get_columns(table_name)}
+    except Exception as e:
+        logger.warning("Unable to inspect table '%s': %s", table_name, e)
+        return set()
 
 
 def _expand_chunk_window(
@@ -438,8 +447,35 @@ async def get_politicians(
     }
 
     try:
+        politician_columns = _table_columns("politician")
+        has_district_table = bool(_table_columns("district"))
+
+        required_live_columns = {
+            "id",
+            "full_name",
+            "party",
+            "role",
+            "location_borough",
+            "district_number",
+            "bio_url",
+        }
+        if not required_live_columns.issubset(politician_columns):
+            missing = sorted(required_live_columns - politician_columns)
+            raise RuntimeError(f"politician table missing required columns: {missing}")
+
         with Session(engine) as session:
-            query = select(Politician)
+            selected_politician_columns = [
+                "id",
+                "full_name",
+                "party",
+                "role",
+                "location_borough",
+                "district_number",
+                "bio_url",
+            ]
+            query = select(
+                *[getattr(Politician, c) for c in selected_politician_columns]
+            )
             normalized_borough = (borough or "").strip().lower()
             normalized_stance = (stance or "").strip().lower()
 
@@ -450,33 +486,49 @@ async def get_politicians(
 
             rows = session.exec(query.order_by(Politician.full_name.asc())).all()
 
-            districts = session.exec(select(District)).all()
+            districts = []
+            if has_district_table:
+                try:
+                    districts = session.exec(select(District)).all()
+                except Exception as district_error:
+                    # Some deployments haven't run district table migrations yet.
+                    logger.warning(
+                        "District table unavailable; serving politicians without district geo: %s",
+                        district_error,
+                    )
             district_by_key = {(d.district_number, d.jurisdiction): d for d in districts}
 
             payload = []
             for p in rows:
-                computed_stance = infer_stance(p.party)
+                row = dict(zip(selected_politician_columns, p))
+                politician_id = row.get("id")
+                full_name = row.get("full_name")
+                party = row.get("party")
+                role = row.get("role")
+                location_borough = row.get("location_borough")
+                district_number = row.get("district_number")
+                bio_url = row.get("bio_url")
+                computed_stance = infer_stance(party)
                 if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
                     continue
 
-                jurisdiction = role_to_jurisdiction.get(p.role or "")
+                jurisdiction = role_to_jurisdiction.get(role or "")
                 district = (
-                    district_by_key.get((p.district_number, jurisdiction))
-                    if (p.district_number and jurisdiction)
+                    district_by_key.get((district_number, jurisdiction))
+                    if (district_number and jurisdiction)
                     else None
                 )
 
                 payload.append(
                     {
-                        "id": p.id,
-                        "name": p.full_name,
-                        "office": p.role or "Representative",
-                        "borough": p.location_borough or "Unknown",
-                        "district": p.district_number,
-                        "party": p.party or "Unknown",
+                        "id": politician_id,
+                        "name": full_name,
+                        "office": role or "Representative",
+                        "borough": location_borough or "Unknown",
+                        "district": district_number,
+                        "party": party or "Unknown",
                         "political_stance": computed_stance,
-                        "bio_url": p.bio_url,
-                        "term_end": p.term_end.isoformat() if p.term_end else None,
+                        "bio_url": bio_url,
                         "zip_codes": district.zip_codes if district else [],
                         "neighborhoods": district.neighborhoods if district else [],
                         "data_source": "live_database",
@@ -493,12 +545,51 @@ async def get_politicians(
                     "party",
                     "political_stance",
                     "bio_url",
-                    "term_end",
                     "zip_codes",
                     "neighborhoods",
                 ],
             }
     except Exception as e:
+        err = str(e)
+        if "UndefinedColumn" in err or "UndefinedTable" in err or "does not exist" in err:
+            logger.warning("Politicians schema mismatch; serving fallback data: %s", err)
+            normalized_borough = (borough or "").strip().lower()
+            normalized_stance = (stance or "").strip().lower()
+            payload = []
+            for p in FALLBACK_POLITICIANS:
+                computed_stance = infer_stance(p.get("party"))
+                fallback_borough = (p.get("borough") or "").strip().lower()
+                if normalized_borough and normalized_borough != "all" and fallback_borough != normalized_borough:
+                    continue
+                if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
+                    continue
+                payload.append(
+                    {
+                        **p,
+                        "office": p.get("office") or "Representative",
+                        "borough": p.get("borough") or "Unknown",
+                        "district": p.get("district"),
+                        "party": p.get("party") or "Unknown",
+                        "political_stance": computed_stance,
+                        "zip_codes": [],
+                        "neighborhoods": [],
+                        "data_source": "fallback_mock",
+                    }
+                )
+            return {
+                "politicians": payload,
+                "available_fields": [
+                    "name",
+                    "office",
+                    "borough",
+                    "district",
+                    "party",
+                    "political_stance",
+                    "bio_url",
+                    "zip_codes",
+                    "neighborhoods",
+                ],
+            }
         raise HTTPException(status_code=503, detail=f"Unable to load politicians: {e}")
 
 
@@ -546,17 +637,27 @@ async def get_politician_filters():
         return "Moderate"
 
     try:
+        politician_columns = _table_columns("politician")
+        if not {"location_borough", "party"}.issubset(politician_columns):
+            missing = sorted({"location_borough", "party"} - politician_columns)
+            raise RuntimeError(f"politician table missing filter columns: {missing}")
+
         with Session(engine) as session:
-            rows = session.exec(select(Politician)).all()
+            rows = session.exec(
+                select(
+                    Politician.location_borough,
+                    Politician.party,
+                )
+            ).all()
             if rows:
                 boroughs = sorted(
                     {
-                        p.location_borough.strip()
-                        for p in rows
-                        if p.location_borough and p.location_borough.strip()
+                        location_borough.strip()
+                        for location_borough, _party in rows
+                        if location_borough and location_borough.strip()
                     }
                 )
-                stances = sorted({infer_stance(p.party) for p in rows})
+                stances = sorted({infer_stance(party) for _location_borough, party in rows})
             else:
                 boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
                 stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
@@ -565,6 +666,15 @@ async def get_politician_filters():
                 "stances": stances,
             }
     except Exception as e:
+        err = str(e)
+        if "UndefinedColumn" in err or "UndefinedTable" in err or "does not exist" in err:
+            logger.warning("Politician filters schema mismatch; serving fallback filters: %s", err)
+            boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
+            stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
+            return {
+                "boroughs": boroughs,
+                "stances": stances,
+            }
         raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")
 
 @app.get("/api/districts/map")
