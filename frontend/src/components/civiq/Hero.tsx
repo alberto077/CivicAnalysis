@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "framer-motion";
 
 function SkylineDecor({ className }: { className?: string }) {
   return (
@@ -50,20 +51,44 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
         className="pointer-events-none absolute -top-28 left-1/2 h-[480px] w-[min(920px,120vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(230,57,70,0.08)_0%,rgba(26,54,93,0.05)_45%,transparent_70%)]"
         aria-hidden
       />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-10 h-[420px] bg-[linear-gradient(180deg,rgba(255,255,255,0.32)_0%,rgba(255,255,255,0)_100%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute right-[7%] top-[26%] h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(230,57,70,0.14)_0%,rgba(230,57,70,0)_70%)] blur-2xl"
+        aria-hidden
+      />
       <SkylineDecor className="text-[var(--accent)] opacity-20" />
       <SkylineDecor className="text-[var(--accent-mid)] opacity-[0.08] translate-x-4 translate-y-2" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-        <div>
-          <h1 className="font-sans mt-5 max-w-2xl text-[2.75rem] font-bold leading-[1.05] tracking-tight text-[var(--foreground)] sm:text-5xl md:text-6xl lg:text-[4.25rem]">
-            Understand Policies That Affect <span className="hero-gradient-text">Your Neighborhood</span>
-          </h1>
-          <p className="font-serif mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted)] sm:text-xl">
+        <div className="lg:pr-4">
+          <motion.h1
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display mt-5 max-w-3xl text-[2.9rem] font-bold leading-[0.97] tracking-[-0.01em] text-[var(--foreground)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]"
+          >
+            Understand Policies That Shape{" "}
+            <span className="hero-gradient-text hero-wordmark-reflect" data-reflect="Your Neighborhood">
+              Your Neighborhood
+            </span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+            className="mt-6 max-w-2xl text-base leading-relaxed text-[var(--muted)]/80 sm:text-lg"
+          >
             Your AI-powered civic research assistant
-          </p>
+          </motion.p>
 
-          <form
-            className="mt-10 max-w-full lg:max-w-md"
+          <motion.form
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
+            className="mt-10 max-w-full lg:max-w-3xl"
             onSubmit={(e) => {
               e.preventDefault();
               void onSearch();
@@ -72,16 +97,16 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             <label htmlFor="location-search" className="sr-only">
               Ask about your neighborhood, local policies, budgets, or city decisions
             </label>
-            <div className="glass-card search-shell flex min-h-[3.75rem] items-center gap-3 rounded-2xl px-4 py-2 sm:gap-4 sm:px-5 sm:py-3 md:min-h-[4.25rem]">
+            <div className="glass-card search-shell command-shell group flex min-h-[5.3rem] items-center gap-3 rounded-[1.7rem] border border-white/80 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] px-5 py-3 shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:gap-4 sm:px-7 sm:py-4 md:min-h-[5.8rem]">
               <span className="text-[var(--muted)]" aria-hidden>
                 <svg
-                  width="22"
-                  height="22"
+                  width="26"
+                  height="26"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.65"
-                  className="opacity-65"
+                  className="opacity-75 transition-transform duration-300 group-focus-within:scale-105"
                 >
                   <circle cx="11" cy="11" r="7" />
                   <path d="M20 20l-4-4" strokeLinecap="round" />
@@ -93,19 +118,32 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
                 name="location"
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
-                placeholder="Ask about your neighborhood, local policies..."
+                placeholder="Ask about your Neighborhood"
                 disabled={loading}
-                className="font-sans focus-soft min-w-0 flex-1 border-0 bg-transparent py-2 text-base text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 sm:text-[17px]"
+                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-[1.1rem] text-[var(--foreground)] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 sm:text-[1.18rem]"
               />
               <button
                 type="submit"
                 disabled={loading || !query.trim()}
-                className="font-condensed btn-premium shrink-0 rounded-xl bg-[var(--accent)] px-5 py-3 text-[15px] tracking-wide uppercase font-semibold text-white disabled:pointer-events-none disabled:opacity-50 sm:px-6 sm:text-[16px]"
+                aria-label={loading ? "Loading briefing" : "Submit briefing request"}
+                className="command-submit shrink-0 rounded-[1.15rem] bg-[var(--accent-mid)] px-4 py-3 text-white shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-50 sm:px-5"
               >
-                {loading ? "Briefing…" : "Get briefing"}
+                <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <path d="M5 12h13" strokeLinecap="round" />
+                  <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </div>
-          </form>
+          </motion.form>
         </div>
 
         <div className="hidden lg:flex justify-end items-center drop-shadow-2xl opacity-95 hover:opacity-100 transition-opacity duration-500">

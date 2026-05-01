@@ -1,9 +1,10 @@
-# Backend (FastAPI + RAG) 
+# Backend (FastAPI + RAG)
 fastapi>=0.115.0
 uvicorn>=0.30.0
 python-dotenv>=1.0.0
 python-multipart>=0.0.9
 pydantic>=2.5.0
+slowapi>=0.1.9
 
 # Database (Neon Postgres + pgvector) 
 sqlmodel>=0.0.16

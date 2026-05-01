@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Tuple
 import logging
 
@@ -28,82 +31,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-llm = LLMEngine()
+# Per-IP rate limiter (in-memory; resets on process restart, fine for free-tier Render).
+# Uses X-Forwarded-For via get_remote_address so it works behind Render's proxy.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-FALLBACK_POLITICIANS = [
-    {
-        "id": None,
-        "name": "Julie Won",
-        "office": "City Council Member",
-        "borough": "Queens",
-        "district": "26",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/julie-won/",
-    },
-    {
-        "id": None,
-        "name": "Carlina Rivera",
-        "office": "City Council Member",
-        "borough": "Manhattan",
-        "district": "2",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/carlina-rivera/",
-    },
-    {
-        "id": None,
-        "name": "Justin Brannan",
-        "office": "City Council Member",
-        "borough": "Brooklyn",
-        "district": "47",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/justin-brannan/",
-    },
-    {
-        "id": None,
-        "name": "Gale A. Brewer",
-        "office": "City Council Member",
-        "borough": "Manhattan",
-        "district": "6",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/gale-a-brewer/",
-    },
-    {
-        "id": None,
-        "name": "Vickie Paladino",
-        "office": "City Council Member",
-        "borough": "Queens",
-        "district": "19",
-        "party": "Republican",
-        "bio_url": "https://council.nyc.gov/vickie-paladino/",
-    },
-    {
-        "id": None,
-        "name": "Rita Joseph",
-        "office": "City Council Member",
-        "borough": "Brooklyn",
-        "district": "40",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/rita-joseph/",
-    },
-    {
-        "id": None,
-        "name": "Kevin C. Riley",
-        "office": "City Council Member",
-        "borough": "Bronx",
-        "district": "12",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/kevin-c-riley/",
-    },
-    {
-        "id": None,
-        "name": "Kamillah Hanks",
-        "office": "City Council Member",
-        "borough": "Staten Island",
-        "district": "49",
-        "party": "Democrat",
-        "bio_url": "https://council.nyc.gov/kamillah-hanks/",
-    },
-]
+llm = LLMEngine()
 
 
 class ChatMessagePayload(BaseModel):
@@ -310,9 +244,13 @@ def get_db_context(
     to MAX_LOCATION_TERMS location terms (borough, neighborhoods derived from
     ZIP) to bias retrieval toward locally-relevant chunks. The original query
     is preserved for the lexical fallback.
+    
+    Default top_k=5 is tuned to keep token usage under Groq's 6K TPM ceiling.
+    Each chunk is expanded with neighbors via _expand_chunk_window, so the
+    LLM sees roughly 3x this many raw chunks of text.
     """
     normalized_query = query.strip()
-    effective_top_k = max(6, top_k)
+    effective_top_k = max(4, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
 
     with Session(engine) as session:
@@ -449,7 +387,8 @@ def build_retrieval_sources_payload(
 
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("10/minute")
+async def chat_endpoint(request: Request, payload: ChatRequest):
     """
     Core RAG endpoint.
     1. Runs pgvector similarity search against Neon.
@@ -458,17 +397,17 @@ async def chat_endpoint(request: ChatRequest):
     Optional `messages` (user/assistant turns) enables multi-turn; optional
     `session_preamble` is merged into the system prompt for plain responses.
     """
-    msg_list = _normalize_chat_messages(request.messages)
+    msg_list = _normalize_chat_messages(payload.messages)
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
             status_code=400,
             detail="When `messages` is provided, the last message must have role `user`.",
         )
 
-    retrieval_q = _retrieval_query_from_request(request)
+    retrieval_q = _retrieval_query_from_request(payload)
     try:
         context_chunks, retrieval_tier = get_db_context(
-            retrieval_q, demographics=request.demographics
+            retrieval_q, demographics=payload.demographics
         )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
@@ -480,16 +419,23 @@ async def chat_endpoint(request: ChatRequest):
         len(msg_list) if msg_list else 0,
     )
 
-    style = (request.response_style or "structured").strip().lower()
-    preamble = (request.session_preamble or "").strip() or None
+    style = (payload.response_style or "structured").strip().lower()
+    preamble = (payload.session_preamble or "").strip() or None
     response = llm.generate_response(
-        query=request.query,
-        demographics=request.demographics,
+        query=payload.query,
+        demographics=payload.demographics,
         context_chunks=context_chunks,
         response_style=style,
         messages=msg_list,
         session_preamble=preamble,
     )
+
+    if isinstance(response, dict) and str(response.get("error", "")).startswith("Error connecting to LLM"):
+        logger.warning("Upstream LLM unavailable: %s", response.get("error"))
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily busy. Please try again in a moment.",
+        )
 
     return {
         "reply": response,
@@ -534,7 +480,16 @@ async def get_politicians(
 
     try:
         with Session(engine) as session:
-            query = select(Politician)
+            selected_cols = [
+                "id",
+                "full_name",
+                "party",
+                "role",
+                "location_borough",
+                "district_number",
+                "bio_url",
+            ]
+            query = select(*[getattr(Politician, c) for c in selected_cols])
             normalized_borough = (borough or "").strip().lower()
             normalized_stance = (stance or "").strip().lower()
 
@@ -550,28 +505,28 @@ async def get_politicians(
 
             payload = []
             for p in rows:
-                computed_stance = infer_stance(p.party)
+                row = dict(zip(selected_cols, p))
+                computed_stance = infer_stance(row.get("party"))
                 if normalized_stance and normalized_stance != "all" and computed_stance.lower() != normalized_stance:
                     continue
 
-                jurisdiction = role_to_jurisdiction.get(p.role or "")
+                jurisdiction = role_to_jurisdiction.get((row.get("role") or ""))
                 district = (
-                    district_by_key.get((p.district_number, jurisdiction))
-                    if (p.district_number and jurisdiction)
+                    district_by_key.get((row.get("district_number"), jurisdiction))
+                    if (row.get("district_number") and jurisdiction)
                     else None
                 )
 
                 payload.append(
                     {
-                        "id": p.id,
-                        "name": p.full_name,
-                        "office": p.role or "Representative",
-                        "borough": p.location_borough or "Unknown",
-                        "district": p.district_number,
-                        "party": p.party or "Unknown",
+                        "id": row.get("id"),
+                        "name": row.get("full_name"),
+                        "office": row.get("role") or "Representative",
+                        "borough": row.get("location_borough") or "Unknown",
+                        "district": row.get("district_number"),
+                        "party": row.get("party") or "Unknown",
                         "political_stance": computed_stance,
-                        "bio_url": p.bio_url,
-                        "term_end": p.term_end.isoformat() if p.term_end else None,
+                        "bio_url": row.get("bio_url"),
                         "zip_codes": district.zip_codes if district else [],
                         "neighborhoods": district.neighborhoods if district else [],
                         "data_source": "live_database",
@@ -588,7 +543,6 @@ async def get_politicians(
                     "party",
                     "political_stance",
                     "bio_url",
-                    "term_end",
                     "zip_codes",
                     "neighborhoods",
                 ],
@@ -642,19 +596,17 @@ async def get_politician_filters():
 
     try:
         with Session(engine) as session:
-            rows = session.exec(select(Politician)).all()
-            if rows:
-                boroughs = sorted(
-                    {
-                        p.location_borough.strip()
-                        for p in rows
-                        if p.location_borough and p.location_borough.strip()
-                    }
-                )
-                stances = sorted({infer_stance(p.party) for p in rows})
-            else:
-                boroughs = sorted({p["borough"] for p in FALLBACK_POLITICIANS})
-                stances = sorted({infer_stance(p.get("party")) for p in FALLBACK_POLITICIANS})
+            rows = session.exec(
+                select(Politician.location_borough, Politician.party)
+            ).all()
+            boroughs = sorted(
+                {
+                    location_borough.strip()
+                    for location_borough, _party in rows
+                    if location_borough and location_borough.strip()
+                }
+            )
+            stances = sorted({infer_stance(party) for _location_borough, party in rows})
             return {
                 "boroughs": boroughs,
                 "stances": stances,
@@ -696,23 +648,31 @@ async def get_districts():
                 select(District).where(District.jurisdiction == "NYC Council")
             ).all()
             reps = session.exec(
-                select(Politician).where(Politician.role == "Council Member")
+                select(
+                    Politician.full_name,
+                    Politician.location_borough,
+                    Politician.district_number,
+                ).where(Politician.role == "Council Member")
             ).all()
-            rep_by_district = {p.district_number: p for p in reps if p.district_number}
+            rep_by_district = {
+                district_number: (full_name, location_borough)
+                for full_name, location_borough, district_number in reps
+                if district_number
+            }
 
             out: List[Dict] = []
             for d in districts:
                 if not d.district_number or not d.district_number.isdigit():
                     continue
                 rep = rep_by_district.get(d.district_number)
-                borough = d.borough or (rep.location_borough if rep else None)
+                borough = d.borough or (rep[1] if rep else None)
                 out.append({
                     "id": int(d.district_number),
                     "district_number": d.district_number,
                     "jurisdiction": d.jurisdiction,
                     "name": f"District {d.district_number}" + (f" ({borough})" if borough else ""),
                     "borough": borough,
-                    "rep": rep.full_name if rep else None,
+                    "rep": rep[0] if rep else None,
                     "zip_codes": d.zip_codes or [],
                     "neighborhoods": d.neighborhoods or [],
                     "issues": [],
