@@ -2,6 +2,7 @@ import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
 import { Database, FileText, Globe, Link2, Cpu, Zap, Layers, ShieldCheck, ExternalLink, Info } from "lucide-react";
+import { HeroKpiStrip } from "@/components/civiq/HeroKpiStrip";
 
 export default function DataSourcesPage() {
   const primarySources = [
@@ -126,6 +127,9 @@ export default function DataSourcesPage() {
                 Civic Spiegel is built on publicly available, primary data sources. We do not use third-party analysis; we go straight to the official record to power our RAG search engine.
               </p>
             </MotionReveal>
+
+            <HeroKpiStrip />
+
           </div>
         </div>
 
@@ -150,10 +154,10 @@ export default function DataSourcesPage() {
                           <h3 className="text-lg font-bold text-slate-900 mb-2">{source.name}</h3>
                           <p className="text-sm text-slate-500 leading-relaxed max-w-xl">{source.desc}</p>
                         </div>
-                        <a 
-                          href={source.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -182,10 +186,10 @@ export default function DataSourcesPage() {
                           <h3 className="text-lg font-bold text-slate-900 mb-2">{source.name}</h3>
                           <p className="text-sm text-slate-500 leading-relaxed max-w-xl">{source.desc}</p>
                         </div>
-                        <a 
-                          href={source.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-all"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -261,12 +265,12 @@ export default function DataSourcesPage() {
                 <p className="text-sm text-slate-500 mb-6">We use official shapefiles and lookup services to ensure your district representation is accurate.</p>
                 <div className="space-y-4">
                   <a href="https://nysboe.maps.arcgis.com/apps/instant/lookup/index.html?appid=0a08fa8c5ea2400d86ab65daa5aa4f0e" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all group">
-                       <span className="text-xs font-bold text-slate-700">NYS Board of Elections Map</span>
-                       <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-700">NYS Board of Elections Map</span>
+                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
                   </a>
                   <a href="https://www.ballotready.org/us/new-york" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all group">
-                       <span className="text-xs font-bold text-slate-700">BallotReady NY</span>
-                       <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-700">BallotReady NY</span>
+                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
                   </a>
                 </div>
               </div>
