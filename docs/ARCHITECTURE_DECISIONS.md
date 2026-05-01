@@ -151,3 +151,16 @@ Given the NYC/NYS civic domain (see `DOMAINS_AND_NUANCES.md`), our scraping prio
     * **Batching:** `FastEmbed` processes chunks in reliable batches (n=32) to prevent memory spikes on Github Actions.
     * **Raw Context:** Preserving verbatim text ensures precise keyword matching during semantic search.
 * **Current Status:** **[ACTIVE]** Integrated into `BaseScraper` and all production scrapers.
+
+---
+
+## 14. Chat Endpoint Resilience (Rate Limiting + Upstream Failures)
+**Decision:** Per-IP `slowapi` rate limit + reduced RAG context window + clean 503 on Groq SDK failures, with friendly client-side messages.
+* **The Problem:** Groq's free tier imposes two distinct limits — 30 requests/min (RPM) and **6,000 tokens/min (TPM)**. The TPM ceiling is the practical bottleneck: a single chat request bundles ~3-5K tokens of system prompt + RAG context + response, so ~1.5-2 requests/min saturates TPM. After that, the Groq SDK silently retries for 30+ seconds, leaking either a slow response or a malformed error string into the FE.
+* **The Solution:**
+    * **Incoming rate limit (`slowapi`):** `/api/chat` capped at 10 requests/min/IP via `get_remote_address` (works correctly under Render's proxy). Sized below Groq's 30 RPM ceiling — purely an abuse brake, not a TPM solution. Free-tier in-memory storage is acceptable on a single-instance Render deployment.
+    * **RAG context reduction:** `top_k` lowered from 8 → 5 in `get_db_context` (~37% token reduction). Roughly doubles sustainable chat throughput against the 6K TPM ceiling without measurably hurting answer quality.
+    * **Upstream failure surfacing:** When the Groq SDK exhausts its retries, `llm_engine` returns `{"error": "Error connecting to LLM..."}`. The chat endpoint detects this shape and converts it into a `503 Service Unavailable` with a user-facing message, instead of leaking the error string into the chat UI as a fake reply.
+    * **Frontend mapping:** A `friendlyChatError` helper in `frontend/src/lib/api.ts` maps 429 / 503 / 502 status codes to user-facing strings ("You're sending messages too quickly", "The AI service is temporarily busy", etc.), correctly handling slowapi's `{error: ...}` body shape that earlier code missed.
+* **Tradeoff:** Token-aware throttling (counting projected tokens before each request) would be more precise but materially more complex. Deferred until usage data shows it's worth the cost. The current design accepts that one large query can still exceed TPM on its own — fallback is the SDK's auto-retry with backoff.
+* **Current Status:** **[ACTIVE]** Wired on `/api/chat`; `/api/floating-chat` (Next.js BFF) inherits protection by proxying through the limited backend route.

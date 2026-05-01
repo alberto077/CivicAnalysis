@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Tuple
 import logging
 
@@ -27,6 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Per-IP rate limiter (in-memory; resets on process restart, fine for free-tier Render).
+# Uses X-Forwarded-For via get_remote_address so it works behind Render's proxy.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 llm = LLMEngine()
 
@@ -147,15 +156,19 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     return context
 
 
-def get_db_context(query: str, top_k: int = 8) -> Tuple[List[Dict], str]:
+def get_db_context(query: str, top_k: int = 5) -> Tuple[List[Dict], str]:
     """
     Embed the user query and run a pgvector cosine similarity search
     against DocumentChunk. Returns the top_k most relevant chunks
     joined with their parent PolicyDocument title, plus a retrieval tier:
     vector | lexical | recent | none.
+
+    Default top_k=5 is tuned to keep token usage under Groq's 6K TPM ceiling.
+    Each chunk is expanded with neighbors via _expand_chunk_window, so the
+    LLM sees roughly 3x this many raw chunks of text.
     """
     normalized_query = query.strip()
-    effective_top_k = max(6, top_k)
+    effective_top_k = max(4, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
     query_embedding = get_query_embedding(normalized_query)
     embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
@@ -281,7 +294,8 @@ def build_retrieval_sources_payload(
 
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("10/minute")
+async def chat_endpoint(request: Request, payload: ChatRequest):
     """
     Core RAG endpoint.
     1. Runs pgvector similarity search against Neon.
@@ -290,14 +304,14 @@ async def chat_endpoint(request: ChatRequest):
     Optional `messages` (user/assistant turns) enables multi-turn; optional
     `session_preamble` is merged into the system prompt for plain responses.
     """
-    msg_list = _normalize_chat_messages(request.messages)
+    msg_list = _normalize_chat_messages(payload.messages)
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
             status_code=400,
             detail="When `messages` is provided, the last message must have role `user`.",
         )
 
-    retrieval_q = _retrieval_query_from_request(request)
+    retrieval_q = _retrieval_query_from_request(payload)
     try:
         context_chunks, retrieval_tier = get_db_context(retrieval_q)
     except Exception as e:
@@ -310,16 +324,23 @@ async def chat_endpoint(request: ChatRequest):
         len(msg_list) if msg_list else 0,
     )
 
-    style = (request.response_style or "structured").strip().lower()
-    preamble = (request.session_preamble or "").strip() or None
+    style = (payload.response_style or "structured").strip().lower()
+    preamble = (payload.session_preamble or "").strip() or None
     response = llm.generate_response(
-        query=request.query,
-        demographics=request.demographics,
+        query=payload.query,
+        demographics=payload.demographics,
         context_chunks=context_chunks,
         response_style=style,
         messages=msg_list,
         session_preamble=preamble,
     )
+
+    if isinstance(response, dict) and str(response.get("error", "")).startswith("Error connecting to LLM"):
+        logger.warning("Upstream LLM unavailable: %s", response.get("error"))
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily busy. Please try again in a moment.",
+        )
 
     return {
         "reply": response,
