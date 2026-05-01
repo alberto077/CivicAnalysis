@@ -256,6 +256,28 @@ export default function DataSourcesPage() {
                       <p className="text-xs text-slate-400 leading-relaxed">Our RAG pipeline combines real legislative text with AI to answer complex queries.</p>
                     </div>
                   </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">2</div>
+                    <div>
+                      <p className="font-bold text-sm mb-1">OCR & Text Extraction</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">Scanned documents are converted to machine-readable text and structured formats.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">3</div>
+                    <div>
+                      <p className="font-bold text-sm mb-1">Vector Indexing</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">Content is chunked and indexed into our vector database for semantic search.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">4</div>
+                    <div>
+                      <p className="font-bold text-sm mb-1">AI-Augmented Retrieval</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">Our RAG pipeline combines real legislative text with AI to answer complex queries.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
