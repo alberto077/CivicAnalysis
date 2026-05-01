@@ -11,7 +11,6 @@ import {
   Download
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
 import { MotionReveal } from "./MotionReveal";
 import type { PolicyResponse } from "@/lib/api";
 
@@ -28,9 +27,6 @@ export function PolicyBriefingPanel({
   response,
   briefingQuery,
 }: PolicyBriefingPanelProps) {
-  const skylineGifSrc = "/skyline.gif";
-  const emptyStateRef = useRef<HTMLDivElement | null>(null);
-  const [shouldLoadSkyline, setShouldLoadSkyline] = useState(false);
   const showBriefing = Boolean(response && !loading);
   const safe = {
     at_a_glance: response?.at_a_glance ?? [],
@@ -60,24 +56,6 @@ export function PolicyBriefingPanel({
       Icon: ListChecks,
     },
   ] as const;
-
-  useEffect(() => {
-    if (loading || showBriefing || shouldLoadSkyline) return;
-    const target = emptyStateRef.current;
-    if (!target) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setShouldLoadSkyline(true);
-        observer.disconnect();
-      },
-      { threshold: 0.35 },
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [loading, showBriefing, shouldLoadSkyline]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -117,7 +95,7 @@ export function PolicyBriefingPanel({
       </MotionReveal>
 
       <MotionReveal className="mt-10">
-        <div className="glass-card-strong lift-card rounded-[3rem] p-8 sm:p-12 border border-white/60 bg-white/40 shadow-2xl backdrop-blur-2xl">
+        <div className="lift-card overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 sm:p-12 shadow-xl">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -126,9 +104,19 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex min-h-[400px] flex-col items-center justify-center gap-6 py-12 text-center"
+                className="flex min-h-[520px] flex-col items-center justify-center gap-6 py-12 text-center sm:min-h-[560px]"
               >
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent shadow-xl" />
+                <div className="relative h-80 w-80 max-w-[min(92vw,20rem)] overflow-hidden rounded-2xl sm:h-96 sm:w-96 sm:max-w-[min(92vw,24rem)] lg:h-[28rem] lg:w-[28rem] lg:max-w-[min(92vw,28rem)]">
+                  <Image
+                    src="/maggla.gif"
+                    alt="Loading briefing animation"
+                    fill
+                    sizes="(max-width: 640px) 92vw, (max-width: 1024px) 384px, 448px"
+                    className="object-contain"
+                    priority
+                    unoptimized
+                  />
+                </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-slate-900">
                     Generating Intelligent Briefing...
@@ -215,31 +203,13 @@ export function PolicyBriefingPanel({
             ) : (
               <motion.div
                 key="empty"
-                ref={emptyStateRef}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-center py-12"
-              >
-                {shouldLoadSkyline ? (
-                  <div className="relative h-[420px] w-full max-w-[1200px] md:h-[560px]">
-                    <Image
-                      src={skylineGifSrc}
-                      alt="Animated NYC Skyline"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 1200px"
-                      className="rounded-[2.5rem] object-cover shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] transition duration-700"
-                    />
-                  </div>
-                ) : (
-                  <div className="p-20 text-center border-4 border-dashed border-slate-100 rounded-[3rem]">
-                    <p className="text-2xl font-display font-bold text-slate-300">
-                      Generating Intelligent Briefing...
-                    </p>
-                  </div>
-                )}
-              </motion.div>
+                className="mx-auto min-h-[240px] w-full max-w-[1200px] py-12"
+                aria-hidden
+              />
             )}
           </AnimatePresence>
         </div>
