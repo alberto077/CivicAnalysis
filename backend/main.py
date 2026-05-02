@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Tuple
 import logging
 
@@ -27,6 +30,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Per-IP rate limiter (in-memory; resets on process restart, fine for free-tier Render).
+# Uses X-Forwarded-For via get_remote_address so it works behind Render's proxy.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 llm = LLMEngine()
 
@@ -60,6 +69,79 @@ def _normalize_chat_messages(
             continue
         out.append({"role": role, "content": content})
     return out or None
+
+
+MAX_LOCATION_TERMS = 3
+
+
+def _derive_location_terms(demographics: Dict[str, Optional[str]]) -> List[str]:
+    """Extract location terms already present in the demographics dict.
+
+    Pure: no DB access. Returns at most MAX_LOCATION_TERMS terms. Callers can
+    expand further (e.g. ZIP -> districts/neighborhoods) and re-cap.
+    """
+    if not demographics:
+        return []
+    terms: List[str] = []
+    seen: set = set()
+    for key in ("borough", "community_board"):
+        raw = demographics.get(key)
+        if not raw:
+            continue
+        value = raw.strip()
+        if not value:
+            continue
+        if value.lower() in seen:
+            continue
+        seen.add(value.lower())
+        terms.append(value)
+        if len(terms) >= MAX_LOCATION_TERMS:
+            break
+    return terms
+
+
+def _expand_location_terms_with_zip(
+    session: Session,
+    terms: List[str],
+    zip_code: Optional[str],
+) -> List[str]:
+    if not zip_code:
+        return terms
+    z = zip_code.strip()
+    if not (z.isdigit() and len(z) == 5):
+        return terms
+    if len(terms) >= MAX_LOCATION_TERMS:
+        return terms
+
+    seen = {t.lower() for t in terms}
+    out = list(terms)
+
+    districts = session.exec(select(District)).all()
+    matching = [d for d in districts if z in (d.zip_codes or [])]
+    if not matching:
+        return out
+
+    for d in matching:
+        if d.borough and d.borough.lower() not in seen:
+            out.append(d.borough)
+            seen.add(d.borough.lower())
+            if len(out) >= MAX_LOCATION_TERMS:
+                return out
+            break  # one borough is enough — multiple matching districts usually share it
+
+    for d in matching:
+        for nta in (d.neighborhoods or []):
+            if not nta:
+                continue
+            key = nta.lower()
+            if key in seen:
+                continue
+            out.append(nta)
+            seen.add(key)
+            if len(out) >= MAX_LOCATION_TERMS:
+                return out
+
+    return out
 
 
 def _retrieval_query_from_request(request: ChatRequest) -> str:
@@ -147,25 +229,49 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     return context
 
 
-def get_db_context(query: str, top_k: int = 8) -> Tuple[List[Dict], str]:
+def get_db_context(
+    query: str,
+    top_k: int = 8,
+    demographics: Optional[Dict[str, Optional[str]]] = None,
+) -> Tuple[List[Dict], str]:
     """
     Embed the user query and run a pgvector cosine similarity search
     against DocumentChunk. Returns the top_k most relevant chunks
     joined with their parent PolicyDocument title, plus a retrieval tier:
     vector | lexical | recent | none.
+
+    When `demographics` is provided, the embedded query is augmented with up
+    to MAX_LOCATION_TERMS location terms (borough, neighborhoods derived from
+    ZIP) to bias retrieval toward locally-relevant chunks. The original query
+    is preserved for the lexical fallback.
+    
+    Default top_k=5 is tuned to keep token usage under Groq's 6K TPM ceiling.
+    Each chunk is expanded with neighbors via _expand_chunk_window, so the
+    LLM sees roughly 3x this many raw chunks of text.
     """
     normalized_query = query.strip()
-    effective_top_k = max(6, top_k)
+    effective_top_k = max(4, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
-    query_embedding = get_query_embedding(normalized_query)
-    embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
-    logger.info(
-        "Query embedding generated dim=%s sample=%s",
-        embedding_dim,
-        query_embedding[:5] if isinstance(query_embedding, list) else [],
-    )
 
     with Session(engine) as session:
+        location_terms = _derive_location_terms(demographics or {})
+        location_terms = _expand_location_terms_with_zip(
+            session, location_terms, (demographics or {}).get("zip")
+        )
+        if location_terms:
+            embed_query = f"{normalized_query} {' '.join(location_terms)}".strip()
+            logger.info("Retrieval augmented terms=%s", len(location_terms))
+        else:
+            embed_query = normalized_query
+
+        query_embedding = get_query_embedding(embed_query)
+        embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
+        logger.info(
+            "Query embedding generated dim=%s sample=%s",
+            embedding_dim,
+            query_embedding[:5] if isinstance(query_embedding, list) else [],
+        )
+
         total_chunks = session.exec(select(func.count(DocumentChunk.id))).one()
         chunks_with_text = session.exec(
             select(func.count(DocumentChunk.id)).where(DocumentChunk.text_content.is_not(None))
@@ -281,7 +387,8 @@ def build_retrieval_sources_payload(
 
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("10/minute")
+async def chat_endpoint(request: Request, payload: ChatRequest):
     """
     Core RAG endpoint.
     1. Runs pgvector similarity search against Neon.
@@ -290,16 +397,18 @@ async def chat_endpoint(request: ChatRequest):
     Optional `messages` (user/assistant turns) enables multi-turn; optional
     `session_preamble` is merged into the system prompt for plain responses.
     """
-    msg_list = _normalize_chat_messages(request.messages)
+    msg_list = _normalize_chat_messages(payload.messages)
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
             status_code=400,
             detail="When `messages` is provided, the last message must have role `user`.",
         )
 
-    retrieval_q = _retrieval_query_from_request(request)
+    retrieval_q = _retrieval_query_from_request(payload)
     try:
-        context_chunks, retrieval_tier = get_db_context(retrieval_q)
+        context_chunks, retrieval_tier = get_db_context(
+            retrieval_q, demographics=payload.demographics
+        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
 
@@ -310,16 +419,23 @@ async def chat_endpoint(request: ChatRequest):
         len(msg_list) if msg_list else 0,
     )
 
-    style = (request.response_style or "structured").strip().lower()
-    preamble = (request.session_preamble or "").strip() or None
+    style = (payload.response_style or "structured").strip().lower()
+    preamble = (payload.session_preamble or "").strip() or None
     response = llm.generate_response(
-        query=request.query,
-        demographics=request.demographics,
+        query=payload.query,
+        demographics=payload.demographics,
         context_chunks=context_chunks,
         response_style=style,
         messages=msg_list,
         session_preamble=preamble,
     )
+
+    if isinstance(response, dict) and str(response.get("error", "")).startswith("Error connecting to LLM"):
+        logger.warning("Upstream LLM unavailable: %s", response.get("error"))
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily busy. Please try again in a moment.",
+        )
 
     return {
         "reply": response,

@@ -157,6 +157,29 @@ export async function checkHealth(): Promise<HealthResponse> {
   return json;
 }
 
+function friendlyChatError(status: number, data: unknown): string {
+  let serverMessage: string | undefined;
+  if (typeof data === "object" && data !== null) {
+    const d = data as Record<string, unknown>;
+    if (typeof d.detail === "string" && d.detail.trim()) {
+      serverMessage = d.detail.trim();
+    } else if (typeof d.error === "string" && d.error.trim()) {
+      serverMessage = d.error.trim();
+    }
+  }
+
+  switch (status) {
+    case 429:
+      return "You're sending messages too quickly. Please wait a moment and try again.";
+    case 503:
+      return serverMessage || "The AI service is temporarily busy. Please try again in a moment.";
+    case 502:
+      return "We're having trouble reaching the AI service. Please try again shortly.";
+    default:
+      return serverMessage || `Request failed: ${status}`;
+  }
+}
+
 export async function sendChat(
   query: string,
   extra?: ChatExtra,
@@ -178,13 +201,7 @@ export async function sendChat(
   const data = (await res.json()) as unknown;
 
   if (!res.ok) {
-    let message = `Request failed: ${res.status}`;
-    if (typeof data === "object" && data !== null && "detail" in data) {
-      const d = (data as { detail: unknown }).detail;
-      if (typeof d === "string") message = d;
-      else if (Array.isArray(d)) message = JSON.stringify(d);
-    }
-    throw new Error(message);
+    throw new Error(friendlyChatError(res.status, data));
   }
 
   const payload: unknown =
@@ -269,13 +286,7 @@ export async function postFloatingChatOrchestrated(params: {
   const data = (await res.json()) as unknown;
 
   if (!res.ok) {
-    let message = `Request failed: ${res.status}`;
-    if (typeof data === "object" && data !== null && "detail" in data) {
-      const d = (data as { detail: unknown }).detail;
-      if (typeof d === "string") message = d;
-      else if (Array.isArray(d)) message = JSON.stringify(d);
-    }
-    throw new Error(message);
+    throw new Error(friendlyChatError(res.status, data));
   }
 
   if (
