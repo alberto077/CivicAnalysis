@@ -181,10 +181,6 @@ export function HomeShell() {
         aria-hidden
       />
       <div
-        className="ambient-orb top-[28%] -right-24 h-80 w-80 bg-[rgba(230,57,70,0.12)]"
-        aria-hidden
-      />
-      <div
         className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)]"
         aria-hidden
       />
@@ -241,7 +237,7 @@ export function HomeShell() {
 
         {/* 2. Dashboard feed */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
+          <h2 className="font-limelight text-2xl font-medium tracking-tight text-[rgba(20,31,45,0.9)] sm:text-3xl">
             Live City Dashboard
           </h2>
           <p className="mt-2 text-[var(--muted)]">

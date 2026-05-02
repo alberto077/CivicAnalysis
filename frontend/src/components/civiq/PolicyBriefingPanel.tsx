@@ -65,13 +65,13 @@ export function PolicyBriefingPanel({
           role="alert"
         >
           <span className="font-semibold">Policy data unavailable. </span>
-          <span className="font-normal">{error}</span>
+          <span className="font-work-sans font-normal">{error}</span>
         </div>
       ) : null}
 
       <MotionReveal className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900">
+          <h2 className="font-limelight text-4xl font-medium tracking-tight text-[rgba(20,31,45,0.92)]">
             {showBriefing ? "Live Policy Briefing" : "Neighborhood Intel"}
           </h2>
           {showBriefing && (
@@ -86,7 +86,7 @@ export function PolicyBriefingPanel({
             <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition shadow-sm">
               <Share2 className="h-4 w-4" />
             </button>
-            <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition shadow-md">
+            <button className="font-work-sans h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition shadow-md">
               <Download className="h-4 w-4" />
               <span>Export</span>
             </button>
@@ -118,7 +118,7 @@ export function PolicyBriefingPanel({
                   />
                 </div>
                 <div>
-                  <p className="font-display text-2xl font-bold text-slate-900">
+                  <p className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.92)]">
                     Generating Intelligent Briefing...
                   </p>
                   <p className="mt-2 text-slate-500">
@@ -140,7 +140,7 @@ export function PolicyBriefingPanel({
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
                       <FileText className="h-5 w-5" />
                     </span>
-                    <h3 className="text-xl font-bold text-slate-900">
+                    <h3 className="font-limelight text-xl font-medium text-[rgba(20,31,45,0.92)]">
                       Policy Synthesis
                     </h3>
                   </div>
@@ -161,7 +161,7 @@ export function PolicyBriefingPanel({
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
                           <s.Icon className="h-[1.125rem] w-[1.125rem]" />
                         </span>
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">
+                        <h3 className="font-limelight text-sm font-bold uppercase tracking-widest text-slate-400">
                           {s.title}
                         </h3>
                       </div>
@@ -183,7 +183,7 @@ export function PolicyBriefingPanel({
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                         <Globe2 className="h-5 w-5" />
                       </span>
-                      <h3 className="text-[15px] font-bold uppercase tracking-widest text-slate-400">
+                      <h3 className="font-limelight text-[15px] font-bold uppercase tracking-widest text-slate-400">
                         Evidence & Sources
                       </h3>
                     </div>

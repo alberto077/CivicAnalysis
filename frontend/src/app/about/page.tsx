@@ -12,7 +12,7 @@ export default function AboutPage() {
         <section className="relative px-4 py-24 sm:px-6 lg:px-8 bg-slate-50">
           <div className="mx-auto max-w-5xl text-center">
             <MotionReveal>
-              <h1 className="font-display text-5xl font-extrabold tracking-tight text-slate-900 sm:text-7xl">
+              <h1 className="font-limelight text-5xl font-medium tracking-tight text-[rgba(20,31,45,0.94)] sm:text-7xl">
                 Illuminating City <span className="text-[var(--accent)]">Policy</span>
               </h1>
               <p className="mt-8 text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
@@ -36,7 +36,7 @@ export default function AboutPage() {
                 <div className="h-14 w-14 rounded-2xl bg-[var(--accent-soft)]/10 flex items-center justify-center text-[var(--accent)] mb-6">
                   <v.icon className="h-7 w-7" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{v.title}</h3>
+                <h3 className="font-limelight text-xl font-medium text-[rgba(20,31,45,0.92)] mb-3">{v.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{v.text}</p>
               </MotionReveal>
             ))}
@@ -46,14 +46,14 @@ export default function AboutPage() {
         {/* The Problem */}
         <section className="py-24 bg-slate-900 text-white px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <h2 className="text-3xl font-bold mb-8">Why Civic Spiegel?</h2>
+            <h2 className="font-limelight text-3xl font-medium mb-8 text-slate-100">Why Civic Spiegel?</h2>
             <div className="grid gap-8 text-left">
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                <h4 className="text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">The Challenge</h4>
+                <h4 className="font-work-sans text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">The Challenge</h4>
                 <p className="text-slate-300">NYC produces thousands of pages of legislative transcripts and filings every month. For the average resident, staying informed on local changes is a full-time job.</p>
               </div>
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                <h4 className="text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">Our Solution</h4>
+                <h4 className="font-work-sans text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">Our Solution</h4>
                 <p className="text-slate-300">We use advanced RAG (Retrieval-Augmented Generation) to scan these archives instantly, pulling out the facts that matter most to your specific life and location.</p>
               </div>
             </div>

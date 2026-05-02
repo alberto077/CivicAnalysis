@@ -50,9 +50,15 @@ const assistantMarkdownComponents: Components = {
     </blockquote>
   ),
   hr: () => <hr className="my-3 border-[var(--border)]" />,
-  h1: ({ children }) => <h3 className="mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>,
-  h2: ({ children }) => <h3 className="mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>,
-  h3: ({ children }) => <h3 className="mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>,
+  h1: ({ children }) => (
+    <h3 className="font-limelight mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>
+  ),
+  h2: ({ children }) => (
+    <h3 className="font-limelight mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>
+  ),
+  h3: ({ children }) => (
+    <h3 className="font-limelight mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h3>
+  ),
 };
 
 const SYSTEM_PROMPT =
@@ -145,7 +151,7 @@ export function ChatShell() {
       <main className="relative z-10 flex-1">
         <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+            <h1 className="font-limelight text-3xl font-semibold tracking-tight text-[var(--foreground)]">
               Civic Chat
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">

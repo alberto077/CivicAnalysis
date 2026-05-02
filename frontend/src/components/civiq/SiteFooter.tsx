@@ -1,7 +1,6 @@
 const links = [
   { label: "About", href: "/about" },
   { label: "Data Sources", href: "/data-sources" },
-  { label: "Search", href: "/chat" },
 ] as const;
 
 export function SiteFooter() {
@@ -10,7 +9,7 @@ export function SiteFooter() {
       <div className="surface-float mx-auto flex max-w-6xl flex-col gap-8 rounded-3xl border border-white/70 bg-[linear-gradient(160deg,rgba(255,255,255,0.72)_0%,rgba(255,255,255,0.5)_100%)] px-6 py-8 sm:flex-row sm:items-center sm:justify-between backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <span className="logo-clip w-[24px] h-[24px] bg-[length:400px] bg-[position:center_52%] opacity-80 border-0 shadow-none grayscale" />
-          <p className="font-condensed text-[13px] font-semibold tracking-wide uppercase text-[var(--muted)]">
+          <p className="font-work-sans text-[13px] font-semibold tracking-wide uppercase text-[var(--muted)]">
             © {new Date().getFullYear()} Civic Spiegel · NY Policy Assistant
           </p>
         </div>
@@ -19,7 +18,7 @@ export function SiteFooter() {
             <a
               key={l.label}
               href={l.href}
-              className="text-sm text-[var(--foreground)]/80 underline-offset-4 transition hover:text-[var(--accent)] hover:underline"
+              className="font-work-sans text-sm text-[var(--foreground)]/80 underline-offset-4 transition hover:text-[var(--accent)] hover:underline"
               {...(l.href.startsWith("http")
                 ? { target: "_blank", rel: "noopener noreferrer" }
                 : {})}

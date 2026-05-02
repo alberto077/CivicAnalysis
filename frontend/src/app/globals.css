@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e6edf4;
-  --foreground: #0d1b2a;
-  --muted: #4a5568;
+  --background: #f8fbff;
+  --foreground: #1f2f3f;
+  --muted: #5f6f81;
   --border: rgba(26, 54, 93, 0.16);
   --accent: #1a365d;
   --accent-mid: #e63946;
@@ -12,8 +12,8 @@
   --accent-rose: rgba(230, 57, 70, 0.15);
   --surface-glass: rgba(255, 255, 255, 0.92);
   --surface-glass-strong: rgba(255, 255, 255, 0.98);
-  --font-serif: 'Erode', ui-serif, Georgia, serif;
-  --font-display: 'Tanker', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif-display), ui-serif, Georgia, serif;
+  --font-display: var(--font-serif-display), ui-serif, Georgia, serif;
 
   /* Layered shadows */
   --shadow-glass:
@@ -40,40 +40,73 @@
   --font-sans: var(--font-sans-body);
   --font-serif: var(--font-serif);
   --font-display: var(--font-display);
-  --font-mono: var(--font-mono);
-  --font-condensed: var(--font-condensed);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
   min-height: 100vh;
+  line-height: 1.62;
+  letter-spacing: 0.003em;
 }
 
 .font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-serif {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
-.font-mono {
-  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+.font-work-sans {
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
+.font-bebas,
+.font-dm-sans,
 .font-condensed {
-  font-family: var(--font-condensed), var(--font-sans-body), sans-serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-blode-starkly,
+.font-blode-starkly-alt,
+.font-blode-starkly-wide {
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-limelight {
+  font-family: var(--font-limelight), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.limelight-regular {
+  font-family: "Limelight", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.google-sans-flex-label {
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3.section-title,
+.section-title {
+  color: color-mix(in srgb, var(--foreground) 92%, white);
+  letter-spacing: 0.004em;
+  font-weight: 500;
 }
 
 /* Hero: animated gradient highlight */
 .hero-gradient-text {
   background: linear-gradient(
     112deg,
-    var(--foreground) 0%,
-    #22466f 38%,
-    var(--accent-mid) 100%
+    rgba(13, 27, 42, 1) 0%,
+    rgba(230, 57, 70, 1) 100%
   );
   background-size: 220% auto;
   -webkit-background-clip: text;

@@ -77,13 +77,13 @@ const floatingMarkdownComponents: Components = {
   ),
   hr: () => <hr className="my-2 border-slate-200/80" />,
   h1: ({ children }) => (
-    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+    <h3 className="font-limelight mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
   ),
   h2: ({ children }) => (
-    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+    <h3 className="font-limelight mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
   ),
   h3: ({ children }) => (
-    <h3 className="mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
+    <h3 className="font-limelight mb-1.5 mt-2 text-xs font-semibold tracking-tight first:mt-0">{children}</h3>
   ),
 };
 
@@ -171,8 +171,8 @@ export function FloatingChatBot() {
         >
           <div className="flex shrink-0 items-center justify-between bg-[var(--accent)] px-4 py-3 text-white">
             <div className="min-w-0 pr-2">
-              <h2 className="text-sm font-semibold tracking-tight">Civic Chat</h2>
-              <p className="mt-0.5 text-[11px] leading-tight text-white/85">
+              <h2 className="font-limelight text-sm font-semibold tracking-tight">Civic Chat</h2>
+              <p className="font-work-sans mt-0.5 text-[11px] leading-tight text-white/85">
                 NYC policy &amp; local government
               </p>
             </div>
@@ -223,7 +223,7 @@ export function FloatingChatBot() {
 
                       {message.retrieval_sources && message.retrieval_sources.length > 0 ? (
                         <div className="mt-2 border-t border-slate-200/80 pt-2">
-                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          <p className="font-work-sans mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                             Official sources
                           </p>
                           <ul className="space-y-1.5">
@@ -238,7 +238,7 @@ export function FloatingChatBot() {
                                   {src.title}
                                 </a>
                                 {src.source_type ? (
-                                  <span className="mt-0.5 block text-[10px] text-slate-500">
+                                  <span className="font-work-sans mt-0.5 block text-[10px] text-slate-500">
                                     {src.source_type}
                                   </span>
                                 ) : null}
