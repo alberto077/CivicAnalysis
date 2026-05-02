@@ -111,6 +111,15 @@ export type Politician = {
   data_source?: string;
   zip_codes?: string[];
   neighborhoods?: string[];
+  committees?: string[];
+  photo_url?: string | null;
+  phone?: string;
+  email?: string;
+  website?: string;
+  level?: string;
+  represents?: string;
+  next_election?: string;
+  senate_class?: string;
 };
 
 export type PoliticianFilterOptions = {
@@ -206,8 +215,8 @@ export async function sendChat(
 
   const payload: unknown =
     typeof data === "object" &&
-    data !== null &&
-    "reply" in (data as Record<string, unknown>)
+      data !== null &&
+      "reply" in (data as Record<string, unknown>)
       ? (data as { reply: unknown }).reply
       : data;
 
@@ -305,9 +314,9 @@ export async function postFloatingChatOrchestrated(params: {
   const retrieval_sources = parseFloatingRetrievalSources(dataObj);
   const tier =
     retrieval_tier === "vector" ||
-    retrieval_tier === "lexical" ||
-    retrieval_tier === "recent" ||
-    retrieval_tier === "none"
+      retrieval_tier === "lexical" ||
+      retrieval_tier === "recent" ||
+      retrieval_tier === "none"
       ? retrieval_tier
       : "none";
 
@@ -342,129 +351,23 @@ export async function postFloatingChatOrchestrated(params: {
   throw new Error("Invalid floating chat response mode.");
 }
 
+// TODO: connect to database? (scraper not finished yet)
 export async function getPoliticians(filters?: {
   borough?: string;
   stance?: string;
 }): Promise<Politician[]> {
-  const params = new URLSearchParams();
-  const borough = filters?.borough?.trim();
-  if (borough && borough.toLowerCase() !== "all") {
-    params.set("borough", borough);
-  }
-  const stance = filters?.stance?.trim();
-  if (stance && stance.toLowerCase() !== "all") {
-    params.set("stance", stance);
-  }
+  const { fetchAllPoliticians } = await import("@/lib/politicians");
+  const all = await fetchAllPoliticians();
 
-  const url = `${CIVIC_API}/politicians${params.toString() ? `?${params.toString()}` : ""}`;
-  const res = await fetch(url, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  const data = (await res.json()) as {
-    politicians?: unknown;
-    detail?: string;
-    error?: string;
-  };
-
-  if (!res.ok) {
-    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
-  }
-
-  if (!Array.isArray(data.politicians)) {
-    return [];
-  }
-
-  const livePoliticians = data.politicians.filter(
-    (item): item is Politician =>
-      typeof item === "object" &&
-      item !== null &&
-      typeof (item as Record<string, unknown>).name === "string" &&
-      typeof (item as Record<string, unknown>).office === "string" &&
-      typeof (item as Record<string, unknown>).borough === "string"
-  );
-  
-  // Enrich the live data because the scraper was basic
-  const enriched = livePoliticians.map((p, index) => {
-      const stances = ["Progressive", "Moderate Democrat", "Liberal", "Moderate", "Conservative"];
-      const parties = ["Democrat", "Democrat", "Republican", "Working Families", "Democrat"];
-
-      const stance = p.political_stance && p.political_stance !== "Moderate"
-         ? p.political_stance
-         : stances[index % stances.length];
-
-      const party = p.party && p.party.trim() !== "Unknown" && p.party.trim() !== ""
-         ? p.party
-         : parties[index % parties.length];
-
-      return {
-          ...p,
-          political_stance: stance,
-          party: party,
-      };
-  });
-
-  // Inject a few State and Federal reps for a more complete UI feel
-  const stateReps: Politician[] = [
-    {
-      id: "sen-1",
-      name: "Andrew Gounardes",
-      role: "State Senator",
-      office: "State Senate",
-      district: "26",
-      borough: "Brooklyn",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://www.nysenate.gov/senators/andrew-gounardes",
-      zip_codes: ["11209", "11228"],
-      neighborhoods: ["Bay Ridge", "Dyker Heights", "Bath Beach"]
-    },
-    {
-      id: "sen-2",
-      name: "Jessica Ramos",
-      role: "State Senator",
-      office: "State Senate",
-      district: "13",
-      borough: "Queens",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://www.nysenate.gov/senators/jessica-ramos",
-      zip_codes: ["11368", "11369"],
-      neighborhoods: ["Corona", "East Elmhurst", "Jackson Heights"]
+  return all.filter((p) => {
+    if (filters?.borough && filters.borough.toLowerCase() !== "all") {
+      if (!p.borough.toLowerCase().includes(filters.borough.toLowerCase())) return false;
     }
-  ];
-
-  const federalReps: Politician[] = [
-    {
-      id: "fed-1",
-      name: "Nicole Malliotakis",
-      role: "Congresswoman",
-      office: "U.S. House",
-      district: "11",
-      borough: "Staten Island",
-      political_stance: "Conservative",
-      party: "Republican",
-      bio_url: "https://malliotakis.house.gov/",
-      zip_codes: ["10301", "11209"],
-      neighborhoods: ["Staten Island", "Bay Ridge"]
-    },
-    {
-      id: "fed-2",
-      name: "Alexandria Ocasio-Cortez",
-      role: "Congresswoman",
-      office: "U.S. House",
-      district: "14",
-      borough: "Bronx",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://ocasio-cortez.house.gov/",
-      zip_codes: ["10461", "11372"],
-      neighborhoods: ["Bronx", "Queens", "Jackson Heights"]
+    if (filters?.stance && filters.stance.toLowerCase() !== "all") {
+      if (p.political_stance !== filters.stance) return false;
     }
-  ];
-
-  return [...federalReps, ...stateReps, ...enriched];
+    return true;
+  }) as Politician[];
 }
 
 export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
