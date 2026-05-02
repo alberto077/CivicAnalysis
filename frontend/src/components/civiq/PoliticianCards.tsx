@@ -171,12 +171,12 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <MotionReveal>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
+          <h2 className="font-limelight text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Local Representatives
           </h2>
 
           {(selectedLocation !== "All" || selectedDistrict !== "All") && (
-            <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white shadow-sm">
+            <span className="font-work-sans rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white shadow-sm">
               Filtered for{" "}
               {selectedLocation !== "All" ? selectedLocation : "All Boroughs"}
               {selectedDistrict !== "All"
@@ -195,7 +195,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       <MotionReveal className="mt-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
               Borough
             </span>
 
@@ -216,7 +216,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
               District
             </span>
 
@@ -270,7 +270,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               >
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="font-sans text-xl font-bold leading-tight text-[var(--foreground)]">
+                    <h3 className="font-limelight text-xl font-bold leading-tight text-[var(--foreground)]">
                       {p.name}
                     </h3>
 
@@ -280,11 +280,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   </div>
 
                   <div className="flex min-w-[70px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-white px-2 py-2">
-                    <span className="text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
+                    <span className="font-work-sans text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
                       Stance
                     </span>
 
-                    <span className="mt-1 text-center text-xs font-semibold leading-tight text-[var(--foreground)]">
+                    <span className="font-work-sans mt-1 text-center text-xs font-semibold leading-tight text-[var(--foreground)]">
                       {p.political_stance || "Unknown"}
                     </span>
                   </div>
@@ -292,7 +292,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
                 <div className="flex-1 space-y-4">
                   <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                       Borough
                     </p>
 
@@ -302,7 +302,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   </div>
 
                   <div className="border-t border-[var(--border)] pt-4">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                       District
                     </p>
 
@@ -312,7 +312,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   </div>
 
                   <div className="border-t border-[var(--border)] pt-4">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                       Party
                     </p>
 
@@ -324,7 +324,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
                 <div className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
                   <div className="min-w-0">
-                    <p className="text-xs text-[var(--muted)]">
+                    <p className="font-work-sans text-xs text-[var(--muted)]">
                       View official profile and details
                     </p>
                   </div>
@@ -333,7 +333,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     href={getLearnMoreUrl(p)}
                     target="_blank"
                     rel="noreferrer"
-                    className="shrink-0 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-90"
+                    className="font-work-sans shrink-0 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-90"
                   >
                     Learn More
                   </a>

@@ -58,7 +58,7 @@ function Section({
 
   return (
     <div className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-sm transition hover:shadow-md">
-      <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
+      <h3 className="font-limelight mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
         {title}
       </h3>
       <ul className="space-y-3 text-[15px] text-slate-800 leading-relaxed">
@@ -165,7 +165,7 @@ export function ChatPanel({
              <MessageSquare className="h-5 w-5" />
            </div>
            <div>
-              <h2 className="text-3xl font-display font-bold tracking-tight text-slate-900">
+              <h2 className="font-limelight text-3xl font-bold tracking-tight text-slate-900">
                 {isStandalone ? "Policy AI Explorer" : "Briefing Assistant"}
               </h2>
               <p className="text-slate-600 text-sm">
@@ -180,7 +180,7 @@ export function ChatPanel({
         <div className="flex items-center gap-3 mb-6 bg-slate-50 border border-slate-100 p-2 rounded-2xl w-fit">
           <button
             onClick={() => setIsPersonalized(false)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`font-work-sans flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               !isPersonalized
                 ? "bg-white text-slate-900 shadow-sm border border-slate-200"
                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
@@ -191,7 +191,7 @@ export function ChatPanel({
           </button>
           <button
             onClick={() => setIsPersonalized(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`font-work-sans flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               isPersonalized
                 ? "bg-[var(--accent)] text-white shadow-sm border border-[var(--accent-soft)]"
                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
@@ -214,7 +214,7 @@ export function ChatPanel({
               key={prompt}
               type="button"
               onClick={() => setMessage(prompt)}
-              className="rounded-full border border-slate-200 bg-white shadow-sm px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-[var(--accent-soft)] hover:text-[var(--accent)] transition-all"
+              className="font-work-sans rounded-full border border-slate-200 bg-white shadow-sm px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-[var(--accent-soft)] hover:text-[var(--accent)] transition-all"
             >
               {prompt}
             </button>
@@ -253,7 +253,7 @@ export function ChatPanel({
 
         {lastQuestion && !loading && (
           <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
-            <span className="font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
+            <span className="font-work-sans font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
             <span className="font-medium italic">&quot;{lastQuestion}&quot;</span>
           </div>
         )}
@@ -274,7 +274,7 @@ export function ChatPanel({
 
                 {sources.length > 0 && (
                   <div className="rounded-[32px] border border-white/60 bg-white/80 p-8 shadow-sm">
-                    <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
+                    <h3 className="font-limelight mb-4 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
                       Evidence Library
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

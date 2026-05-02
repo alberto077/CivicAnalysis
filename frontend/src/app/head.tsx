@@ -1,0 +1,12 @@
+export default function Head() {
+  return (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Limelight&display=swap"
+        rel="stylesheet"
+      />
+    </>
+  );
+}

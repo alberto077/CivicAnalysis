@@ -97,7 +97,7 @@ export function CivicMap({
       {!hideHeader && (
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div>
-            <h2 className="font-display text-4xl font-bold text-slate-900">{title}</h2>
+            <h2 className="font-limelight text-4xl font-medium text-[rgba(20,31,45,0.92)]">{title}</h2>
             <p className="mt-2 text-lg text-slate-500">{subtitle}</p>
           </div>
           <form onSubmit={handleSearch} className="relative w-full max-w-sm">
@@ -112,7 +112,7 @@ export function CivicMap({
             {activeTab === "nys" && (
               <button
                 type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[var(--accent)] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[var(--accent-hover)] transition-colors"
+                className="font-work-sans absolute right-1.5 top-1/2 -translate-y-1/2 bg-[var(--accent)] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[var(--accent-hover)] transition-colors"
               >
                 Locate
               </button>
@@ -153,7 +153,7 @@ export function CivicMap({
             </div>
             <button
               onClick={() => window.open(iframeSrc, '_blank')}
-              className="text-xs font-semibold text-slate-400 hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
+              className="font-work-sans text-xs font-semibold text-slate-400 hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
               title="Open full map in new tab"
             >
               <Maximize2 className="h-3.5 w-3.5" />
@@ -172,7 +172,7 @@ export function CivicMap({
 
           {!activeQuery && (
             <div className="absolute bottom-6 left-6 flex flex-col gap-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 backdrop-blur-md shadow-lg border border-slate-200/50 text-[11px] font-bold text-slate-600 uppercase tracking-widest">
+              <div className="font-work-sans flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 backdrop-blur-md shadow-lg border border-slate-200/50 text-[11px] font-bold text-slate-600 uppercase tracking-widest">
                 💡 Tip: Type your address or Zip Code above to zoom in automatically.
               </div>
             </div>
@@ -246,7 +246,7 @@ export function CivicMap({
             )}
 
             <div className="absolute bottom-6 left-6 flex flex-col gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur shadow-sm border border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <div className="font-work-sans flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur shadow-sm border border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                 <Layers className="h-3 w-3" />
                 51 Council Districts
               </div>
@@ -268,10 +268,10 @@ export function CivicMap({
                     <div className="h-14 w-14 rounded-2xl bg-[var(--accent-soft)]/20 flex items-center justify-center text-[var(--accent)] font-bold text-2xl">
                       {selectedDistrict.id}
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-widest">District</span>
+                    <span className="font-work-sans px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-widest">District</span>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-slate-900 mb-1">{selectedDistrict.rep}</h2>
+                  <h2 className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.92)] mb-1">{selectedDistrict.rep}</h2>
                   <p className="text-slate-500 text-sm font-medium mb-6">{selectedDistrict.name}</p>
 
                   <div className="space-y-4 mb-8">
@@ -287,10 +287,10 @@ export function CivicMap({
 
                   {selectedDistrict.issues.length > 0 && (
                     <div className="border-t border-slate-100 pt-6">
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-4">Focus Areas</h4>
+                      <h4 className="font-work-sans text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-4">Focus Areas</h4>
                       <div className="flex flex-wrap gap-2">
                         {selectedDistrict.issues.map(issue => (
-                          <span key={issue} className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-600">
+                          <span key={issue} className="font-work-sans px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-semibold text-slate-600">
                             {issue}
                           </span>
                         ))}
@@ -301,7 +301,7 @@ export function CivicMap({
               ) : (
                 <div className="bg-slate-100/50 rounded-[2rem] border-2 border-dashed border-slate-200 p-12 text-center h-[400px] flex flex-col items-center justify-center">
                   <MapPin className="h-10 w-10 text-slate-300 mb-4" />
-                  <h3 className="text-slate-900 font-bold mb-2">No District Selected</h3>
+                  <h3 className="font-limelight text-slate-800 font-medium mb-2">No District Selected</h3>
                   <p className="text-sm text-slate-400 max-w-[200px]">Select a shape on the map or search to see representative data.</p>
                 </div>
               )}
@@ -310,7 +310,7 @@ export function CivicMap({
             {/* Quick List Search Results */}
             {searchTerm && (
               <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm mt-6">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Search Results</h4>
+                <h4 className="font-work-sans text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Search Results</h4>
                 <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                   {filteredDistricts.slice(0, 5).map(d => (
                     <button
@@ -320,7 +320,7 @@ export function CivicMap({
                     >
                       <div>
                         <p className="font-bold text-slate-900">{d.rep}</p>
-                        <p className="text-xs text-slate-500">District {d.id} ({d.name})</p>
+                        <p className="font-work-sans text-xs text-slate-500">District {d.id} ({d.name})</p>
                       </div>
                       <span className="opacity-0 group-hover:opacity-100 transition text-[var(--accent)] font-bold">→</span>
                     </button>

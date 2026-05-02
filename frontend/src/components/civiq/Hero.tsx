@@ -51,7 +51,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
                 }
               }
             }}
-            className="font-display mx-auto mt-5 max-w-3xl text-[2.9rem] font-bold leading-[90px] tracking-[10.1px] text-[var(--foreground)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]"
+            className="font-limelight mx-auto mt-5 max-w-3xl text-right text-[2.9rem] leading-[1.08] tracking-[3.8px] text-[rgba(20,31,45,0.92)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]"
           >
             <span className="block">
               {headlineIntro.split("").map((char, index) => (
@@ -71,7 +71,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
               ))}
             </span>
             <span
-              className="hero-gradient-text hero-wordmark-reflect mt-1.5 block pl-[0.62em] sm:pl-[0.78em]"
+              className="hero-gradient-text hero-wordmark-reflect mt-1.5 block pl-[0.62em] text-right sm:pl-[0.78em]"
               data-reflect="Of Your City"
             >
               {headlineFocus.split("").map((char, index) => (
@@ -95,7 +95,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
-            className="font-display mx-auto mt-3 max-w-2xl text-balance text-[1.08rem] font-medium tracking-[3.2px] text-[color:color-mix(in_oklab,var(--muted)_78%,var(--accent-mid)_22%)] sm:text-[1.2rem]"
+            className="font-limelight mx-auto mt-4 max-w-2xl text-balance text-[18px] font-extrabold tracking-[1.3px] text-[rgba(20,31,45,1)]"
           >
             Where Policy Decisions Become Visible
           </motion.p>
@@ -112,10 +112,10 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             void onSearch();
           }}
         >
-          <label htmlFor="location-search" className="sr-only">
+          <label htmlFor="location-search" className="font-work-sans sr-only">
             Ask about your neighborhood, local policies, budgets, or city decisions
           </label>
-          <div className="glass-card search-shell command-shell group flex min-h-[5.3rem] items-center gap-3 rounded-[1.7rem] border border-white/80 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] px-5 py-3 shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:gap-4 sm:px-7 sm:py-4 md:min-h-[5.8rem]">
+          <div className="glass-card search-shell command-shell group flex h-[61px] w-full max-w-[904px] items-center gap-3 rounded-[23px] border border-white/80 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] px-[9px] py-0 leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:gap-4">
             <span className="text-[var(--muted)]" aria-hidden>
               <svg
                 width="26"
@@ -138,13 +138,13 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Ask about your Neighborhood"
               disabled={loading}
-              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-[1.1rem] text-[var(--foreground)] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 sm:text-[1.18rem]"
+              className="font-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={loading || !query.trim()}
               aria-label={loading ? "Loading briefing" : "Submit briefing request"}
-              className="command-submit shrink-0 rounded-[1.15rem] bg-[var(--accent-mid)] px-4 py-3 text-white shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-50 sm:px-5"
+              className="command-submit shrink-0 rounded-[1.15rem] bg-[var(--accent-mid)] px-4 py-3 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-50 sm:px-5"
             >
               <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
               <svg

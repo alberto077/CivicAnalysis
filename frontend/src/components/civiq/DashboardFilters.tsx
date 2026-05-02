@@ -44,11 +44,11 @@ export function DashboardFilters({
         {/* Label + personalize toggle; then chips + Edit profile on one row */}
         <div className="space-y-3">
           <div className="flex flex-row items-center justify-between gap-4">
-            <span className="min-w-0 text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
+            <span className="font-sans min-w-0 text-sm font-bold uppercase tracking-widest text-[var(--muted)]">
               Select Policy Area
             </span>
             <label className="group flex shrink-0 cursor-pointer items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-tighter text-[var(--muted)]">
+              <span className="font-work-sans text-[11px] font-bold uppercase tracking-tighter text-[var(--muted)]">
                 Personalize results
               </span>
               <div
@@ -83,7 +83,7 @@ export function DashboardFilters({
             <button
               type="button"
               onClick={onEditProfile}
-              className="ml-auto shrink-0 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition duration-300 hover:translate-y-[-1px] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              className="font-work-sans ml-auto shrink-0 rounded-xl border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition duration-300 hover:translate-y-[-1px] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             >
               Edit profile
             </button>
@@ -93,7 +93,7 @@ export function DashboardFilters({
         {/* Secondary Selects */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]/50">
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-[var(--muted)] tracking-widest uppercase">Target Location</span>
+            <span className="font-work-sans text-xs font-bold text-[var(--muted)] tracking-widest uppercase">Target Location</span>
             <select 
               value={selectedLocation} 
               onChange={(e) => setSelectedLocation(e.target.value)}
@@ -103,7 +103,7 @@ export function DashboardFilters({
             </select>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-[var(--muted)] tracking-widest uppercase">Timeframe</span>
+            <span className="font-work-sans text-xs font-bold text-[var(--muted)] tracking-widest uppercase">Timeframe</span>
             <select 
               value={selectedTime} 
               onChange={(e) => setSelectedTime(e.target.value)}

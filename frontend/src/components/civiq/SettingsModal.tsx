@@ -52,21 +52,21 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
         <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-[var(--border)] shrink-0 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-sans text-xl font-bold text-[var(--foreground)] tracking-tight">Edit profile</h2>
-              <p className="text-xs text-[var(--muted)] mt-1">Configure your personalized assistant details.</p>
+              <h2 className="font-limelight text-xl font-bold text-[var(--foreground)] tracking-tight">Edit profile</h2>
+              <p className="font-work-sans text-xs text-[var(--muted)] mt-1">Configure your personalized assistant details.</p>
             </div>
             <button onClick={onClose} className="text-[var(--muted)] hover:text-black font-bold p-2 text-xl">&times;</button>
           </div>
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab("Profile")}
-              className={`flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
+              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
             >
               Demographics
             </button>
             <button
               onClick={() => setActiveTab("Interests")}
-              className={`flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Interests" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
+              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Interests" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
             >
               Policy Interests
             </button>
@@ -77,7 +77,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           {activeTab === "Profile" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
-                <h3 className="font-condensed text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Location</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Location</h3>
                 <div className="flex flex-wrap gap-2">
                   {BOROUGHS.map((b) => (
                     <button
@@ -93,7 +93,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-condensed text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Housing & Income</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Housing & Income</h3>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {HOUSING.map((h) => (
                     <button
@@ -121,7 +121,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-condensed text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Age</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Age</h3>
                 <div className="flex flex-wrap gap-2">
                   {AGE.map((a) => (
                     <button
@@ -137,7 +137,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-condensed text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Demographic Traits</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Demographic Traits</h3>
                 <div className="flex flex-wrap gap-2">
                   {DEMOGRAPHICS.map((demo) => (
                     <button
@@ -158,7 +158,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
           {activeTab === "Interests" && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h3 className="font-condensed text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Issues Tracked</h3>
+              <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Issues Tracked</h3>
               <p className="text-sm text-[var(--muted)] mb-4">Select the specific policy areas you want your civic assistant to monitor.</p>
               <div className="flex flex-wrap gap-2">
                 {ISSUES.map((issue) => (

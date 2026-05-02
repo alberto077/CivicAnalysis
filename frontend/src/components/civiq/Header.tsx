@@ -10,12 +10,12 @@ export function Header() {
           className="flex items-center gap-3 transition hover:opacity-80 group"
         >
           <div className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,var(--accent)_0%,#2f5f96_100%)] shadow-inner transition group-hover:rotate-12" />
-          <span className="font-display text-xl font-bold tracking-[0.15em] text-slate-900 uppercase">
-            Civic <span className="text-[var(--accent)]">Spiegel</span>
+          <span className="font-limelight text-[20px] font-semibold tracking-[0.6px] text-slate-800 uppercase">
+            Civic <span className="font-limelight text-[var(--accent)]">Spiegel</span>
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-[11px] font-bold text-slate-500 tracking-[0.25em] uppercase">
+        <nav className="font-work-sans hidden items-center gap-8 text-[14px] font-medium leading-[25px] tracking-[0.25px] text-slate-600 uppercase md:flex">
           <Link href="/" className="hover:text-[var(--accent)] transition-colors">Briefings</Link>
           <Link href="/representatives" className="hover:text-[var(--accent)] transition-colors">Representatives</Link>
           <Link href="/map" className="hover:text-[var(--accent)] transition-colors">Map</Link>

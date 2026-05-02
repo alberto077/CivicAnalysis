@@ -39,7 +39,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70">
             <Rss className="h-4 w-4" strokeWidth={1.65} aria-hidden />
           </span>
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
+          <h2 className="font-limelight text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Recent policy updates
           </h2>
         </div>
@@ -81,16 +81,16 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                         href={p.source_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="font-display font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                        className="font-blode-starkly font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
                       >
                         {p.title}
                       </a>
                       <div className="mt-1 flex items-center gap-3">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent-soft)]/20 px-2 py-0.5 rounded">
+                        <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent-soft)]/20 px-2 py-0.5 rounded">
                           {p.source_type}
                         </span>
                         {p.published_date && (
-                          <span className="text-xs text-[var(--muted)]">
+                          <span className="font-work-sans text-xs text-[var(--muted)]">
                             {new Date(p.published_date).toLocaleDateString()}
                           </span>
                         )}
@@ -108,7 +108,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                 className="flex flex-col items-center justify-center py-20 text-center px-6"
               >
                 <p className="text-sm font-medium text-[var(--foreground)]">No recent updates found</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
+                <p className="font-work-sans mt-1 text-xs text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
               </motion.div>
             )}
           </AnimatePresence>

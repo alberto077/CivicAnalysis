@@ -86,12 +86,12 @@ export default function DataSourcesPage() {
       <main className="relative z-10 flex-1 py-20 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <MotionReveal>
-            <h1 className="font-display text-4xl font-bold text-slate-900 mb-4">Data Transparency</h1>
+            <h1 className="font-limelight text-4xl font-medium text-[rgba(20,31,45,0.92)] mb-4">Data Transparency</h1>
             <p className="text-lg text-slate-600 mb-12">Civic Spiegel is built on publicly available, primary data sources. We do not use third-party analysis; we go straight to the official record.</p>
           </MotionReveal>
 
           <section className="mb-20">
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+            <h2 className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.9)] mb-8 flex items-center gap-3">
               <Globe className="h-6 w-6 text-indigo-500" />
               Primary Data Sources
             </h2>
@@ -103,8 +103,8 @@ export default function DataSourcesPage() {
                       <Database className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-900 text-xl">{s.name}</h3>
-                      <span className="text-xs font-bold uppercase tracking-widest text-indigo-500">{s.type}</span>
+                      <h3 className="font-limelight font-medium text-[rgba(20,31,45,0.92)] text-xl">{s.name}</h3>
+                      <span className="font-work-sans text-xs font-bold uppercase tracking-widest text-indigo-500">{s.type}</span>
                       <p className="mt-2 text-slate-600 text-sm max-w-md">{s.desc}</p>
                     </div>
                   </div>
@@ -123,7 +123,7 @@ export default function DataSourcesPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+            <h2 className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.9)] mb-8 flex items-center gap-3">
               <Cpu className="h-6 w-6 text-emerald-500" />
               Technical Infrastructure
             </h2>
@@ -133,10 +133,10 @@ export default function DataSourcesPage() {
                   <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-6">
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="font-bold text-slate-900 text-lg mb-1">{item.name}</h3>
-                  <div className="text-[10px] font-bold uppercase tracking-tighter text-emerald-600 mb-3">{item.type}</div>
+                  <h3 className="font-limelight font-medium text-[rgba(20,31,45,0.92)] text-lg mb-1">{item.name}</h3>
+                  <div className="font-work-sans text-[10px] font-bold uppercase tracking-tighter text-emerald-600 mb-3">{item.type}</div>
                   <p className="text-slate-500 text-sm leading-relaxed mb-6">{item.desc}</p>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-400 hover:text-slate-900 transition flex items-center gap-1">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="font-work-sans text-xs font-bold text-slate-400 hover:text-slate-900 transition flex items-center gap-1">
                     Documentation <Link2 className="h-3 w-3" />
                   </a>
                 </MotionReveal>
@@ -145,7 +145,7 @@ export default function DataSourcesPage() {
           </section>
 
           <div className="mt-20 p-12 rounded-[3rem] bg-[linear-gradient(135deg,var(--accent)_0%,#2f5f96_100%)] text-white text-center">
-            <h2 className="text-2xl font-bold mb-4">Pipeline Intelligence</h2>
+            <h2 className="font-limelight text-2xl font-medium mb-4 text-slate-50">Pipeline Intelligence</h2>
             <p className="text-white/80 max-w-2xl mx-auto text-sm leading-relaxed">
               Our data pipeline runs automated syncs twice daily via GitHub Actions. It extracts text from legislative transcripts, classifies policy areas using our custom ML tagger, and generates high-fidelity embeddings for our RAG-enabled search engine.
             </p>

@@ -81,15 +81,15 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
     >
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] animate-in fade-in zoom-in duration-300">
         <div className="mb-6 flex items-center justify-between">
-          <p className="font-condensed text-sm font-semibold tracking-widest text-[var(--accent-mid)] uppercase">
+          <p className="font-work-sans text-sm font-semibold tracking-widest text-[var(--accent-mid)] uppercase">
             Step {step} of 5
           </p>
-          <p className="text-xs text-[var(--muted)]">Privacy: Saved only to your browser</p>
+          <p className="font-work-sans text-xs text-[var(--muted)]">Privacy: Saved only to your browser</p>
         </div>
 
         {step === 1 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Where do you live?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Where do you live?</h2>
             <div className="grid grid-cols-2 gap-3">
               {BOROUGHS.map((b) => (
                 <button
@@ -109,7 +109,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 2 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Housing & Income</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Housing & Income</h2>
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-[var(--muted)]">Housing Status</label>
@@ -147,7 +147,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 3 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">What issues matter to you?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">What issues matter to you?</h2>
             <div className="flex flex-wrap gap-2 max-h-[35vh] overflow-y-auto pr-2 pb-4 scrollbar-thin">
               {ISSUES.map((issue) => (
                 <button
@@ -167,7 +167,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 4 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">What is your age?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">What is your age?</h2>
             <div className="flex flex-wrap gap-2">
               {AGE.map((a) => (
                 <button
@@ -185,7 +185,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 5 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Any demographics apply?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Any demographics apply?</h2>
             <p className="text-sm text-[var(--muted)]">Select all that apply.</p>
             <div className="flex flex-wrap gap-2 max-h-[35vh] overflow-y-auto pr-2 pb-4 scrollbar-thin">
               {DEMOGRAPHICS.map((demo) => (
