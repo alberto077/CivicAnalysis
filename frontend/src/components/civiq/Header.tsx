@@ -1,12 +1,24 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Settings } from "lucide-react";
 import { useProfile } from "@/lib/useProfile";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { SettingsModal } from "@/components/civiq/SettingsModal";
 
+function navLinkClass(pathname: string, href: string) {
+  const active =
+    href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(`${href}/`);
+  return active
+    ? "font-semibold text-[var(--accent)] transition-colors hover:text-[var(--accent-soft)]"
+    : "text-slate-600 transition-colors hover:text-[var(--accent-mid)]";
+}
+
 export function Header() {
+  const pathname = usePathname();
   const { profile, saveProfile } = useProfile();
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -24,12 +36,22 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="font-work-sans hidden items-center gap-8 text-[14px] font-medium leading-[25px] tracking-[0.25px] text-slate-600 uppercase md:flex">
-          <Link href="/" className="hover:text-[var(--accent)] transition-colors">Briefings</Link>
-          <Link href="/representatives" className="hover:text-[var(--accent)] transition-colors">Representatives</Link>
-          <Link href="/map" className="hover:text-[var(--accent)] transition-colors">Map</Link>
-          <Link href="/chat" className="hover:text-[var(--accent)] transition-colors">Civic Assistant</Link>
-          <Link href="/about" className="hover:text-[var(--accent)] transition-colors">About</Link>
+        <nav className="font-work-sans hidden items-center gap-8 text-[14px] font-medium leading-[25px] tracking-[0.25px] uppercase md:flex">
+          <Link href="/" className={navLinkClass(pathname, "/")}>
+            Briefings
+          </Link>
+          <Link href="/representatives" className={navLinkClass(pathname, "/representatives")}>
+            Representatives
+          </Link>
+          <Link href="/map" className={navLinkClass(pathname, "/map")}>
+            Map
+          </Link>
+          <Link href="/chat" className={navLinkClass(pathname, "/chat")}>
+            Civic Assistant
+          </Link>
+          <Link href="/about" className={navLinkClass(pathname, "/about")}>
+            About
+          </Link>
         </nav>
 
         <div className="flex items-center gap-4">

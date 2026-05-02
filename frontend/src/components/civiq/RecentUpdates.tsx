@@ -81,7 +81,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                         href={p.source_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="font-blode-starkly font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                        className="font-work-sans font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
                       >
                         {p.title}
                       </a>
@@ -90,7 +90,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                           {p.source_type}
                         </span>
                         {p.published_date && (
-                          <span className="font-work-sans text-xs text-[var(--muted)]">
+                          <span className="font-work-sans text-xs font-normal text-[var(--muted)]">
                             {new Date(p.published_date).toLocaleDateString()}
                           </span>
                         )}
@@ -107,8 +107,8 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center py-20 text-center px-6"
               >
-                <p className="text-sm font-medium text-[var(--foreground)]">No recent updates found</p>
-                <p className="font-work-sans mt-1 text-xs text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
+                <p className="font-work-sans text-sm font-medium text-[var(--foreground)]">No recent updates found</p>
+                <p className="font-work-sans mt-1 text-xs font-normal text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
               </motion.div>
             )}
           </AnimatePresence>

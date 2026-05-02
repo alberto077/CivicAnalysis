@@ -138,7 +138,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Ask about your Neighborhood"
               disabled={loading}
-              className="font-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60"
+              className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 placeholder:font-normal focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60"
             />
             <button
               type="submit"

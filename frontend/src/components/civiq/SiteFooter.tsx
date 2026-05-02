@@ -1,7 +1,6 @@
 const links = [
   { label: "About", href: "/about" },
   { label: "Data Sources", href: "/data-sources" },
-  { label: "Search", href: "/chat" },
 ] as const;
 
 export function SiteFooter() {

@@ -46,29 +46,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
   min-height: 100vh;
   line-height: 1.62;
   letter-spacing: 0.003em;
 }
 
 .font-display {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-serif {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-work-sans {
-  font-family: "Google Sans Flex", var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  font-style: normal;
-  font-variation-settings:
-    "slnt" 0,
-    "wdth" 100,
-    "GRAD" 0,
-    "ROND" 0;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-bebas,
@@ -80,7 +73,7 @@ body {
 .font-blode-starkly,
 .font-blode-starkly-alt,
 .font-blode-starkly-wide {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-limelight {
@@ -96,15 +89,7 @@ body {
 }
 
 .google-sans-flex-label {
-  font-family: "Google Sans Flex", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  font-style: normal;
-  font-variation-settings:
-    "slnt" 0,
-    "wdth" 100,
-    "GRAD" 0,
-    "ROND" 0;
+  font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,

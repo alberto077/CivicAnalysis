@@ -274,7 +274,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                       {p.name}
                     </h3>
 
-                    <p className="text-sm font-medium text-[var(--muted)]">
+                    <p className="font-work-sans text-sm font-medium text-[var(--muted)]">
                       {p.office}
                     </p>
                   </div>

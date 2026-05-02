@@ -229,7 +229,7 @@ export function ChatPanel({
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void handleAsk()}
               placeholder={isStandalone ? "Ask a policy question..." : "Ask a follow-up..."}
-              className="w-full h-14 pl-5 pr-14 rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all"
+              className="font-work-sans w-full h-14 pl-5 pr-14 rounded-2xl border border-slate-200 bg-white text-sm font-normal text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all"
             />
             <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors ${message.trim() ? "text-[var(--accent)]" : "text-slate-300"}`}>
                <Sparkles className="h-5 w-5" />
@@ -262,8 +262,8 @@ export function ChatPanel({
           <div className="mt-12 space-y-6">
             {!hasContent ? (
               <div className="rounded-3xl border border-amber-100 bg-amber-50 p-8 text-center text-amber-900">
-                 <p className="font-medium">No specific policy facts found for this query.</p>
-                 <p className="mt-1 text-sm opacity-80">Try asking about recent legislation, borough programs, or city council actions.</p>
+                 <p className="font-work-sans font-medium">No specific policy facts found for this query.</p>
+                 <p className="font-work-sans mt-1 text-sm font-normal opacity-80">Try asking about recent legislation, borough programs, or city council actions.</p>
               </div>
             ) : (
               <>

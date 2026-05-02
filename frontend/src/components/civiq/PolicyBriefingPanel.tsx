@@ -65,7 +65,7 @@ export function PolicyBriefingPanel({
           role="alert"
         >
           <span className="font-semibold">Policy data unavailable. </span>
-          <span className="font-normal">{error}</span>
+          <span className="font-work-sans font-normal">{error}</span>
         </div>
       ) : null}
 

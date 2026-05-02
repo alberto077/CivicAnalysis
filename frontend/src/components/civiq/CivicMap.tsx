@@ -187,7 +187,7 @@ export function CivicMap({
               <div className="absolute inset-0 flex items-center justify-center bg-slate-50/50 backdrop-blur-sm z-20">
                 <div className="flex flex-col items-center gap-4">
                   <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[var(--accent)]" />
-                  <p className="text-sm font-medium text-slate-500">Loading Geographic Data...</p>
+                  <p className="font-work-sans text-sm font-medium text-slate-500">Loading Geographic Data...</p>
                 </div>
               </div>
             ) : geoData ? (

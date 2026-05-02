@@ -44,11 +44,11 @@ export function DashboardFilters({
         {/* Label + personalize toggle; then chips + Edit profile on one row */}
         <div className="space-y-3">
           <div className="flex flex-row items-center justify-between gap-4">
-            <span className="font-sans min-w-0 text-sm font-bold uppercase tracking-widest text-[var(--muted)]">
+            <span className="font-work-sans min-w-0 text-sm font-bold uppercase tracking-widest text-[var(--muted)]">
               Select Policy Area
             </span>
             <label className="group flex shrink-0 cursor-pointer items-center gap-2">
-              <span className="font-work-sans text-[11px] font-bold uppercase tracking-tighter text-[var(--muted)]">
+              <span className="font-work-sans text-[14px] font-bold uppercase tracking-[1.2px] text-[var(--muted)]">
                 Personalize results
               </span>
               <div

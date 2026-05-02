@@ -12,7 +12,7 @@ const playfairDisplay = Playfair_Display({
 });
 
 const workSans = Work_Sans({
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans-body",
   subsets: ["latin"],
 });
