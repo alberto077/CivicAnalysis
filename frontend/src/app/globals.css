@@ -127,7 +127,7 @@ h3.section-title,
 
 .hero-wordmark-reflect {
   position: relative;
-  display: inline-block;
+  /* display set in Hero (flex + wrap) so staggered letters match the top line layout */
 }
 
 .hero-wordmark-reflect::after {
@@ -139,7 +139,12 @@ h3.section-title,
   opacity: 0.16;
   filter: blur(1px);
   pointer-events: none;
-  background: inherit;
+  background: linear-gradient(
+    112deg,
+    rgba(13, 27, 42, 1) 0%,
+    rgba(230, 57, 70, 1) 100%
+  );
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -156,6 +161,10 @@ h3.section-title,
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow-glass);
+}
+
+.search-shell.glass-card {
+  border: none;
 }
 
 .ambient-orb {
@@ -215,8 +224,9 @@ h3.section-title,
   transform: scale(1.002);
 }
 
-/* Hero search: soft glowing shell */
+/* Hero search: soft glowing shell (size container for cqh-based control sizing) */
 .search-shell {
+  container-type: size;
   box-shadow:
     var(--shadow-glass),
     0 0 0 1px rgba(255, 255, 255, 0.75),
@@ -235,7 +245,6 @@ h3.section-title,
     0 0 48px -8px rgba(26, 54, 93, 0.25),
     0 0 90px -20px rgba(230, 57, 70, 0.15);
   transform: translateY(-1px);
-  border-color: rgba(230, 57, 70, 0.46);
 }
 
 .command-shell {
@@ -253,7 +262,7 @@ h3.section-title,
     118deg,
     rgba(26, 54, 93, 0.36) 0%,
     rgba(255, 255, 255, 0.68) 48%,
-    rgba(230, 57, 70, 0.34) 100%
+    rgba(26, 54, 93, 0.22) 100%
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -266,7 +275,7 @@ h3.section-title,
 }
 
 .command-shell:focus-within::before {
-  opacity: 0.96;
+  opacity: 0.72;
 }
 
 .command-submit {

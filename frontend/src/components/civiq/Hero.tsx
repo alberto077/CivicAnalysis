@@ -8,9 +8,29 @@ type HeroProps = {
   onSearch: () => void | Promise<void>;
 };
 
+const HEADLINE_LETTER_STAGGER = 0.14;
+const HEADLINE_LETTER_DURATION = 1.05;
+const headlineLetterEase: [number, number, number, number] = [0.16, 1, 0.32, 1];
+
+const headlineLetterVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: HEADLINE_LETTER_DURATION,
+      ease: headlineLetterEase,
+    },
+  },
+};
+
 export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
   const headlineIntro = "A Reflection";
   const headlineFocus = "Of Your City";
+  const introLen = headlineIntro.length;
+  /** Same rhythm as line 1: start after line 1’s letters have begun their cascade (+ short pause). */
+  const line2DelayChildren =
+    0.22 + introLen * HEADLINE_LETTER_STAGGER + 0.12;
 
   return (
     <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16">
@@ -36,61 +56,61 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 opacity-85 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 opacity-85 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full min-w-0 max-w-4xl">
         <div className="grid grid-cols-1 items-center gap-12">
-          <div className="mx-auto text-center">
-          <motion.h1
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: {},
-              visible: {
-                transition: {
-                  staggerChildren: 0.035,
-                  delayChildren: 0.2
-                }
-              }
-            }}
-            className="font-limelight mx-auto mt-5 max-w-3xl text-right text-[2.9rem] leading-[1.08] tracking-[3.8px] text-[rgba(20,31,45,0.92)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]"
-          >
-            <span className="block">
+          <div className="mx-auto w-full text-center">
+          <h1 className="font-limelight mx-auto mt-5 max-w-3xl text-center text-[2.9rem] leading-[1.08] tracking-[3.8px] text-[rgba(20,31,45,0.92)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]">
+            <motion.span
+              className="block w-full"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: HEADLINE_LETTER_STAGGER,
+                    delayChildren: 0.22,
+                  },
+                },
+              }}
+            >
               {headlineIntro.split("").map((char, index) => (
                 <motion.span
                   key={`headline-intro-${index}`}
-                  variants={{
-                    hidden: { opacity: 0, y: 16 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
-                    }
-                  }}
+                  className="inline-block"
+                  variants={headlineLetterVariants}
                 >
                   {char === " " ? "\u00A0" : char}
                 </motion.span>
               ))}
-            </span>
-            <span
-              className="hero-gradient-text hero-wordmark-reflect mt-1.5 block pl-[0.62em] text-right sm:pl-[0.78em]"
+            </motion.span>
+            <motion.span
+              className="hero-wordmark-reflect mt-1.5 block w-full text-center"
               data-reflect="Of Your City"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: HEADLINE_LETTER_STAGGER,
+                    delayChildren: line2DelayChildren,
+                  },
+                },
+              }}
             >
               {headlineFocus.split("").map((char, index) => (
                 <motion.span
                   key={`headline-focus-${index}`}
-                  variants={{
-                    hidden: { opacity: 0, y: 16 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
-                    }
-                  }}
+                  className="hero-gradient-text inline-block"
+                  variants={headlineLetterVariants}
                 >
                   {char === " " ? "\u00A0" : char}
                 </motion.span>
               ))}
-            </span>
-          </motion.h1>
+            </motion.span>
+          </h1>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +126,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
-          className="mx-auto mt-10 w-full max-w-4xl"
+          className="mt-10 w-full min-w-0"
           onSubmit={(e) => {
             e.preventDefault();
             void onSearch();
@@ -115,16 +135,14 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
           <label htmlFor="location-search" className="font-work-sans sr-only">
             Ask about your neighborhood, local policies, budgets, or city decisions
           </label>
-          <div className="glass-card search-shell command-shell group flex h-[61px] w-full max-w-[904px] items-center gap-3 rounded-[23px] border border-white/80 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] px-[9px] py-0 leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:gap-4">
-            <span className="text-[var(--muted)]" aria-hidden>
+          <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)]">
+            <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
               <svg
-                width="26"
-                height="26"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.65"
-                className="opacity-75 transition-transform duration-300 group-focus-within:scale-105"
+                className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105"
               >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-4-4" strokeLinecap="round" />
@@ -144,16 +162,15 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
               type="submit"
               disabled={loading || !query.trim()}
               aria-label={loading ? "Loading briefing" : "Submit briefing request"}
-              className="command-submit shrink-0 rounded-[1.15rem] bg-[var(--accent-mid)] px-4 py-3 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-50 sm:px-5"
+              className="command-submit box-border flex aspect-square h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center rounded-[1.05rem] bg-[var(--accent-mid)] p-1 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/85 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--accent-mid)] disabled:pointer-events-none disabled:opacity-50 sm:p-1.5 sm:rounded-[1.1rem] md:rounded-[1.15rem]"
             >
               <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
               <svg
-                width="20"
-                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                className="block h-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] w-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] shrink-0"
                 aria-hidden
               >
                 <path d="M5 12h13" strokeLinecap="round" />
@@ -162,6 +179,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             </button>
           </div>
         </motion.form>
+        </div>
       </div>
     </section>
   );
