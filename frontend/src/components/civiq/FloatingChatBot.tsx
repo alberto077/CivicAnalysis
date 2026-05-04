@@ -99,8 +99,17 @@ const floatingMarkdownComponents: Components = {
 
 const panelEase = [0.22, 1, 0.36, 1] as const;
 
+/** Scales with viewport height (min 600px, up to ~86vh, cap 920px) so large screens feel balanced, never past the screen. */
+const askSpiegelPanelHeight = "min(calc(100dvh - 2rem), min(920px, max(600px, 86vh)))";
+
 export function FloatingChatBot() {
   const pathname = usePathname();
+
+  /** Avoid FAB SSR/client DOM mismatch (e.g. motion/compiler wrappers vs native button). */
+  const [launcherMounted, setLauncherMounted] = useState(false);
+  useEffect(() => {
+    setLauncherMounted(true);
+  }, []);
 
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -221,7 +230,11 @@ export function FloatingChatBot() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ duration: 0.4, ease: panelEase }}
-              className="fixed right-2 top-[calc((100dvh-min(600px,calc(100dvh_-_1rem)))/2)] z-[200] flex h-[min(600px,calc(100dvh_-_1rem))] w-[min(100%,max(19rem,38vw))] max-w-[calc(100vw_-_0.5rem)] flex-col overflow-hidden rounded-2xl border border-white/45 bg-gradient-to-b from-white/[0.52] via-white/[0.38] to-white/[0.28] shadow-[0_24px_80px_-28px_rgba(15,23,42,0.45),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl backdrop-saturate-150 sm:right-4 sm:rounded-3xl"
+              style={{
+                height: askSpiegelPanelHeight,
+                top: `calc((100dvh - ${askSpiegelPanelHeight}) / 2)`,
+              }}
+              className="fixed right-2 z-[200] flex w-[min(100%,max(19rem,38vw))] max-w-[calc(100vw_-_0.5rem)] flex-col overflow-hidden rounded-2xl border border-white/45 bg-gradient-to-b from-white/[0.52] via-white/[0.38] to-white/[0.28] shadow-[0_24px_80px_-28px_rgba(15,23,42,0.45),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl backdrop-saturate-150 sm:right-4 sm:rounded-3xl"
             >
               <header className="relative flex shrink-0 items-start justify-between gap-4 px-5 pb-3 pt-5 sm:gap-6 sm:px-7 sm:pb-4 sm:pt-6">
                 <div className="min-w-0 pr-12">
@@ -349,7 +362,7 @@ export function FloatingChatBot() {
                   }}
                 >
                   <label htmlFor="ask-spiegel-input" className="font-work-sans sr-only">
-                    Ask Spiegel — query budgets, council actions, districts, or sources
+                    Ask Spiegel — ask about NYC policy...
                   </label>
                   <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full min-w-0 max-w-full items-center gap-2 rounded-[23px] border border-white/40 bg-gradient-to-br from-white/70 to-white/45 py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.75),0_12px_36px_-18px_rgba(15,23,42,0.2)] backdrop-blur-md sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)]">
                     <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
@@ -366,7 +379,7 @@ export function FloatingChatBot() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       autoComplete="off"
-                      placeholder="Ask about budgets, council actions, districts, or sources…"
+                      placeholder="Ask about NYC policy..."
                       disabled={loading}
                       className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[clamp(15px,2.8cqw,18px)] font-medium tracking-[0.04em] text-slate-900 placeholder:text-[0.95rem] placeholder:text-slate-500/90 placeholder:font-normal focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60"
                     />
@@ -397,20 +410,17 @@ export function FloatingChatBot() {
         ) : null}
       </AnimatePresence>
 
-      {!isOpen ? (
+      {launcherMounted && !isOpen ? (
         <div className="fixed bottom-6 right-5 z-[120] sm:bottom-8 sm:right-8">
-          <motion.button
+          <button
             type="button"
             onClick={() => setIsOpen(true)}
-            whileHover={{ scale: 1.045 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 420, damping: 26 }}
-            className="flex items-center gap-2.5 rounded-full border border-white/45 bg-[linear-gradient(135deg,rgba(26,54,93,0.96)_0%,#1a3f6d_48%,#163a66_100%)] py-3 pl-5 pr-5 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.14)_inset,0_6px_28px_-10px_rgba(26,54,93,0.55),0_18px_48px_-16px_rgba(168,218,220,0.38)] transition-[padding,box-shadow] duration-300 ease-out hover:px-7 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset,0_10px_36px_-12px_rgba(26,54,93,0.62),0_22px_56px_-18px_rgba(168,218,220,0.42)]"
+            className="flex items-center gap-2.5 rounded-full border border-white/45 bg-[linear-gradient(135deg,rgba(26,54,93,0.96)_0%,#1a3f6d_48%,#163a66_100%)] py-3 pl-5 pr-5 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.14)_inset,0_6px_28px_-10px_rgba(26,54,93,0.55),0_18px_48px_-16px_rgba(168,218,220,0.38)] transition-[padding,box-shadow,transform] duration-300 ease-out hover:scale-[1.045] hover:px-7 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset,0_10px_36px_-12px_rgba(26,54,93,0.62),0_22px_56px_-18px_rgba(168,218,220,0.42)] active:scale-[0.98]"
             aria-label="Open Ask Spiegel"
           >
             <Sparkles className="h-5 w-5 shrink-0 opacity-95" strokeWidth={1.75} aria-hidden />
             <span className="font-work-sans text-sm font-semibold tracking-wide">Ask Spiegel</span>
-          </motion.button>
+          </button>
         </div>
       ) : null}
     </>
