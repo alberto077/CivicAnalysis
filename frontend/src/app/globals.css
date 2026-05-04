@@ -304,8 +304,8 @@ h3.section-title,
 
 .filter-pill-active {
   box-shadow:
-    0 12px 22px -14px rgba(230, 57, 70, 0.72),
-    0 0 0 1px rgba(230, 57, 70, 0.25) inset;
+    0 10px 20px -12px rgba(220, 90, 100, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
 }
 
 .btn-premium {
