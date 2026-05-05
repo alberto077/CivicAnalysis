@@ -149,6 +149,64 @@ async function fetchCityCouncil(): Promise<Politician[]> {
 
 // NY State Assembly — nyassembly.gov/mem/
 
+async function fetchAssemblyCommittees(): Promise<Record<string, string[]>> {
+  const res = await fetch("https://nyassembly.gov/comm/", {
+    headers: { "User-Agent": UA },
+    signal: AbortSignal.timeout(10_000),
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) return {};
+  const html = await res.text();
+
+  // extract all committee IDs and names
+  const commRe = /href="https?:\/\/nyassembly\.gov\/comm\/\?id=(\d+)"[^>]*>([\s\S]+?)<\/a>/g;
+  const comms: { id: string; name: string }[] = [];
+  let m: RegExpExecArray | null;
+  const seenIds = new Set<string>();
+
+  while ((m = commRe.exec(html)) !== null) {
+    const id = m[1];
+    const name = stripHtml(m[2]).trim();
+    if (id && name && !seenIds.has(id) && name.length > 3 && !name.includes("Agenda") && !name.includes("Notice")) {
+      seenIds.add(id);
+      comms.push({ id, name });
+    }
+  }
+
+  // fetch all rosters in parallel (max 40)
+  const mapping: Record<string, string[]> = {};
+  await Promise.allSettled(comms.map(async (comm) => {
+    try {
+      const cRes = await fetch(`https://nyassembly.gov/comm/?id=${comm.id}&sec=membership`, {
+        headers: { "User-Agent": UA },
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!cRes.ok) return;
+      const cHtml = await cRes.text();
+
+      // extract slugs from member links
+      const slugRe = /href="\/mem\/([\w\-'.]+)"/g;
+      let sm: RegExpExecArray | null;
+      while ((sm = slugRe.exec(cHtml)) !== null) {
+        const slug = sm[1];
+        if (slug && slug !== "search" && slug !== "email") {
+          if (!mapping[slug]) mapping[slug] = [];
+          if (!mapping[slug].includes(comm.name)) {
+            // check if they are chair/member
+            const ahead = cHtml.slice(sm.index - 500, sm.index);
+            const isChair = ahead.toLowerCase().includes("chair");
+            mapping[slug].push(isChair ? `Chair, ${comm.name}` : `Member, ${comm.name}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`[Assembly comm] Failed to fetch ${comm.name}:`, (e as Error).message);
+    }
+  }));
+
+  return mapping;
+}
+
 async function fetchAssembly(): Promise<Politician[]> {
   const res = await fetch("https://nyassembly.gov/mem/", {
     headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
@@ -188,7 +246,7 @@ async function fetchAssembly(): Promise<Politician[]> {
     const email = emailM ? emailM[1] : undefined;
 
 
-    // TODO: improve to get party affiliation, political_stance, bio_url, photo_url, zip_codes, neighborhoods, committees
+    // TODO: get party affiliation, political_stance, bio_url, photo_url, zip_codes, neighborhoods, committees
     const d = Number(district);
     members.push({
       id: `ny-assembly-${slug}`,
@@ -196,7 +254,7 @@ async function fetchAssembly(): Promise<Politician[]> {
       office: "NY Assembly Member",
       level: "State Assembly",
       party: "Unknown",
-      political_stance: "Moderate",
+      political_stance: "N/A",
       borough: assemblyBorough(d),
       district,
       neighborhoods: [],
@@ -208,7 +266,16 @@ async function fetchAssembly(): Promise<Politician[]> {
     });
   }
 
-  console.log(`[Assembly scrape] ${members.length} members`);
+  // merge committees
+  const commMapping = await fetchAssemblyCommittees();
+  members.forEach(p => {
+    const slug = p.id.replace("ny-assembly-", "");
+    if (commMapping[slug]) {
+      p.committees = commMapping[slug];
+    }
+  });
+
+  console.log(`[Assembly scrape] ${members.length} members (with committees)`);
   return members;
 }
 
@@ -258,8 +325,8 @@ async function fetchSenate(): Promise<Politician[]> {
       name: m.fullName?.trim() ?? "Unknown",
       office: "NY State Senator",
       level: "State Senate",
-      party: "Unknown",       // API does not expose party affiliation
-      political_stance: "Moderate",
+      party: "N/A",       // API does not expose party affiliation
+      political_stance: "N/A",
       borough: senateBorough(d),
       district,
       neighborhoods: [],
@@ -299,49 +366,91 @@ function usHouseBorough(d: number): string {
   return "New York";
 }
 
-async function fetchGovTrack(roleType: "representative" | "senator"): Promise<Politician[]> {
-  const res = await fetch(
-    `https://www.govtrack.us/api/v2/role?current=true&state=NY&role_type=${roleType}&limit=50&format=json`,
-    { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(12_000), next: { revalidate: 86400 } }
-  );
-  if (!res.ok) throw new Error(`GovTrack ${roleType} HTTP ${res.status}`);
-  const data = (await res.json()) as { objects?: GovTrackRole[] };
+async function fetchHouse(): Promise<Politician[]> {
+  const res = await fetch("https://www.house.gov/representatives", {
+    headers: { "User-Agent": UA },
+    signal: AbortSignal.timeout(15_000),
+    next: { revalidate: 86400 },
+  });
+  if (!res.ok) throw new Error(`House.gov HTTP ${res.status}`);
+  const html = await res.text();
 
-  return (data.objects ?? []).map((r, i): Politician => {
-    const level: GovLevel = roleType === "representative" ? "U.S. House" : "U.S. Senate";
-    const party = r.party?.trim() ?? "Unknown";
-    const district = r.district != null ? String(r.district) : null;
-    const senClass = r.senator_class ? String(r.senator_class) : undefined;
-    const name =
-      r.person?.name?.trim() ??
-      `${r.person?.firstname ?? ""} ${r.person?.lastname ?? ""}`.trim() ??
-      "Unknown";
+  const members: Politician[] = [];
+  // target NY section specifically
+  const nyStart = html.indexOf('id="state-new-york"');
+  if (nyStart === -1) throw new Error("Could not find NY section on house.gov");
+  const nySection = html.slice(nyStart, html.indexOf('id="state-north-carolina"', nyStart));
 
-    return {
-      id: r.id ? `${roleType === "representative" ? "us-house" : "us-senate"}-${r.id}` : `${roleType}-${i}`,
+  const re = /<tr>\s*<td>(\d+)<\/td>\s*<td>\s*<a href="([^"]+)">([^<]+)<\/a>\s*<\/td>\s*<td>([^<]+)<\/td>/g;
+  let m: RegExpExecArray | null;
+
+  while ((m = re.exec(nySection)) !== null) {
+    const district = m[1];
+    const bio_url = m[2];
+    const name = m[3].split(",").reverse().join(" ").trim(); // "Last, First" -> "First Last"
+    const party = m[4].trim().startsWith("D") ? "Democrat" : "Republican";
+
+    members.push({
+      id: `us-house-ny${district}`,
       name,
-      office: roleType === "representative" ? "U.S. Representative" : "U.S. Senator",
-      level,
+      office: "U.S. Representative",
+      level: "U.S. House",
       party,
       political_stance: partyToStance(party),
-      borough: roleType === "senator" ? "New York State" : usHouseBorough(Number(district ?? 0)),
+      borough: usHouseBorough(Number(district)),
       district,
       neighborhoods: [],
       zip_codes: [],
       committees: [],
-      bio_url: r.person?.link ? `https://www.govtrack.us${r.person.link}` : (r.website ?? null),
+      bio_url,
       photo_url: null,
-      phone: r.phone?.trim(),
-      website: r.website?.trim(),
-      term_ends: r.enddate ?? undefined,
-      senate_class: senClass ? `Class ${senClass}` : undefined,
-      next_election: senClass ? (SENATE_CLASS_YEAR[senClass] ?? "2026") : "2026",
-      represents:
-        level === "U.S. Senate"
-          ? "All of New York State"
-          : `New York's ${ordinal(Number(district ?? 0))} Congressional District`,
-    };
-  });
+      represents: `New York's ${ordinal(Number(district))} Congressional District`,
+    });
+  }
+
+  console.log(`[House scrape] ${members.length} members`);
+  return members;
+}
+
+async function fetchUSSenate(): Promise<Politician[]> {
+  return [
+    {
+      id: "us-senate-schumer",
+      name: "Chuck Schumer",
+      office: "U.S. Senator",
+      level: "U.S. Senate",
+      party: "Democrat",
+      political_stance: "Liberal",
+      borough: "New York State",
+      district: null,
+      neighborhoods: [],
+      zip_codes: [],
+      committees: ["Majority Leader"],
+      bio_url: "https://www.schumer.senate.gov/",
+      photo_url: "https://www.schumer.senate.gov/imo/media/image/Schumer_Official_Photo.jpg",
+      senate_class: "Class 3",
+      next_election: "2028",
+      represents: "All of New York State",
+    },
+    {
+      id: "us-senate-gillibrand",
+      name: "Kirsten Gillibrand",
+      office: "U.S. Senator",
+      level: "U.S. Senate",
+      party: "Democrat",
+      political_stance: "Liberal",
+      borough: "New York State",
+      district: null,
+      neighborhoods: [],
+      zip_codes: [],
+      committees: [],
+      bio_url: "https://www.gillibrand.senate.gov/",
+      photo_url: "https://www.gillibrand.senate.gov/imo/media/image/Gillibrand_Official_Photo.jpg",
+      senate_class: "Class 1",
+      next_election: "2030",
+      represents: "All of New York State",
+    },
+  ];
 }
 
 
@@ -370,8 +479,8 @@ function enrichBackend(raw: Partial<Politician>[]): Politician[] {
         name: p.name!.trim(),
         office: p.office!.trim(),
         level,
-        party,
-        political_stance: p.political_stance?.trim() || partyToStance(party),
+        party: party === "Unknown" ? "N/A" : party,
+        political_stance: p.political_stance?.trim() || (party !== "Unknown" ? partyToStance(party) : "N/A"),
         borough: p.borough?.trim() || "New York",
         district: p.district ?? null,
         neighborhoods: p.neighborhoods ?? [],
@@ -399,8 +508,8 @@ async function fetchAllLive(): Promise<Politician[]> {
     fetchCityCouncil(),
     fetchAssembly(),
     fetchSenate(),
-    fetchGovTrack("representative"),
-    fetchGovTrack("senator"),
+    fetchHouse(),
+    fetchUSSenate(),
   ]);
 
   const all = settled.flatMap((r, i) => {
@@ -443,13 +552,15 @@ export async function GET(request: Request) {
     });
     if (up.ok) {
       const json = (await up.json()) as { politicians?: Partial<Politician>[] };
-      if (Array.isArray(json.politicians) && json.politicians.length > 0) {
+      if (Array.isArray(json.politicians) && json.politicians.length >= 286) {
         const enriched = enrichBackend(json.politicians);
-        console.log(`[/api/civic/politicians] backend: ${enriched.length}`);
+        console.log(`[/api/civic/politicians] backend (stable): ${enriched.length}`);
         return NextResponse.json(
           { politicians: enriched, source: "backend", fetched_at: new Date().toISOString() },
           { status: 200, headers: CACHE }
         );
+      } else {
+        console.log(`[/api/civic/politicians] backend incomplete (${json.politicians?.length ?? 0}/286), falling back to live scrape.`);
       }
     }
   } catch {
