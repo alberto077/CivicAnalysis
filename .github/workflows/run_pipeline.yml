@@ -13,22 +13,22 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
-          cache: 'pip'
+          python-version-file: "pyproject.toml"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
 
       - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-          python -m spacy download en_core_web_sm
+        run: 
+          uv sync --frozen
 
       - name: Run pipeline
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NYS_SENATE_API_KEY: ${{ secrets.NYS_SENATE_API_KEY }}
           NYC_COUNCIL_API_KEY: ${{ secrets.NYC_COUNCIL_API_KEY }}
-        run: python pipeline/run_pipeline.py
+        run: uv run pipeline/run_pipeline.py
