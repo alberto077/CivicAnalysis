@@ -109,31 +109,45 @@ async function fetchCityCouncil(): Promise<Politician[]> {
 
   const members: Politician[] = [];
   const seen = new Set<string>();
-  const re = /href="https?:\/\/council\.nyc\.gov\/district-(\d+)\/[^"]*"[^>]*>([\s\S]+?)<\/a>/g;
-  let m: RegExpExecArray | null;
 
-  while ((m = re.exec(html)) !== null) {
-    const district = m[1];
+  const rows = html.split("<tr");
+  for (const row of rows) {
+    if (!row.includes('class="sort-district"')) continue;
+
+    // extract district
+    const dMatch = row.match(/district-(\d+)/);
+    if (!dMatch) continue;
+    const district = dMatch[1];
+    
     if (seen.has(district)) continue;
-
-    const raw = stripHtml(m[2]);
-    // skip pure numbers, very short strings, and nav links
-    if (/^\d+$/.test(raw) || raw.length < 4 || raw.toLowerCase().includes("district info")) continue;
+    
+    // extract name
+    const nMatch = row.match(/data-member-name="([^"]+)"/);
+    if (!nMatch) continue;
+    const name = stripHtml(nMatch[1]);
+    
+    // extract neighborhoods
+    const nbMatch = row.match(/class="[^"]*sort-neighborhoods[^"]*"[^>]*>([\s\S]+?)<\/td>/);
+    let neighborhoods: string[] = [];
+    if (nbMatch) {
+      const rawNb = stripHtml(nbMatch[1]);
+      neighborhoods = rawNb.split(",").map(n => n.trim()).filter(n => n.length > 0);
+    }
 
     seen.add(district);
     const d = Number(district);
 
-    // TODO: improve to scrape for party affiliation, political_stance, bio_url, photo_url, zip_codes, neighborhoods, committees
+    // TODO: improve to scrape for party affiliation, political_stance, bio_url, photo_url, zip_codes, committees
     members.push({
       id: `nyc-council-d${district}`,
-      name: raw,
+      name: name,
       office: "NYC Council Member",
       level: "City Council",
       party: "Democrat",
       political_stance: "Liberal",
       borough: councilBorough(d),
       district,
-      neighborhoods: [],
+      neighborhoods,
       zip_codes: [],
       committees: [],
       bio_url: `https://council.nyc.gov/district-${district}/`,

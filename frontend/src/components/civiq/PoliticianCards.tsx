@@ -167,14 +167,15 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
               </div>
 
               <div className="mt-auto pt-4 flex flex-col gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Neighborhoods Served</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(p.neighborhoods ?? []).slice(0, 3).map(n => (
-                    <span key={n} className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{n}</span>
-                  ))}
-                  {(p.neighborhoods ?? []).length === 0 && <span className="text-[10px] text-slate-400 italic">Visit official profile</span>}
-                  {(p.neighborhoods ?? []).length > 3 && <span className="text-[10px] text-[var(--accent)] font-bold">+{p.neighborhoods!.length - 3} more</span>}
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Contact Information</span>
+                {(ext.email || ext.phone) ? (
+                  <div className="flex flex-col gap-1">
+                    {ext.email && <span className="text-[11px] text-slate-600 font-medium truncate"><span className="font-bold">Email:</span> {ext.email}</span>}
+                    {ext.phone && <span className="text-[11px] text-slate-600 font-medium"><span className="font-bold">Phone:</span> {ext.phone}</span>}
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-slate-400 italic">No contact info available</span>
+                )}
               </div>
             </div>
 
@@ -198,8 +199,8 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Committee Assignments</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.committees.map(c => (
-                      <span key={c} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                    {p.committees.map((c, i) => (
+                      <span key={`${c}-${i}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
                         <Users className="h-3 w-3 text-blue-400" />{c}
                       </span>
                     ))}
@@ -210,10 +211,10 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Focus Areas &amp; Alignment</span>
                 <div className="flex flex-wrap gap-2">
-                  {areas.map(area => {
+                  {areas.map((area, i) => {
                     const isMatch = matches.some(m => m.toLowerCase().includes(area.toLowerCase()));
                     return (
-                      <span key={area} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all ${isMatch ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm" : "bg-white border-slate-200 text-slate-700"}`}>
+                      <span key={`${area}-${i}`} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all ${isMatch ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm" : "bg-white border-slate-200 text-slate-700"}`}>
                         {isMatch ? <Sparkles className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
                         {area}{isMatch && <span className="ml-1 text-[8px] uppercase tracking-tighter opacity-70">(Matches Profile)</span>}
                       </span>
@@ -222,14 +223,21 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 </div>
               </div>
 
+              {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Neighborhoods Served</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.neighborhoods!.map((n, i) => <span key={`${n}-${i}`} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">{n}</span>)}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Areas Represented</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {(p.neighborhoods ?? []).length > 0
-                    ? p.neighborhoods!.map(n => <span key={n} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">{n}</span>)
-                    : <span className="text-[11px] text-slate-800">
-                      {level === "U.S. Senate" ? "All of New York State" : level === "U.S. House" || level === "State Assembly" || level === "State Senate" ? `NY District ${p.district ?? "—"} (${p.borough})` : "See official profile"}
-                    </span>}
+                  <span className="text-[11px] text-slate-800">
+                    {level === "U.S. Senate" ? "All of New York State" : level === "City Council" ? `NYC District ${p.district ?? "—"} (${p.borough})` : `NY District ${p.district ?? "—"} (${p.borough})`}
+                  </span>
                 </div>
               </div>
 
@@ -237,17 +245,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">ZIP Codes Served</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.zip_codes!.map(z => <span key={z} className="text-[11px] font-bold text-[var(--accent)]">{z}</span>)}
-                  </div>
-                </div>
-              )}
-
-              {(ext.email || ext.phone) && (
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Contact</span>
-                  <div className="space-y-1">
-                    {ext.email && <div className="text-[11px] text-slate-600"><span className="font-bold">Email: </span>{ext.email}</div>}
-                    {ext.phone && <div className="text-[11px] text-slate-600"><span className="font-bold">Phone: </span>{ext.phone}</div>}
+                    {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-[var(--accent)]">{z}</span>)}
                   </div>
                 </div>
               )}
