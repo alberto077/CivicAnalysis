@@ -371,30 +371,12 @@ export async function getPoliticians(filters?: {
 }
 
 export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
-  const res = await fetch(`${CIVIC_API}/politicians/filters`, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  const data = (await res.json()) as {
-    boroughs?: unknown;
-    stances?: unknown;
-    detail?: string;
-    error?: string;
+  const { getPoliticianFilters: getFiltersShim } = await import("@/lib/politicians");
+  const opts = await getFiltersShim();
+  return {
+    boroughs: Array.isArray(opts.boroughs) ? opts.boroughs : [],
+    stances: Array.isArray(opts.stances) ? opts.stances : [],
   };
-
-  if (!res.ok) {
-    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
-  }
-
-  const boroughs = Array.isArray(data.boroughs)
-    ? data.boroughs.filter((v): v is string => typeof v === "string")
-    : [];
-  const stances = Array.isArray(data.stances)
-    ? data.stances.filter((v): v is string => typeof v === "string")
-    : [];
-
-  return { boroughs, stances };
 }
 
 export async function sendOpenAiChat(

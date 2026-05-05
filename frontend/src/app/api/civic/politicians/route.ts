@@ -381,14 +381,14 @@ async function fetchHouse(): Promise<Politician[]> {
   if (nyStart === -1) throw new Error("Could not find NY section on house.gov");
   const nySection = html.slice(nyStart, html.indexOf('id="state-north-carolina"', nyStart));
 
-  const re = /<tr>\s*<td>(\d+)<\/td>\s*<td>\s*<a href="([^"]+)">([^<]+)<\/a>\s*<\/td>\s*<td>([^<]+)<\/td>/g;
+  const re = /<td[^>]*>(\d+)[a-z]*\s*<\/td>\s*<td[^>]*><a href="([^"]+)">([^<]+)<\/a>\s*<\/td>\s*<td[^>]*>([A-Z])\s*<\/td>/g;
   let m: RegExpExecArray | null;
 
   while ((m = re.exec(nySection)) !== null) {
     const district = m[1];
     const bio_url = m[2];
     const name = m[3].split(",").reverse().join(" ").trim(); // "Last, First" -> "First Last"
-    const party = m[4].trim().startsWith("D") ? "Democrat" : "Republican";
+    const party = m[4].trim() === "D" ? "Democrat" : "Republican";
 
     members.push({
       id: `us-house-ny${district}`,
@@ -544,7 +544,19 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const qs = searchParams.toString();
 
-  // try python backend first
+  // prefer live html scraping
+  try {
+    const politicians = await fetchAllLive();
+    console.log(`[/api/civic/politicians] live scrape total: ${politicians.length}`);
+    return NextResponse.json(
+      { politicians, source: "live_scrape", fetched_at: new Date().toISOString() },
+      { status: 200, headers: CACHE }
+    );
+  } catch (e) {
+    console.warn("[/api/civic/politicians] Live scrape failed, falling back to backend:", e);
+  }
+
+  // fallback to backend
   try {
     const up = await fetch(`${getBackendOrigin()}/api/politicians${qs ? `?${qs}` : ""}`, {
       cache: "no-store",
@@ -552,34 +564,21 @@ export async function GET(request: Request) {
     });
     if (up.ok) {
       const json = (await up.json()) as { politicians?: Partial<Politician>[] };
-      if (Array.isArray(json.politicians) && json.politicians.length >= 286) {
+      if (Array.isArray(json.politicians)) {
         const enriched = enrichBackend(json.politicians);
-        console.log(`[/api/civic/politicians] backend (stable): ${enriched.length}`);
+        console.log(`[/api/civic/politicians] backend fallback total: ${enriched.length}`);
         return NextResponse.json(
           { politicians: enriched, source: "backend", fetched_at: new Date().toISOString() },
           { status: 200, headers: CACHE }
         );
-      } else {
-        console.log(`[/api/civic/politicians] backend incomplete (${json.politicians?.length ?? 0}/286), falling back to live scrape.`);
       }
     }
   } catch {
-    // backend unreachable - fall through to live scraping
+    // both failed
   }
 
-  // live html scraping
-  try {
-    const politicians = await fetchAllLive();
-    console.log(`[/api/civic/politicians] total: ${politicians.length}`);
-    return NextResponse.json(
-      { politicians, source: "live_scrape", fetched_at: new Date().toISOString() },
-      { status: 200, headers: CACHE }
-    );
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json(
-      { politicians: [], error: msg, fetched_at: new Date().toISOString() },
-      { status: 200, headers: CACHE }
-    );
-  }
+  return NextResponse.json(
+    { politicians: [], error: "All data sources failed", fetched_at: new Date().toISOString() },
+    { status: 200, headers: CACHE }
+  );
 }
