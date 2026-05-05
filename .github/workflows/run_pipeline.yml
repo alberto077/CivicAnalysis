@@ -30,4 +30,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NYS_SENATE_API_KEY: ${{ secrets.NYS_SENATE_API_KEY }}
           NYC_COUNCIL_API_KEY: ${{ secrets.NYC_COUNCIL_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uv run pipeline/run_pipeline.py
