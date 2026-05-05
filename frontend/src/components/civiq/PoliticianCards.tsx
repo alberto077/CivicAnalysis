@@ -84,25 +84,7 @@ function getLearnMoreUrl(p: Politician) {
 }
 
 
-// TODO: for now
-const FOCUS_AREAS: Record<string, string[]> = {
-  "City Council": ["Housing & Zoning", "Local Budget", "Parks & Rec", "Sanitation", "Public Safety", "School Funding", "Small Business", "Transportation"],
-  "State Assembly": ["Education", "Healthcare", "State Budget", "Infrastructure", "Labor Policy", "Environment", "Criminal Justice", "Housing Policy"],
-  "State Senate": ["State Legislation", "Judicial Appointments", "Agriculture", "Environment", "Economic Dev", "Healthcare", "Criminal Justice", "Higher Education"],
-  "U.S. House": ["Federal Budget", "Immigration", "Defense & Veterans", "Infrastructure", "Healthcare Reform", "Climate", "Trade", "Civil Rights"],
-  "U.S. Senate": ["Foreign Policy", "Federal Judiciary", "National Security", "Fiscal Policy", "Trade Agreements", "Intelligence", "Climate", "Immigration"],
-};
 
-// TODO: add more focus areas, also make sure the data is relevant to the politician ??
-function getFocusAreas(p: Politician, userIssues: string[] = []) {
-  const level = getLevelKey(p);
-  const pool = FOCUS_AREAS[level] ?? FOCUS_AREAS["City Council"];
-  const seed = p.name.length;
-  const areas = [pool[seed % pool.length], pool[(seed + 2) % pool.length], pool[(seed + 4) % pool.length]]
-    .filter((v, i, a) => a.indexOf(v) === i);
-  const matches = userIssues.filter(i => areas.some(a => i.toLowerCase().includes(a.toLowerCase())));
-  return { areas, matches };
-}
 
 // TODO: replace with better/relevant data for state/federal
 const SCOPE_BULLETS: Record<string, string[]> = {
@@ -115,7 +97,6 @@ const SCOPE_BULLETS: Record<string, string[]> = {
 
 function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: string[] }) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const { areas, matches } = getFocusAreas(p, userIssues);
   const level = getLevelKey(p);
   const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string };
 
@@ -208,20 +189,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 </div>
               )}
 
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Focus Areas &amp; Alignment</span>
-                <div className="flex flex-wrap gap-2">
-                  {areas.map((area, i) => {
-                    const isMatch = matches.some(m => m.toLowerCase().includes(area.toLowerCase()));
-                    return (
-                      <span key={`${area}-${i}`} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all ${isMatch ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm" : "bg-white border-slate-200 text-slate-700"}`}>
-                        {isMatch ? <Sparkles className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
-                        {area}{isMatch && <span className="ml-1 text-[8px] uppercase tracking-tighter opacity-70">(Matches Profile)</span>}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
+
 
               {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
                 <div>
