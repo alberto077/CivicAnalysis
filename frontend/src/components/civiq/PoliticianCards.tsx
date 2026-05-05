@@ -788,7 +788,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       </MotionReveal>
 
       {/* RESULTS */}
-      <MotionReveal>
+      <div>
         {error && (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 mb-8">
             {error}
@@ -804,7 +804,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
         ) : (
           /* GRID : Politicians */
-          <MotionReveal className="relative">
+          <div className="relative">
             <div className="flex items-center justify-between mb-6 px-2">
               <p className="text-sm text-slate-500 font-medium">
                 Showing <span className="text-slate-900 font-bold">{Math.min(visibleCount, filteredPoliticians.length)}</span> of <span className="text-slate-900 font-bold">{filteredPoliticians.length}</span> representatives
@@ -849,9 +849,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 </button>
               </div>
             )}
-          </MotionReveal>
+          </div>
         )}
-      </MotionReveal>
+      </div>
     </section>
   );
 }
