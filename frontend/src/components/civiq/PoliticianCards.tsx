@@ -51,11 +51,29 @@ function getLevelAccent(level: string): string {
 
 function getStanceStyles(stance: string) {
   const s = (stance || "").toLowerCase();
+  if (s === "n/a" || s === "unknown") return "bg-slate-50 text-slate-400 border-slate-200";
   if (s.includes("progressive")) return "bg-teal-50 text-teal-700 border-teal-100";
   if (s.includes("liberal")) return "bg-blue-50 text-blue-700 border-blue-100";
   if (s.includes("conservative")) return "bg-red-50 text-red-700 border-red-100";
   if (s.includes("independent")) return "bg-orange-50 text-orange-700 border-orange-100";
   return "bg-slate-50 text-slate-600 border-slate-200";
+}
+
+function cleanPoliticianData(name: string) {
+  let cleanedName = name;
+  let title = "";
+
+  // extract titles, eg. "Majority Leader", "Deputy Speaker", etc
+  const titleMatch = name.match(/^(Majority Leader|Minority Leader|Deputy Speaker|Speaker|President Pro Tempore|Deputy Leader|Rep\.|Sen\.)\s+/i);
+  if (titleMatch) {
+    title = titleMatch[1];
+    cleanedName = cleanedName.replace(titleMatch[0], "");
+  }
+
+  // remove [D-NY] or similar brackets in name
+  cleanedName = cleanedName.replace(/\s*\[[A-Z]-[A-Z]{2}.*?\]/g, "");
+
+  return { cleanedName: cleanedName.trim(), title };
 }
 
 function getLearnMoreUrl(p: Politician) {
@@ -101,9 +119,16 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
   const level = getLevelKey(p);
   const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string };
 
+  const { cleanedName, title } = cleanPoliticianData(p.name);
+
   return (
     /* main container - controls the flip */
-    <motion.div variants={staggerItem} className="relative h-[480px] w-full [perspective:1000px] group" onClick={() => setIsFlipped(f => !f)}>
+    <motion.div
+      variants={staggerItem}
+      whileHover={{ y: -6, transition: { duration: 0.2 } }}
+      className="relative h-[480px] w-full [perspective:1000px] group"
+      onClick={() => setIsFlipped(f => !f)}
+    >
       <motion.div
         className="relative h-full w-full [transform-style:preserve-3d] cursor-pointer"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
@@ -111,14 +136,15 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
       >
 
         {/* Card Front */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--border)] bg-white [backface-visibility:hidden] shadow-sm group-hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--border)] bg-white [backface-visibility:hidden] shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden">
           <div className={`h-1 w-full flex-shrink-0 ${getLevelAccent(level)}`} />
           <div className="p-8 flex flex-col flex-1">
             <div className="mb-6 flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-2xl font-bold leading-tight text-[var(--foreground)] truncate">{p.name}</h3>
+                <h3 className="font-display text-2xl font-bold leading-tight text-[var(--foreground)]">{cleanedName}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className={`rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${getOfficeStyles(p.office)}`}>{p.office}</span>
+                  {title && <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">{title}</span>}
                   {p.district && <span className="rounded-md bg-slate-50 border border-slate-200 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">District {p.district}</span>}
                 </div>
               </div>
@@ -127,16 +153,16 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
             <div className="space-y-4 flex-1">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--muted)] font-medium">Borough</span>
-                <span className="font-bold text-[var(--foreground)]">{p.borough}</span>
+                <span className="font-bold text-[var(--foreground)]">{p.borough || "N/A"}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--muted)] font-medium">Party</span>
-                <span className="font-bold text-[var(--foreground)]">{p.party || "Unknown"}</span>
+                <span className="font-bold text-[var(--foreground)]">{p.party || "N/A"}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--muted)] font-medium">Stance</span>
                 <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${getStanceStyles(p.political_stance)}`}>
-                  {p.political_stance || "Unknown"}
+                  {p.political_stance || "N/A"}
                 </span>
               </div>
 
@@ -197,11 +223,11 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
               </div>
 
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Service Area</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Areas Represented</span>
                 <div className="flex flex-wrap gap-1.5">
                   {(p.neighborhoods ?? []).length > 0
                     ? p.neighborhoods!.map(n => <span key={n} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">{n}</span>)
-                    : <span className="text-[11px] text-slate-400 italic">
+                    : <span className="text-[11px] text-slate-800">
                       {level === "U.S. Senate" ? "All of New York State" : level === "U.S. House" || level === "State Assembly" || level === "State Senate" ? `NY District ${p.district ?? "—"} (${p.borough})` : "See official profile"}
                     </span>}
                 </div>
@@ -250,6 +276,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const { profile } = useProfile();
+  const [visibleCount, setVisibleCount] = useState(24);
 
   const [selectedBoroughs, setSelectedBoroughs] = useState<string[]>([]);
   const [dynamicBoroughs, setDynamicBoroughs] = useState<string[]>([]);
@@ -397,7 +424,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         const data = await getPoliticians();
 
         if (requestId === politicianRequestIdRef.current) {
-          setPoliticians(data);
+          // randomized sorting on initial load
+          const shuffled = [...data].sort(() => Math.random() - 0.5);
+          setPoliticians(shuffled);
         }
       } catch (e) {
         if (requestId === politicianRequestIdRef.current) {
@@ -414,15 +443,19 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     void load();
   }, []);
 
+  // reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [searchTerm, selectedBoroughs, selectedLevel, selectedParty, selectedStance, selectedDistrict, selectedCommittee]);
 
   // filters - parties, stances, districts, committees, level, search-term, boroughs ??
   const availableParties = useMemo(() => {
-    const parties = new Set(politicians.map(p => p.party).filter(Boolean) as string[]);
+    const parties = new Set(politicians.map(p => p.party || "N/A"));
     return ["All", ...Array.from(parties).sort()];
   }, [politicians]);
 
   const availableStances = useMemo(() => {
-    const stances = new Set(politicians.map(p => p.political_stance).filter(Boolean) as string[]);
+    const stances = new Set(politicians.map(p => p.political_stance || "N/A"));
     return ["All", ...Array.from(stances).sort()];
   }, [politicians]);
 
@@ -469,8 +502,8 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         }
       }
 
-      const matchesParty = selectedParty === "All" || p.party === selectedParty;
-      const matchesStance = selectedStance === "All" || p.political_stance === selectedStance;
+      const matchesParty = selectedParty === "All" || (p.party || "N/A") === selectedParty;
+      const matchesStance = selectedStance === "All" || (p.political_stance || "N/A") === selectedStance;
       const matchesDistrict = selectedDistrict === "All" || p.district === selectedDistrict;
       const matchesCommittee = selectedCommittee === "All" || (p.committees && p.committees.includes(selectedCommittee));
 
@@ -481,7 +514,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <MotionReveal>
         <div className="flex items-start justify-between">
           <h1 className="font-display text-4xl font-bold tracking-tight text-[var(--foreground)] sm:text-5xl">
@@ -628,19 +661,21 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
 
       {/* Tabs : Levels of Government */}
-      <MotionReveal className="mt-12 flex items-center gap-2 mb-6 border-b border-slate-200 pb-px overflow-x-auto hide-scrollbar">
-        {GOV_LEVELS.map(level => (
-          <button
-            key={level}
-            onClick={() => setSelectedLevel(level)}
-            className={`px-4 py-2 font-bold text-sm transition-colors border-b-2 whitespace-nowrap ${selectedLevel === level
-              ? "border-[var(--accent)] text-[var(--accent)]"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-          >
-            {level}
-          </button>
-        ))}
+      <MotionReveal className="mt-12 mb-6 border-b border-slate-200">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full">
+          {GOV_LEVELS.map(level => (
+            <button
+              key={level}
+              onClick={() => setSelectedLevel(level)}
+              className={`px-2 py-4 font-bold text-sm transition-colors border-b-2 text-center ${selectedLevel === level
+                ? "border-[var(--accent)] text-[var(--accent)] bg-slate-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/30"
+                }`}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
       </MotionReveal>
 
       {/* FILTERS */}
@@ -760,20 +795,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
         )}
 
-        {/* results count */}
-        <div className="flex justify-between items-end mb-6">
-          <div className="flex flex-col gap-1">
-            <h3 className="font-bold text-slate-800 text-lg">
-              Results <span className="text-slate-400 font-medium text-sm ml-2">({filteredPoliticians.length} found)</span>
-            </h3>
-            {searchTerm && /^\d{5}$/.test(searchTerm) && (
-              <p className="text-[10px] text-slate-400 font-medium italic">
-                Zip code {searchTerm} may include multiple districts.
-              </p>
-            )}
-          </div>
-        </div>
-
         {/* loading skeleton when loading data */}
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -781,29 +802,55 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               <div key={i} className="h-[480px] animate-pulse rounded-3xl bg-slate-100" />
             ))}
           </div>
-        ) : filteredPoliticians.length > 0 ? (
-          <motion.div
-            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-            initial="hidden"
-            animate="show"
-            variants={staggerContainer}
-          >
-            {filteredPoliticians.map((p) => (
-              <PoliticianCard
-                key={`${p.id || p.name}-${p.borough}-${p.district}`}
-                p={p}
-                userIssues={profile?.issues}
-              />
-            ))}
-          </motion.div>
         ) : (
-          <div className="rounded-3xl border-2 border-dashed border-slate-200 py-20 text-center">
-            <p className="text-[var(--muted)]">No representatives found matching your detailed filters.</p>
-            <button onClick={clearAllFilters} className="mt-4 text-[var(--accent)] font-bold text-sm hover:underline">Clear all filters</button>
-          </div>
+          /* GRID : Politicians */
+          <MotionReveal className="relative">
+            <div className="flex items-center justify-between mb-6 px-2">
+              <p className="text-sm text-slate-500 font-medium">
+                Showing <span className="text-slate-900 font-bold">{Math.min(visibleCount, filteredPoliticians.length)}</span> of <span className="text-slate-900 font-bold">{filteredPoliticians.length}</span> representatives
+              </p>
+            </div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6"
+            >
+              {filteredPoliticians.slice(0, visibleCount).map((p, idx) => (
+                <PoliticianCard key={`${p.id || p.name}-${idx}`} p={p} userIssues={profile?.issues} />
+              ))}
+            </motion.div>
+
+            {filteredPoliticians.length === 0 && !loading && (
+              <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-dashed border-slate-300">
+                <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
+                  <Search className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">No representatives found</h3>
+                <p className="text-slate-500 mt-2">Try adjusting your filters or search term</p>
+                <button onClick={clearAllFilters} className="mt-6 text-[var(--accent)] font-bold hover:underline">
+                  Clear all filters
+                </button>
+              </div>
+            )}
+
+            {visibleCount < filteredPoliticians.length && (
+              <div className="mt-16 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 24)}
+                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-[var(--accent)] hover:shadow-lg active:scale-95"
+                >
+                  <span>Show More Representatives</span>
+                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
+                  <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm">
+                    +{filteredPoliticians.length - visibleCount}
+                  </div>
+                </button>
+              </div>
+            )}
+          </MotionReveal>
         )}
-
-
       </MotionReveal>
     </section>
   );
