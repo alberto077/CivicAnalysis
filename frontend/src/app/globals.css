@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fbff;
   --foreground: #1f2f3f;
+  --foreground-secondary: #4a5a6b;
   --muted: #5f6f81;
   --border: rgba(26, 54, 93, 0.16);
   --accent: #1a365d;
@@ -10,6 +13,8 @@
   --accent-soft: #a8dadc;
   --accent-glow: rgba(230, 57, 70, 0.25);
   --accent-rose: rgba(230, 57, 70, 0.15);
+  --surface-card: rgba(255, 255, 255, 0.72);
+  --surface-elevated: rgba(255, 255, 255, 0.88);
   --surface-glass: rgba(255, 255, 255, 0.92);
   --surface-glass-strong: rgba(255, 255, 255, 0.98);
   --font-serif: var(--font-serif-display), ui-serif, Georgia, serif;
@@ -34,6 +39,38 @@
     0 1px 2px rgba(30, 42, 51, 0.06);
 }
 
+/* Editorial dark — calm blue-gray, not pure black */
+.dark {
+  --background: #0b0f14;
+  --foreground: #e6edf3;
+  --foreground-secondary: #9aa4af;
+  --muted: #6b7682;
+  --border: rgba(255, 255, 255, 0.06);
+  --accent: #8ba3b8;
+  --accent-mid: #a85c62;
+  --accent-soft: #5c6d7e;
+  --accent-glow: rgba(168, 92, 98, 0.22);
+  --accent-rose: rgba(168, 92, 98, 0.12);
+  --surface-card: #11161c;
+  --surface-elevated: #151b22;
+  --surface-glass: rgba(17, 22, 28, 0.82);
+  --surface-glass-strong: rgba(21, 27, 34, 0.92);
+  --shadow-glass:
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    0 12px 32px -8px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --shadow-float:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 20px 50px -20px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  --shadow-glow-hover:
+    0 0 40px -12px rgba(100, 130, 160, 0.2),
+    0 0 60px -20px rgba(168, 92, 98, 0.12);
+  --shadow-btn:
+    0 2px 8px -2px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -50,6 +87,19 @@ body {
   min-height: 100vh;
   line-height: 1.62;
   letter-spacing: 0.003em;
+  position: relative;
+}
+
+.dark body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 85% 55% at 50% -10%, rgba(55, 72, 94, 0.35) 0%, transparent 52%),
+    radial-gradient(ellipse 55% 45% at 100% 100%, rgba(25, 35, 48, 0.38) 0%, transparent 48%),
+    radial-gradient(ellipse 45% 40% at 0% 90%, rgba(30, 42, 56, 0.25) 0%, transparent 45%);
 }
 
 .font-display {
@@ -92,6 +142,55 @@ body {
   font-family: var(--font-sans-body), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Filter dropdowns — filled dark surfaces in dark mode */
+.filter-dd-trigger {
+  box-shadow:
+    0 10px 36px -18px rgba(26, 54, 93, 0.22),
+    0 2px 14px -4px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition:
+    box-shadow 0.28s ease,
+    transform 0.24s ease,
+    background 0.28s ease;
+}
+
+.dark .filter-dd-trigger {
+  background: linear-gradient(160deg, rgba(28, 34, 42, 0.98) 0%, rgba(18, 22, 28, 0.96) 100%) !important;
+  border: none;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 10px 36px -16px rgba(0, 0, 0, 0.55);
+  color: var(--foreground);
+}
+
+.dark .filter-dd-trigger:hover {
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 40px -14px rgba(0, 0, 0, 0.5);
+}
+
+.filter-dd-panel {
+  transition: box-shadow 0.24s ease;
+}
+
+.dark .filter-dd-panel {
+  background: linear-gradient(165deg, rgba(26, 32, 40, 0.97) 0%, rgba(17, 21, 26, 0.96) 100%) !important;
+  box-shadow:
+    0 18px 48px -18px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .filter-dd-option-active {
+  background: rgba(139, 163, 184, 0.14) !important;
+  color: var(--accent) !important;
+}
+
+.dark .filter-dd-option:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
 h1,
 h2,
 h3.section-title,
@@ -101,7 +200,14 @@ h3.section-title,
   font-weight: 500;
 }
 
-/* Hero: animated gradient highlight */
+.dark h1,
+.dark h2,
+.dark h3.section-title,
+.dark .section-title {
+  color: color-mix(in srgb, var(--foreground) 96%, black);
+}
+
+/* Hero: animated gradient highlight (WebKit needs text-fill with clip) */
 .hero-gradient-text {
   background: linear-gradient(
     112deg,
@@ -112,7 +218,27 @@ h3.section-title,
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent;
   animation: gradient-shift 10s ease-in-out infinite;
+}
+
+/*
+ * Dark mode: per-letter background-clip often renders as solid rectangles.
+ * Use solid fill + soft highlight/shadow for a glassy wordmark instead.
+ */
+.dark .hero-gradient-text {
+  background: none;
+  background-size: auto;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  animation: none;
+  color: var(--foreground);
+  -webkit-text-fill-color: var(--foreground);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1),
+    0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 0 32px rgba(130, 160, 200, 0.22),
+    0 0 1px rgba(230, 237, 243, 0.35);
 }
 
 @keyframes gradient-shift {
@@ -148,10 +274,25 @@ h3.section-title,
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.48), transparent 78%);
 }
 
+/* Reflection: avoid clipped gradient in dark (same rectangle glitch); soft mirrored tint */
+.dark .hero-wordmark-reflect::after {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: var(--foreground);
+  color: var(--foreground);
+  opacity: 0.07;
+  filter: blur(2px);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 82%);
+}
+
 .glass-card {
+  position: relative;
+  isolation: isolate;
   background: linear-gradient(
     155deg,
     var(--surface-glass-strong) 0%,
@@ -161,6 +302,51 @@ h3.section-title,
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow-glass);
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+/* Glassy dark: specular top edge + deeper translucency + inner light */
+.dark .glass-card {
+  background:
+    linear-gradient(
+      185deg,
+      rgba(255, 255, 255, 0.09) 0%,
+      rgba(255, 255, 255, 0.02) 28%,
+      transparent 52%
+    ),
+    linear-gradient(
+      155deg,
+      rgba(32, 40, 50, 0.72) 0%,
+      rgba(17, 22, 28, 0.82) 42%,
+      rgba(10, 13, 18, 0.9) 100%
+    );
+  backdrop-filter: blur(28px) saturate(165%);
+  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    var(--shadow-glass),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.dark .glass-card::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 0;
+  opacity: 0.55;
+  background: linear-gradient(
+    125deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 48%,
+    transparent 56%
+  );
 }
 
 .search-shell.glass-card {
@@ -179,6 +365,14 @@ h3.section-title,
     0 10px 24px -14px rgba(20, 39, 64, 0.24),
     0 24px 50px -24px rgba(69, 101, 138, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.68) inset;
+}
+
+.dark .surface-float {
+  box-shadow:
+    0 10px 28px -12px rgba(0, 0, 0, 0.45),
+    0 28px 56px -28px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .soft-inset {
@@ -308,6 +502,13 @@ h3.section-title,
     0 0 0 1px rgba(255, 255, 255, 0.35) inset;
 }
 
+.dark .filter-pill-active {
+  box-shadow:
+    0 8px 22px -10px rgba(168, 92, 98, 0.35),
+    0 0 24px -8px rgba(139, 163, 184, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
 .btn-premium {
   box-shadow: var(--shadow-btn);
   transition:
@@ -354,6 +555,14 @@ h3.section-title,
   display: inline-block;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   background-color: white;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dark .logo-clip {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }

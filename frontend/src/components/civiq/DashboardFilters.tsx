@@ -17,10 +17,10 @@ const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "Current Session", "All Ti
 const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
 const FILTER_DROPDOWN_TRIGGER =
-  "font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] focus-visible:outline-none";
+  "filter-dd-trigger font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] focus-visible:outline-none dark:hover:brightness-100";
 
 const FILTER_DROPDOWN_PANEL =
-  "absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.3)_100%)] py-1 shadow-[0_14px_40px_-18px_rgba(26,54,93,0.24),0_4px_18px_-6px_rgba(15,23,42,0.1)] backdrop-blur-[30px]";
+  "filter-dd-panel absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.3)_100%)] py-1 shadow-[0_14px_40px_-18px_rgba(26,54,93,0.24),0_4px_18px_-6px_rgba(15,23,42,0.1)] backdrop-blur-[30px]";
 
 const AREA_ICONS = {
   All: Building2,
@@ -96,9 +96,9 @@ function FilterDropdown({
                 type="button"
                 role="option"
                 aria-selected={value === opt}
-                className={`font-work-sans flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[0.02em] transition ${
+                className={`filter-dd-option font-work-sans flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[0.02em] transition ${
                   value === opt
-                    ? "bg-white/45 text-[var(--accent)]"
+                    ? "bg-white/45 text-[var(--accent)] filter-dd-option-active"
                     : "text-[var(--foreground)] hover:bg-white/38"
                 }`}
                 onClick={() => {
@@ -150,8 +150,8 @@ export function DashboardFilters({
                 onClick={() => setSelectedArea(area)}
                 className={`filter-pill inline-flex items-center gap-2 rounded-xl border-0 px-4 py-2 text-[13px] font-medium ${
                   selectedArea === area
-                    ? "filter-pill-active bg-[linear-gradient(155deg,#f7a8af_0%,#ee7a85_100%)] text-white"
-                    : "bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] text-[var(--foreground)] hover:brightness-[1.02]"
+                    ? "filter-pill-active bg-[linear-gradient(155deg,#f7a8af_0%,#ee7a85_100%)] text-white dark:bg-[linear-gradient(155deg,rgba(140,78,84,0.65)_0%,rgba(95,48,52,0.75)_100%)] dark:text-[#f0eceb] dark:shadow-[0_0_20px_-8px_rgba(168,92,98,0.35)]"
+                    : "bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] text-[var(--foreground)] hover:brightness-[1.02] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)] dark:hover:translate-y-[-1px] dark:hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,0.5)]"
                 }`}
               >
                 {(() => {
@@ -229,7 +229,7 @@ export function DashboardFilters({
               <button
                 type="button"
                 onClick={onEditProfile}
-                className="filter-pill font-work-sans shrink-0 rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition duration-300 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)]"
+                className="filter-pill font-work-sans shrink-0 rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition duration-300 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)] dark:hover:translate-y-[-1px] dark:hover:shadow-[0_6px_16px_-10px_rgba(0,0,0,0.45)]"
               >
                 Edit profile
               </button>

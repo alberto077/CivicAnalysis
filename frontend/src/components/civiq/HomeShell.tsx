@@ -20,7 +20,7 @@ const DashboardFilters = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full mb-2 sm:mb-4" aria-hidden>
-        <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40" />
+        <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/80" />
       </div>
     ),
   },
@@ -34,9 +34,9 @@ const Hero = dynamic(
       <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16" aria-hidden>
         <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
           <div>
-            <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24" />
-            <div className="mt-6 h-6 w-3/4 animate-pulse rounded-lg bg-slate-200/80 sm:h-7" />
-            <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl border border-[var(--border)] bg-white/65 sm:h-24" />
+            <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24 dark:bg-[var(--surface-elevated)]/90" />
+            <div className="mt-6 h-6 w-3/4 animate-pulse rounded-lg bg-slate-200/80 sm:h-7 dark:bg-[var(--surface-card)]/80" />
+            <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl border border-[var(--border)] bg-white/65 sm:h-24 dark:bg-[var(--surface-card)]/70" />
           </div>
         </div>
       </section>
@@ -52,9 +52,9 @@ const PolicyBriefingPanel = dynamic(
     ssr: false,
     loading: () => (
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-hidden>
-        <div className="mt-10 h-11 w-64 max-w-[80%] animate-pulse rounded-xl bg-slate-200/90" />
-        <div className="mt-10 overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl sm:p-12">
-          <div className="min-h-[280px] animate-pulse rounded-2xl bg-slate-100/90" />
+        <div className="mt-10 h-11 w-64 max-w-[80%] animate-pulse rounded-xl bg-slate-200/90 dark:bg-[var(--surface-elevated)]/85" />
+        <div className="mt-10 overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+          <div className="min-h-[280px] animate-pulse rounded-2xl bg-slate-100/90 dark:bg-[var(--surface-elevated)]/80" />
         </div>
       </section>
     ),
@@ -177,11 +177,11 @@ export function HomeShell() {
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
       <div
-        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)]"
+        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(90,110,140,0.15)]"
         aria-hidden
       />
       <div
-        className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)]"
+        className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)] dark:bg-[rgba(60,75,98,0.12)]"
         aria-hidden
       />
       <OnboardingModal 
