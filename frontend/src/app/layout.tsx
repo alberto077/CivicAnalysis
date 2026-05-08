@@ -46,6 +46,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <FloatingChatBot />
+          <AccessibilityWidget />
         </ThemeProvider>
       </body>
     </html>

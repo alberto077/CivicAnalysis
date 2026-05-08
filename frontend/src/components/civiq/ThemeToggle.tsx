@@ -18,7 +18,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <div
-        className="h-8 w-[52px] shrink-0 rounded-full bg-[var(--surface-elevated)]"
+        className="h-10 w-10 shrink-0 rounded-full bg-[var(--surface-elevated)]"
         aria-hidden
       />
     );
@@ -29,11 +29,9 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      role="switch"
-      aria-checked={isDark}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="group relative h-8 w-[52px] shrink-0 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] p-0 outline-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-200 ease-out hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] active:scale-[0.98]"
+      className="group relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] p-0 outline-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.15),0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-200 ease-out hover:scale-[1.05] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] active:scale-[0.97]"
     >
       <motion.div
         aria-hidden
@@ -47,39 +45,31 @@ export function ThemeToggle() {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       />
 
-      <AnimatePresence>
-        {isDark ? (
-          <motion.span
-            key="stars"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="pointer-events-none absolute left-2 top-2 flex gap-1"
-            aria-hidden
-          >
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="block size-0.5 rounded-full bg-[var(--foreground)]/45"
-                style={{ opacity: 0.4 + i * 0.15 }}
-              />
-            ))}
-          </motion.span>
-        ) : null}
-      </AnimatePresence>
-
       <motion.div
-        className="absolute top-0.5 left-0.5 z-[1] flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] will-change-transform"
+        className="relative z-[1] flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(255,255,255,0.1)] will-change-transform"
         initial={false}
         animate={{
-          x: isDark ? 22 : 0,
           backgroundColor: isDark ? "rgba(52, 62, 78, 0.98)" : "rgba(255, 246, 228, 0.96)",
           boxShadow: isDark
-            ? "0 2px 10px -2px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 16px -2px rgba(120, 150, 190, 0.45)"
-            : "0 2px 10px -2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.65), 0 0 14px -2px rgba(255, 190, 100, 0.4)",
+            ? "0 2px 10px -2px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)"
+            : "0 2px 10px -2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.65)",
         }}
         transition={spring}
       >
+        <AnimatePresence>
+          {isDark ? (
+            <motion.span
+              key="moon-glow"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(166,197,238,0.52)_0%,rgba(166,197,238,0.18)_45%,rgba(166,197,238,0)_72%)]"
+              aria-hidden
+            />
+          ) : null}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait" initial={false}>
           {isDark ? (
             <motion.span
@@ -88,9 +78,13 @@ export function ThemeToggle() {
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
               exit={{ opacity: 0, rotate: 50, scale: 0.65 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center justify-center"
+              className="relative z-[1] flex items-center justify-center"
             >
-              <Moon className="size-4 text-[#c5d4e8]" strokeWidth={2} aria-hidden />
+              <Moon
+                className="size-4 text-[#c5d4e8] drop-shadow-[0_0_8px_rgba(166,197,238,0.8)]"
+                strokeWidth={2}
+                aria-hidden
+              />
             </motion.span>
           ) : (
             <motion.span
@@ -99,7 +93,7 @@ export function ThemeToggle() {
               animate={{ opacity: 1, rotate: 0, scale: 1 }}
               exit={{ opacity: 0, rotate: -50, scale: 0.65 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center justify-center"
+              className="relative z-[1] flex items-center justify-center"
             >
               <Sun className="size-4 text-[#c9956a]" strokeWidth={2} aria-hidden />
             </motion.span>
