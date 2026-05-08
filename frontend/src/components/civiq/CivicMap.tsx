@@ -1,6 +1,9 @@
 "use client";
 
-import { MapPin, Users, Layers, Search, Map as MapIcon, Maximize2, ExternalLink, Info } from "lucide-react";
+import {
+  MapPin, Users, Layers, Search, ExternalLink, Info,
+  Map as MapIcon, Maximize2
+} from "lucide-react";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { getDistricts, getDistrictsMap, type District } from "@/lib/api";
 import {
@@ -11,6 +14,188 @@ import {
 } from "react-simple-maps";
 import { AnimatePresence, motion } from "framer-motion";
 
+type Resource = {
+  name: string;
+  url: string;
+  tag: string;
+  tagColor: string;
+  desc: string;
+  useCase: string;
+  audience: string;
+};
+
+const RESOURCES: Resource[] = [
+  {
+    name: "NYC Planning Labs Geocoder",
+    url: "https://geosearch.planninglabs.nyc/",
+    tag: "API",
+    tagColor: "bg-violet-50 text-violet-700 ring-violet-100",
+    desc: "Free, no-key address geocoding for NYC by the Dept. of City Planning. Returns borough, block, lot, council district, and community board.",
+    useCase: "Powers the address search on this page. Use directly when building civic apps that need NYC address resolution.",
+    audience: "Developers, civic technologists",
+  },
+  {
+    name: "BetaNYC Boundary Explorer",
+    url: "https://boundaries.beta.nyc/?map=cc",
+    tag: "Interactive",
+    tagColor: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    desc: "Civic tech boundary map showing council districts, community boards, school districts, police precincts, and more — with address search.",
+    useCase: "Best tool for visually exploring overlapping boundary layers at once. Toggle between district types.",
+    audience: "Researchers, advocates, curious residents",
+  },
+  {
+    name: "NYC Council Official Map",
+    url: "https://council.nyc.gov/map-widget/",
+    tag: "Official",
+    tagColor: "bg-blue-50 text-blue-700 ring-blue-100",
+    desc: "The NYC Council's address-to-district finder. Authoritative source with direct links to each council member's page.",
+    useCase: "Use when you need the definitive answer on which council district an address falls in.",
+    audience: "General public, journalists, advocates",
+  },
+  {
+    name: "NYS Assembly District Finder",
+    url: "https://nyassembly.gov/mem/search/",
+    tag: "Official",
+    tagColor: "bg-blue-50 text-blue-700 ring-blue-100",
+    desc: "Official NYS Assembly member search by name, district number, or address. Shows committee assignments and direct contact.",
+    useCase: "Find your state lower-house rep for issues like housing, criminal justice, and education at the state level.",
+    audience: "New York State residents",
+  },
+  {
+    name: "NYS Senate Rep Finder",
+    url: "https://www.nysenate.gov/find-my-senator",
+    tag: "Official",
+    tagColor: "bg-blue-50 text-blue-700 ring-blue-100",
+    desc: "Official NYS Senate address lookup. Returns your senator with district map, committee memberships, and contact details.",
+    useCase: "Find your State Senator for state budget, healthcare, and criminal justice policy.",
+    audience: "New York State residents",
+  },
+  {
+    name: "House.gov Rep Finder",
+    url: "https://www.house.gov/representatives/find-your-representative",
+    tag: "Federal",
+    tagColor: "bg-rose-50 text-rose-700 ring-rose-100",
+    desc: "Official US House zip code lookup. Returns your Congressional district representative with direct office contact.",
+    useCase: "Contact your federal rep on immigration, federal funding, and national healthcare legislation.",
+    audience: "US residents",
+  },
+  {
+    name: "NYS Open GIS — Assembly Districts",
+    url: "https://opdgig.dos.ny.gov/datasets/sharegisny::nys-assembly-districts/about",
+    tag: "GIS Data",
+    tagColor: "bg-amber-50 text-amber-700 ring-amber-100",
+    desc: "Authoritative GeoJSON/shapefile of all NYS Assembly district boundaries published by the NYS Dept. of State.",
+    useCase: "Download boundary data for mapping projects, redistricting analysis, or building your own district tools.",
+    audience: "Developers, researchers, GIS analysts",
+  },
+  {
+    name: "NYS Open GIS — Senate Districts",
+    url: "https://opdgig.dos.ny.gov/maps/074d3456e5664f5e85d0fb251d05cc5b/about",
+    tag: "GIS Data",
+    tagColor: "bg-amber-50 text-amber-700 ring-amber-100",
+    desc: "Authoritative shapefile of all NYS Senate district boundaries maintained by the NYS GIS clearinghouse.",
+    useCase: "Pair with Assembly district data for complete state legislative boundary mapping.",
+    audience: "Developers, researchers, GIS analysts",
+  },
+  {
+    name: "NYC Community Boards Directory",
+    url: "https://www.nyc.gov/site/cau/community-boards/community-boards.page",
+    tag: "NYC Gov",
+    tagColor: "bg-sky-50 text-sky-700 ring-sky-100",
+    desc: "All 59 NYC Community Boards with meeting schedules, district maps, contact info, and member rosters. Boards advise on land use, zoning, and local budgets.",
+    useCase: "Find your CB to attend public meetings, submit testimony on local issues, or contact the board directly.",
+    audience: "NYC residents, advocates, developers",
+  },
+  {
+    name: "NYC Civic Engagement — Public Meetings",
+    url: "https://www.nyc.gov/site/civicengagement/meetings/public-meetings.page",
+    tag: "NYC Gov",
+    tagColor: "bg-sky-50 text-sky-700 ring-sky-100",
+    desc: "Citywide calendar of public meetings across all NYC agencies, curated by the Mayor's Office of Civic Engagement.",
+    useCase: "Find upcoming public meetings near you or on topics you care about across all city agencies.",
+    audience: "NYC residents",
+  },
+  {
+    name: "NYC Legistar — Council Calendar",
+    url: "https://legistar.council.nyc.gov/Calendar.aspx",
+    tag: "Legislative",
+    tagColor: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+    desc: "Official NYC Council meeting calendar with agendas, minutes, and voting records via the Legistar system.",
+    useCase: "Track specific legislation, upcoming committee hearings, and how your council member voted.",
+    audience: "Advocates, journalists, engaged residents",
+  },
+  {
+    name: "NYS Assembly Hearing Schedule",
+    url: "https://nyassembly.gov/leg/?sh=hear",
+    tag: "Legislative",
+    tagColor: "bg-indigo-50 text-indigo-700 ring-indigo-100",
+    desc: "Upcoming NYS Assembly public hearings searchable by committee, date, and subject with witness lists and bill references.",
+    useCase: "Monitor state-level hearings on housing, transit, education, and criminal justice affecting NYC.",
+    audience: "Advocates, lobbyists, journalists",
+  },
+];
+
+function ResourcesTab() {
+  const tags = ["All", "Official", "Interactive", "GIS Data", "Legislative", "API", "NYC Gov", "Federal"];
+  const [activeTag, setActiveTag] = useState("All");
+  const filtered = activeTag === "All" ? RESOURCES : RESOURCES.filter((r) => r.tag === activeTag);
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-base font-semibold text-slate-800 mb-1">Civic Map & Rep Resources</h3>
+        {/* <p></p> */}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <button key={tag} onClick={() => setActiveTag(tag)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              activeTag === tag
+                ? "bg-[rgba(20,31,45,0.85)] text-white border-transparent"
+                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+            }`}>
+            {tag}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map((r) => (
+          <div key={r.name} className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ring-inset mb-1.5 ${r.tagColor}`}>
+                  {r.tag}
+                </span>
+                <h4 className="text-sm font-semibold text-slate-800">{r.name}</h4>
+              </div>
+              <a href={r.url} target="_blank" rel="noopener noreferrer"
+                className="shrink-0 p-2 rounded-xl bg-slate-50 hover:bg-[rgba(20,31,45,0.85)] hover:text-white text-slate-400 transition-all" title="Open">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">{r.desc}</p>
+            <div className="pt-3 border-t border-slate-100 space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Best for</p>
+              <p className="text-xs text-slate-600">{r.useCase}</p>
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-slate-400">{r.audience}</span>
+              <a 
+                href={r.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-2/5 py-3 rounded-xl bg-slate-50 text-slate-600 text-xs font-bold hover:bg-(--accent) hover:text-white transition-all"
+              >
+                Explore Map <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export type CivicMapProps = {
   title?: string;
   subtitle?: string;
@@ -19,10 +204,10 @@ export type CivicMapProps = {
 
 export function CivicMap({
   title = "NY Explorer",
-  subtitle = "Interactive district intelligence powered by ArcGIS.",
+  subtitle = "",
   hideHeader = false
 }: CivicMapProps) {
-  const [activeTab, setActiveTab] = useState<"nys" | "nyc">("nys");
+  const [activeTab, setActiveTab] = useState<"nys" | "nyc" | "resources">("nys");
 
   // NYC Tab State
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(null);
@@ -99,6 +284,22 @@ export function CivicMap({
           <div>
             <h2 className="font-display text-4xl font-bold text-slate-900">{title}</h2>
             <p className="mt-2 text-lg text-slate-500">{subtitle}</p>
+
+
+      {/* INFO */}
+      <div className="mt-6 bg-blue-50/50 rounded-4xl border border-blue-100/50 p-4 flex flex-col md:flex-row items-center gap-6">
+        <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+          <Info className="h-6 w-6 text-blue-600" />
+        </div>
+        <div>
+          <h5 className="font-bold text-blue-900 mb-1">Why these maps matter?</h5>
+          <p className="text-sm text-blue-700/80 leading-relaxed">
+            District boundaries determine which representatives appear on your ballot and how resources are allocated to your community. Understanding these lines is the first step in effective civic engagement and policy advocacy.
+          </p>
+        </div>
+      </div>
+
+
           </div>
           <form onSubmit={handleSearch} className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -141,6 +342,15 @@ export function CivicMap({
         >
           NYC Local Explorer
         </button>
+        <button
+          onClick={() => setActiveTab("resources")}
+          className={`px-4 py-2 font-bold text-sm transition-colors border-b-2 ${activeTab === "resources"
+            ? "border-(--accent) text-(--accent)"
+            : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+        >
+          Resources
+        </button>
       </div>
 
       {activeTab === "nys" ? (
@@ -178,7 +388,7 @@ export function CivicMap({
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === "nyc" ? (
         /* NYC Local Tab */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Map Area */}
@@ -330,23 +540,16 @@ export function CivicMap({
             )}
           </div>
         </div>
+      ) : (
+        <ResourcesTab />
       )}
 
 
-      <div className="mt-12 bg-blue-50/50 rounded-4xl border border-blue-100/50 p-8 flex flex-col md:flex-row items-center gap-6">
-        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-          <Info className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h5 className="font-bold text-blue-900 mb-1">Why these maps matter?</h5>
-          <p className="text-sm text-blue-700/80 leading-relaxed">
-            District boundaries determine which representatives appear on your ballot and how resources are allocated to your community. Understanding these lines is the first step in effective civic engagement and policy advocacy.
-          </p>
-        </div>
-      </div>
+
+
 
       {/* Map Resource Gallery */}
-      <div className="mt-20 border-t border-slate-100 pt-16">
+      {/* <div className="mt-20 border-t border-slate-100 pt-16">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -431,7 +634,8 @@ export function CivicMap({
           ))}
         </div>
 
-      </div>
+      </div> */}
+
     </div>
   );
 }
