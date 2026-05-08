@@ -3,8 +3,10 @@ import {
   type PolicyResponse,
   type RetrievalTier,
 } from "@/lib/policy-reply";
+import type { Politician } from "@/lib/politicians";
 
 export type { PolicyResponse, RetrievalTier } from "@/lib/policy-reply";
+export type { Politician };
 
 export type PolicyBriefing = {
   id: string;
@@ -96,30 +98,6 @@ export type HealthResponse = {
   db_connected?: boolean;
   has_data?: boolean;
   error?: string;
-};
-
-export type Politician = {
-  id?: number | null | string;
-  name: string;
-  role?: string;
-  office: string;
-  borough: string;
-  district?: string | null;
-  party?: string | null;
-  political_stance: string;
-  bio_url?: string | null;
-  data_source?: string;
-  zip_codes?: string[];
-  neighborhoods?: string[];
-  committees?: string[];
-  photo_url?: string | null;
-  phone?: string;
-  email?: string;
-  website?: string;
-  level?: string;
-  represents?: string;
-  next_election?: string;
-  senate_class?: string;
 };
 
 export type PoliticianFilterOptions = {
