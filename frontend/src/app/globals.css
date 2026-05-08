@@ -69,12 +69,10 @@ body {
 
 /* Hero: animated gradient highlight */
 .hero-gradient-text {
-  background: linear-gradient(
-    112deg,
-    var(--foreground) 0%,
-    #22466f 38%,
-    var(--accent-mid) 100%
-  );
+  background: linear-gradient(112deg,
+      var(--foreground) 0%,
+      #22466f 38%,
+      var(--accent-mid) 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -83,10 +81,12 @@ body {
 }
 
 @keyframes gradient-shift {
+
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -114,11 +114,9 @@ body {
 }
 
 .glass-card {
-  background: linear-gradient(
-    155deg,
-    var(--surface-glass-strong) 0%,
-    var(--surface-glass) 100%
-  );
+  background: linear-gradient(155deg,
+      var(--surface-glass-strong) 0%,
+      var(--surface-glass) 100%);
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.9);
@@ -146,11 +144,9 @@ body {
 }
 
 .glass-card-strong {
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0.58) 100%
-  );
+  background: linear-gradient(165deg,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.58) 100%);
   background-color: var(--background);
   backdrop-filter: blur(28px) saturate(150%);
   -webkit-backdrop-filter: blur(28px) saturate(150%);
@@ -216,12 +212,10 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    118deg,
-    rgba(26, 54, 93, 0.36) 0%,
-    rgba(255, 255, 255, 0.68) 48%,
-    rgba(230, 57, 70, 0.34) 100%
-  );
+  background: linear-gradient(118deg,
+      rgba(26, 54, 93, 0.36) 0%,
+      rgba(255, 255, 255, 0.68) 48%,
+      rgba(230, 57, 70, 0.34) 100%);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -312,6 +306,29 @@ body {
   display: inline-block;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   background-color: white;
+}
+
+/* scrollbar for rep card sections */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
