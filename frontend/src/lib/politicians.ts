@@ -18,7 +18,9 @@ export interface Politician {
     district: string | null;
     neighborhoods: string[];
     zip_codes: string[];
-    committees: string[];
+    committees?: string[];
+    subcommittees?: string[];
+    caucuses?: string[];
     bio_url: string | null;
     photo_url: string | null;
     phone?: string;
@@ -129,7 +131,7 @@ export function filterPoliticians(
         if (party !== "All" && p.party !== party) return false;
         if (stance !== "All" && p.political_stance !== stance) return false;
         if (district !== "All" && p.district !== district) return false;
-        if (committee !== "All" && !p.committees.includes(committee)) return false;
+        if (committee !== "All" && !(p.committees ?? []).includes(committee)) return false;
         if (boroughs.length > 0 && !boroughs.some((b) =>
             p.borough.toLowerCase().includes(b.toLowerCase())
         )) return false;
@@ -137,7 +139,8 @@ export function filterPoliticians(
             const hay = [
                 p.name, p.office, p.borough, p.district ?? "", p.party,
                 p.political_stance, p.represents ?? "",
-                ...p.neighborhoods, ...p.zip_codes, ...p.committees,
+                ...(p.neighborhoods ?? []), ...(p.zip_codes ?? []), 
+                ...(p.committees ?? []), ...(p.subcommittees ?? []), ...(p.caucuses ?? [])
             ].join(" ").toLowerCase();
             if (!hay.includes(q)) return false;
         }
@@ -163,7 +166,7 @@ export function getFilterOptions(politicians: Politician[]): FilterOptions {
             const na = Number(a), nb = Number(b);
             return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b);
         }),
-        committees: [...new Set(politicians.flatMap((p) => p.committees))].sort(),
+        committees: [...new Set(politicians.flatMap((p) => p.committees ?? []))].sort(),
     };
 }
 
