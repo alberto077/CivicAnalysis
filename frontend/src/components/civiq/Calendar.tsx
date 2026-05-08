@@ -153,7 +153,7 @@ export function Calendar() {
                 <h2 className="mt-20 font-limelight text-2xl font-medium tracking-tight text-[rgba(20,31,45,0.9)] sm:text-3xl md:text-[2rem]">
                     Civic Calendar
                 </h2>
-                <p className="mt-3 max-w-2xl text-[var(--muted)]">
+                <p className="mt-3 max-w-2xl text-(--muted)">
                     All public meeting calendars, hearing schedules, and livestreams across City Council,
                     Community Boards, and New York State — in one place.
                 </p>
@@ -207,7 +207,7 @@ export function Calendar() {
                         <iframe
                             src={featured.embedUrl}
                             title={featured.label}
-                            className="h-[520px] w-full"
+                            className="h-130 w-full"
                             loading="lazy"
                         />
                     </div>
@@ -292,7 +292,7 @@ export function Calendar() {
                                     href={s.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="min-w-[220px] text-sm font-medium text-[rgba(20,31,45,0.85)] underline-offset-2 hover:underline"
+                                    className="min-w-55 text-sm font-medium text-[rgba(20,31,45,0.85)] underline-offset-2 hover:underline"
                                 >
                                     {s.shortLabel} ↗
                                 </a>
