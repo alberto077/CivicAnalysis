@@ -108,7 +108,7 @@ export default function DataSourcesPage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-[var(--background)]">
       <Header />
       <main className="flex-1 pb-20">
         <div className="bg-slate-900 pt-32 pb-16">
@@ -135,7 +135,7 @@ export default function DataSourcesPage() {
               <section>
                 <div className="mb-8 flex items-center gap-3">
                   <Globe className="h-5 w-5 text-blue-600" />
-                  <h2 className="font-limelight text-2xl font-bold text-slate-900">
+                  <h2 className="font-limelight text-2xl font-bold text-slate-900 dark:text-[var(--foreground)]">
                     Legislative & Representative Portals
                   </h2>
                 </div>
@@ -143,23 +143,23 @@ export default function DataSourcesPage() {
                   {primarySources.map((source) => (
                     <div
                       key={source.name}
-                      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-blue-200 hover:shadow-sm"
+                      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-blue-200 hover:shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:hover:border-[var(--accent)]/40"
                     >
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:bg-[var(--surface-elevated)] dark:text-[#8db5f0]">
                               {source.type}
                             </span>
                           </div>
-                          <h3 className="font-limelight mb-2 text-lg font-bold text-slate-900">{source.name}</h3>
-                          <p className="max-w-xl text-sm leading-relaxed text-slate-500">{source.desc}</p>
+                          <h3 className="font-limelight mb-2 text-lg font-bold text-slate-900 dark:text-[var(--foreground)]">{source.name}</h3>
+                          <p className="max-w-xl text-sm leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">{source.desc}</p>
                         </div>
                         <a
                           href={source.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-lg bg-slate-50 p-2 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-600"
+                          className="rounded-lg bg-slate-50 p-2 text-slate-400 transition-all group-hover:bg-blue-50 group-hover:text-blue-600 dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)] dark:group-hover:bg-[var(--surface-card)] dark:group-hover:text-[#8db5f0]"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -172,29 +172,29 @@ export default function DataSourcesPage() {
               <section>
                 <div className="mb-8 flex items-center gap-3">
                   <Info className="h-5 w-5 text-purple-600" />
-                  <h2 className="font-limelight text-2xl font-bold text-slate-900">Federal Directories</h2>
+                  <h2 className="font-limelight text-2xl font-bold text-slate-900 dark:text-[var(--foreground)]">Federal Directories</h2>
                 </div>
                 <div className="grid gap-6">
                   {federalSources.map((source) => (
                     <div
                       key={source.name}
-                      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-purple-200 hover:shadow-sm"
+                      className="group relative rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-purple-200 hover:shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:hover:border-[#9f87db]/45"
                     >
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-600">
+                            <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:bg-[var(--surface-elevated)] dark:text-[#bca8ee]">
                               {source.type}
                             </span>
                           </div>
-                          <h3 className="font-limelight mb-2 text-lg font-bold text-slate-900">{source.name}</h3>
-                          <p className="max-w-xl text-sm leading-relaxed text-slate-500">{source.desc}</p>
+                          <h3 className="font-limelight mb-2 text-lg font-bold text-slate-900 dark:text-[var(--foreground)]">{source.name}</h3>
+                          <p className="max-w-xl text-sm leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">{source.desc}</p>
                         </div>
                         <a
                           href={source.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-lg bg-slate-50 p-2 text-slate-400 transition-all group-hover:bg-purple-50 group-hover:text-purple-600"
+                          className="rounded-lg bg-slate-50 p-2 text-slate-400 transition-all group-hover:bg-purple-50 group-hover:text-purple-600 dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)] dark:group-hover:bg-[var(--surface-card)] dark:group-hover:text-[#bca8ee]"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -207,25 +207,25 @@ export default function DataSourcesPage() {
               <section>
                 <div className="mb-8 flex items-center gap-3">
                   <Cpu className="h-5 w-5 text-emerald-600" />
-                  <h2 className="font-limelight text-2xl font-bold text-slate-900">Technical Infrastructure</h2>
+                  <h2 className="font-limelight text-2xl font-bold text-slate-900 dark:text-[var(--foreground)]">Technical Infrastructure</h2>
                 </div>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {infrastructure.map((item) => (
                     <div
                       key={item.name}
-                      className="rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm transition hover:shadow-md"
+                      className="rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm transition hover:shadow-md dark:border-[var(--border)] dark:bg-[var(--surface-card)]"
                     >
                       <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                         <item.icon className="h-5 w-5" />
                       </div>
-                      <h3 className="font-limelight mb-1 text-lg font-bold text-slate-900">{item.name}</h3>
+                      <h3 className="font-limelight mb-1 text-lg font-bold text-slate-900 dark:text-[var(--foreground)]">{item.name}</h3>
                       <div className="mb-3 text-[10px] font-bold uppercase tracking-tighter text-emerald-600">{item.type}</div>
-                      <p className="mb-6 text-sm leading-relaxed text-slate-500">{item.desc}</p>
+                      <p className="mb-6 text-sm leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">{item.desc}</p>
                       <a
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs font-bold text-slate-400 transition hover:text-slate-900"
+                        className="flex items-center gap-1 text-xs font-bold text-slate-400 transition hover:text-slate-900 dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)]"
                       >
                         Documentation <Link2 className="h-3 w-3" />
                       </a>
@@ -287,10 +287,10 @@ export default function DataSourcesPage() {
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-8">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-8 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
                 <Globe className="mb-4 h-6 w-6 text-emerald-600" />
-                <h3 className="font-limelight mb-2 font-bold text-slate-900">Geospatial Boundaries</h3>
-                <p className="mb-6 text-sm text-slate-500">
+                <h3 className="font-limelight mb-2 font-bold text-slate-900 dark:text-[var(--foreground)]">Geospatial Boundaries</h3>
+                <p className="mb-6 text-sm text-slate-500 dark:text-[var(--foreground-secondary)]">
                   We use official shapefiles and lookup services to ensure your district representation is accurate.
                 </p>
                 <div className="space-y-4">
@@ -298,19 +298,19 @@ export default function DataSourcesPage() {
                     href="https://nysboe.maps.arcgis.com/apps/instant/lookup/index.html?appid=0a08fa8c5ea2400d86ab65daa5aa4f0e"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200"
+                    className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:hover:border-emerald-400/35"
                   >
-                    <span className="text-xs font-bold text-slate-700">NYS Board of Elections Map</span>
-                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-[var(--foreground)]">NYS Board of Elections Map</span>
+                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600 dark:text-[var(--foreground-secondary)] dark:group-hover:text-emerald-300" />
                   </a>
                   <a
                     href="https://www.ballotready.org/us/new-york"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200"
+                    className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-emerald-200 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:hover:border-emerald-400/35"
                   >
-                    <span className="text-xs font-bold text-slate-700">BallotReady NY</span>
-                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-[var(--foreground)]">BallotReady NY</span>
+                    <ExternalLink className="h-3 w-3 text-slate-400 group-hover:text-emerald-600 dark:text-[var(--foreground-secondary)] dark:group-hover:text-emerald-300" />
                   </a>
                 </div>
               </div>

@@ -137,14 +137,16 @@ function SettingButton({
       onClick={onClick}
       className={`group flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
         active
-          ? "border-[#12355b] bg-[#12355b] text-white shadow-sm"
-          : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+          ? "border-[#12355b] bg-[#12355b] text-white shadow-sm dark:border-[var(--accent)] dark:bg-[var(--accent)]/25 dark:text-[var(--foreground)]"
+          : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)] dark:hover:border-[var(--accent)]/40 dark:hover:bg-[var(--surface-card)]"
       }`}
     >
       <span className="flex min-w-0 items-center gap-3">
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black ${
-            active ? "bg-white text-[#12355b]" : "bg-slate-100 text-slate-900"
+            active
+              ? "bg-white text-[#12355b] dark:bg-[var(--foreground)] dark:text-[var(--background)]"
+              : "bg-slate-100 text-slate-900 dark:bg-[var(--surface-card)] dark:text-[var(--foreground)]"
           }`}
           aria-hidden="true"
         >
@@ -155,7 +157,9 @@ function SettingButton({
           <span className="block text-sm font-bold">{label}</span>
           <span
             className={`mt-0.5 block text-xs leading-snug ${
-              active ? "text-white/85" : "text-slate-500"
+              active
+                ? "text-white/85 dark:text-[var(--foreground-secondary)]"
+                : "text-slate-500 dark:text-[var(--foreground-secondary)]"
             }`}
           >
             {description}
@@ -165,7 +169,9 @@ function SettingButton({
 
       <span
         className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
-          active ? "bg-white text-[#12355b]" : "bg-slate-100 text-slate-500"
+          active
+            ? "bg-white text-[#12355b] dark:bg-[var(--foreground)] dark:text-[var(--background)]"
+            : "bg-slate-100 text-slate-500 dark:bg-[var(--surface-card)] dark:text-[var(--foreground-secondary)]"
         }`}
       >
         {active ? "On ✓" : "Off"}
@@ -312,8 +318,8 @@ export function AccessibilityWidget() {
   return (
     <div className="fixed bottom-5 left-5 z-50">
       {isOpen ? (
-        <div className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl">
-          <div className="bg-gradient-to-br from-[#12355b] via-[#0b1f3a] to-[#061525] px-5 py-4 text-white">
+        <div className="mb-4 flex max-h-[calc(100vh-13rem)] w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
+          <div className="shrink-0 bg-gradient-to-br from-[#12355b] via-[#0b1f3a] to-[#061525] px-5 py-4 text-white dark:from-[#0e2845] dark:via-[#081628] dark:to-[#04101c]">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#12355b] shadow-sm">
@@ -349,7 +355,7 @@ export function AccessibilityWidget() {
             </div>
           </div>
 
-          <div className="max-h-[70vh] space-y-2 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
             {SETTINGS.map((setting) => (
               <SettingButton
                 key={setting.key}
@@ -361,13 +367,13 @@ export function AccessibilityWidget() {
               />
             ))}
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-black text-slate-900">
+                  <p className="text-sm font-black text-slate-900 dark:text-[var(--foreground)]">
                     Text to Speech
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-[var(--foreground-secondary)]">
                     Read the current page aloud.
                   </p>
                 </div>
@@ -375,8 +381,8 @@ export function AccessibilityWidget() {
                 <span
                   className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
                     isSpeaking
-                      ? "bg-[#12355b] text-white"
-                      : "bg-slate-200 text-slate-600"
+                      ? "bg-[#12355b] text-white dark:bg-[var(--foreground)] dark:text-[var(--background)]"
+                      : "bg-slate-200 text-slate-600 dark:bg-[var(--surface-card)] dark:text-[var(--foreground-secondary)]"
                   }`}
                 >
                   {isSpeaking ? (isPaused ? "Paused" : "Reading") : "Idle"}
@@ -387,7 +393,7 @@ export function AccessibilityWidget() {
                 <button
                   type="button"
                   onClick={readPageAloud}
-                  className="rounded-xl bg-[#12355b] px-3 py-2 text-xs font-black text-white transition hover:opacity-90"
+                  className="rounded-xl bg-[#12355b] px-3 py-2 text-xs font-black text-white transition hover:opacity-90 dark:bg-[var(--foreground)] dark:text-[var(--background)]"
                 >
                   Read Selected / Page
                 </button>
@@ -396,7 +402,7 @@ export function AccessibilityWidget() {
                   type="button"
                   onClick={stopSpeech}
                   disabled={!isSpeaking && !isPaused}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
                 >
                   Stop
                 </button>
@@ -405,7 +411,7 @@ export function AccessibilityWidget() {
                   type="button"
                   onClick={pauseSpeech}
                   disabled={!isSpeaking || isPaused}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
                 >
                   Pause
                 </button>
@@ -414,14 +420,14 @@ export function AccessibilityWidget() {
                   type="button"
                   onClick={resumeSpeech}
                   disabled={!isPaused}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
                 >
                   Resume
                 </button>
               </div>
 
               {speechError ? (
-                <p className="mt-2 text-xs font-semibold text-red-600">
+                <p className="mt-2 text-xs font-semibold text-red-600 dark:text-red-400">
                   {speechError}
                 </p>
               ) : null}
@@ -431,12 +437,12 @@ export function AccessibilityWidget() {
               type="button"
               onClick={resetSettings}
               disabled={activeCount === 0}
-              className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-card)]"
             >
               Reset Settings
             </button>
 
-            <p className="px-1 pt-1 text-center text-[11px] text-slate-500">
+            <p className="px-1 pt-1 text-center text-[11px] text-slate-500 dark:text-[var(--foreground-secondary)]">
               Preferences are saved on this device. Text-to-speech uses your
               browser’s built-in voice.
             </p>

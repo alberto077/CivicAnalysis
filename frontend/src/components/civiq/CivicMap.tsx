@@ -101,13 +101,13 @@ export function CivicMap({
             <p className="mt-2 text-lg text-slate-500">{subtitle}</p>
           </div>
           <form onSubmit={handleSearch} className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-[var(--foreground-secondary)]" />
             <input
               type="text"
               placeholder={activeTab === "nys" ? "Search address or zip code..." : "Search rep, district, or zip..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-24 py-3 rounded-2xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow shadow-sm"
+              className="w-full pl-10 pr-24 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)] dark:placeholder:text-[var(--muted)] dark:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]"
             />
             {activeTab === "nys" && (
               <button

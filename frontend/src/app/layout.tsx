@@ -3,6 +3,7 @@ import { Limelight, Playfair_Display, Work_Sans } from "next/font/google";
 
 import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
 import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
+import { DevConsoleFilter } from "@/components/civiq/DevConsoleFilter";
 import { ThemeProvider } from "@/components/civiq/ThemeProvider";
 
 import "./globals.css";
@@ -44,6 +45,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
+          <DevConsoleFilter />
           {children}
           <FloatingChatBot />
           <AccessibilityWidget />
