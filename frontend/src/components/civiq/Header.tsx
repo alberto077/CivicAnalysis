@@ -46,8 +46,8 @@ export function Header() {
           <Link href="/map" className={navLinkClass(pathname, "/map")}>
             Map
           </Link>
-          <Link href="/chat" className={navLinkClass(pathname, "/chat")}>
-            Civic Assistant
+          <Link href="/calendar" className={navLinkClass(pathname, "/calendar")}>
+            Calendar
           </Link>
           <Link href="/about" className={navLinkClass(pathname, "/about")}>
             About
