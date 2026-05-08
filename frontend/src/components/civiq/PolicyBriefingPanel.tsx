@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 import {
   FileText,
@@ -27,6 +28,8 @@ export function PolicyBriefingPanel({
   response,
   briefingQuery,
 }: PolicyBriefingPanelProps) {
+  const { resolvedTheme } = useTheme();
+  const isDarkMode = resolvedTheme === "dark";
   const showBriefing = Boolean(response && !loading);
   const safe = {
     at_a_glance: response?.at_a_glance ?? [],
@@ -107,17 +110,26 @@ export function PolicyBriefingPanel({
                 transition={{ duration: 0.3 }}
                 className="flex min-h-[520px] flex-col items-center justify-center gap-6 py-12 text-center sm:min-h-[560px]"
               >
-                <div className="relative h-80 w-80 max-w-[min(92vw,20rem)] overflow-hidden rounded-2xl sm:h-96 sm:w-96 sm:max-w-[min(92vw,24rem)] lg:h-[28rem] lg:w-[28rem] lg:max-w-[min(92vw,28rem)]">
-                  <Image
-                    src="/maggla.gif"
-                    alt="Loading briefing animation"
-                    fill
-                    sizes="(max-width: 640px) 92vw, (max-width: 1024px) 384px, 448px"
-                    className="object-contain"
-                    priority
-                    unoptimized
-                  />
-                </div>
+                {isDarkMode ? (
+                  <div className="flex h-64 w-64 items-center justify-center sm:h-72 sm:w-72">
+                    <div
+                      className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--accent)]/30 border-t-[var(--accent)] shadow-[0_0_24px_rgba(110,185,255,0.35)]"
+                      aria-hidden
+                    />
+                  </div>
+                ) : (
+                  <div className="relative h-80 w-80 max-w-[min(92vw,20rem)] overflow-hidden rounded-2xl sm:h-96 sm:w-96 sm:max-w-[min(92vw,24rem)] lg:h-[28rem] lg:w-[28rem] lg:max-w-[min(92vw,28rem)]">
+                    <Image
+                      src="/maggla.gif"
+                      alt="Loading briefing animation"
+                      fill
+                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 384px, 448px"
+                      className="object-contain"
+                      priority
+                      unoptimized
+                    />
+                  </div>
+                )}
                 <div>
                   <p className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
                     Generating Intelligent Briefing...

@@ -20,7 +20,7 @@ const FILTER_DROPDOWN_TRIGGER =
   "filter-dd-trigger font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] focus-visible:outline-none dark:hover:brightness-100";
 
 const FILTER_DROPDOWN_PANEL =
-  "filter-dd-panel absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.3)_100%)] py-1 shadow-[0_14px_40px_-18px_rgba(26,54,93,0.24),0_4px_18px_-6px_rgba(15,23,42,0.1)] backdrop-blur-[30px]";
+  "filter-dd-panel absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.3)_100%)] py-1 shadow-[0_14px_40px_-18px_rgba(26,54,93,0.24),0_4px_18px_-6px_rgba(15,23,42,0.1)] backdrop-blur-[30px] dark:bg-[linear-gradient(135deg,rgba(23,29,36,0.94)_0%,rgba(14,19,24,0.9)_100%)]";
 
 const AREA_ICONS = {
   All: Building2,
@@ -98,8 +98,8 @@ function FilterDropdown({
                 aria-selected={value === opt}
                 className={`filter-dd-option font-work-sans flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[0.02em] transition ${
                   value === opt
-                    ? "bg-white/45 text-[var(--accent)] filter-dd-option-active"
-                    : "text-[var(--foreground)] hover:bg-white/38"
+                    ? "bg-white/45 text-[var(--accent)] filter-dd-option-active dark:bg-[var(--surface-elevated)] dark:text-[var(--accent-soft)]"
+                    : "text-[var(--foreground)] hover:bg-white/38 dark:hover:bg-[var(--surface-elevated)]/70"
                 }`}
                 onClick={() => {
                   onChange(opt);

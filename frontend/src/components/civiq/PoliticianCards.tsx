@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { Check, Search, X, RotateCcw } from "lucide-react";
@@ -9,6 +9,7 @@ import {
   getPoliticianFilters,
   type Politician,
 } from "@/lib/api";
+import { ThemedSelect } from "./ThemedSelect";
 
 const BOROUGH_CANONICAL: Record<string, string> = {
   bronx: "Bronx",
@@ -66,6 +67,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
   const filterRequestIdRef = useRef(0);
   const politicianRequestIdRef = useRef(0);
+
+  const boroughInstance = useId().replace(/:/g, "");
+  const districtInstance = useId().replace(/:/g, "");
+  const boroughSelectId = `borough-select-${boroughInstance}`;
+  const districtSelectId = `district-select-${districtInstance}`;
 
   useEffect(() => {
     async function loadFilterOptions() {
@@ -199,20 +205,19 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               Borough
             </span>
 
-            <select
-              className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] shadow-sm outline-none focus:border-[var(--accent)]"
+            <ThemedSelect
+              instanceId={boroughSelectId}
+              ariaLabel="Borough"
               value={selectedLocation}
-              onChange={(e) => {
-                setSelectedLocation(normalizeBorough(e.target.value));
+              options={locationOptions.map((option) => ({
+                value: option,
+                label: option,
+              }))}
+              onChange={(next) => {
+                setSelectedLocation(normalizeBorough(next));
                 setSelectedDistrict("All");
               }}
-            >
-              {locationOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            />
           </label>
 
           <label className="flex flex-col gap-2">
@@ -220,36 +225,35 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               District
             </span>
 
-            <select
-              className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] shadow-sm outline-none focus:border-[var(--accent)]"
+            <ThemedSelect
+              instanceId={districtSelectId}
+              ariaLabel="District"
               value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-            >
-              {districtOptions.map((district) => (
-                <option key={district} value={district}>
-                  {district === "All" ? "All" : `District ${district}`}
-                </option>
-              ))}
-            </select>
+              options={districtOptions.map((district) => ({
+                value: district,
+                label: district === "All" ? "All" : `District ${district}`,
+              }))}
+              onChange={setSelectedDistrict}
+            />
           </label>
         </div>
       </MotionReveal>
 
       <MotionReveal className="mt-10">
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/45 dark:text-red-100">
             {error}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="rounded-xl border border-[var(--border)] bg-white/70 px-4 py-6 text-sm text-[var(--muted)]">
+          <div className="rounded-xl border border-[var(--border)] bg-white/70 px-4 py-6 text-sm text-[var(--muted)] dark:bg-[var(--surface-card)]/80">
             Loading representatives...
           </div>
         ) : null}
 
         {!loading && !error && filteredPoliticians.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)]/80 dark:text-[var(--foreground-secondary)]">
             No representatives matched these filters.
           </div>
         ) : null}
@@ -279,7 +283,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     </p>
                   </div>
 
-                  <div className="flex min-w-[70px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-white px-2 py-2">
+                  <div className="flex min-w-[70px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-white px-2 py-2 dark:bg-[var(--surface-elevated)]">
                     <span className="font-work-sans text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
                       Stance
                     </span>

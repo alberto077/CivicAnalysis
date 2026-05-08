@@ -150,7 +150,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             </span>
             <input
               id="location-search"
-              type="search"
+              type="text"
               name="location"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}

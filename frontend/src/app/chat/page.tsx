@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-slate-50">
+    <div className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-[var(--background)]">
       <div
         className="ambient-orb top-0 right-0 h-96 w-96 bg-[rgba(168,218,220,0.15)]"
         aria-hidden

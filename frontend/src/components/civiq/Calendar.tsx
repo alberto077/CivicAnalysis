@@ -113,27 +113,34 @@ const SOURCES: Source[] = [
 const TIER_META: Record<string, { label: string; color: string; dot: string }> = {
     city: {
         label: "New York City",
-        color: "bg-[#1a3a5c]/10 text-[#1a3a5c] border-[#1a3a5c]/20",
-        dot: "bg-[#1a3a5c]",
+        color:
+            "bg-[#1a3a5c]/10 text-[#1a3a5c] border-[#1a3a5c]/20 dark:bg-[#8db5f0]/10 dark:text-[#a9c5ee] dark:border-[#8db5f0]/30",
+        dot: "bg-[#1a3a5c] dark:bg-[#a9c5ee]",
     },
     borough: {
         label: "Borough & Community",
-        color: "bg-[#0a5c3a]/10 text-[#0a5c3a] border-[#0a5c3a]/20",
-        dot: "bg-[#0a5c3a]",
+        color:
+            "bg-[#0a5c3a]/10 text-[#0a5c3a] border-[#0a5c3a]/20 dark:bg-[#5fcf9c]/10 dark:text-[#7ddcae] dark:border-[#5fcf9c]/30",
+        dot: "bg-[#0a5c3a] dark:bg-[#7ddcae]",
     },
     state: {
         label: "New York State",
-        color: "bg-[#5c1a1a]/10 text-[#5c1a1a] border-[#5c1a1a]/20",
-        dot: "bg-[#5c1a1a]",
+        color:
+            "bg-[#5c1a1a]/10 text-[#5c1a1a] border-[#5c1a1a]/20 dark:bg-[#e88d8d]/10 dark:text-[#eaa1a1] dark:border-[#e88d8d]/30",
+        dot: "bg-[#5c1a1a] dark:bg-[#eaa1a1]",
     },
 };
 
 const BADGE_COLORS: Record<string, string> = {
-    "NYC Council": "bg-blue-50 text-blue-700 ring-blue-100",
-    "NYC Gov": "bg-sky-50 text-sky-700 ring-sky-100",
-    CB6: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    "NYS Assembly": "bg-rose-50 text-rose-700 ring-rose-100",
-    "NYS Senate": "bg-orange-50 text-orange-700 ring-orange-100",
+    "NYC Council":
+        "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20",
+    "NYC Gov":
+        "bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-400/20",
+    CB6: "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20",
+    "NYS Assembly":
+        "bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-400/20",
+    "NYS Senate":
+        "bg-orange-50 text-orange-700 ring-orange-100 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-400/20",
 };
 
 
@@ -150,7 +157,7 @@ export function Calendar() {
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* heading/hero */}
             <MotionReveal>
-                <h2 className="mt-20 font-limelight text-2xl font-medium tracking-tight text-[rgba(20,31,45,0.9)] sm:text-3xl md:text-[2rem]">
+                <h2 className="mt-20 font-limelight text-2xl font-medium tracking-tight text-[rgba(20,31,45,0.9)] sm:text-3xl md:text-[2rem] dark:text-[var(--foreground)]">
                     Civic Calendar
                 </h2>
                 <p className="mt-3 max-w-2xl text-(--muted)">
@@ -168,8 +175,8 @@ export function Calendar() {
                             onClick={() => setFilter(t)}
                             className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
                                 filter === t
-                                    ? "border-[rgba(20,31,45,0.85)] bg-[rgba(20,31,45,0.85)] text-white shadow-sm"
-                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                    ? "border-[rgba(20,31,45,0.85)] bg-[rgba(20,31,45,0.85)] text-white shadow-sm dark:border-[var(--foreground)] dark:bg-[var(--foreground)] dark:text-[var(--background)]"
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground-secondary)] dark:hover:border-[var(--accent)]/40 dark:hover:bg-[var(--surface-elevated)] dark:hover:text-[var(--foreground)]"
                             }`}
                         >
                             {t === "all"
@@ -183,21 +190,21 @@ export function Calendar() {
             {/* TODO: streamline cal data -- for now, embed/redirect urls */}
             {featured?.embedUrl && (
                 <MotionReveal className="mt-8">
-                    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-                        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-                            <span className="text-sm font-semibold text-slate-700">{featured.label}</span>
+                    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 dark:border-[var(--border)]">
+                            <span className="text-sm font-semibold text-slate-700 dark:text-[var(--foreground)]">{featured.label}</span>
                             <div className="flex items-center gap-3">
                                 <a
                                     href={featured.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2"
+                                    className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)]"
                                 >
                                     Open in new tab ↗
                                 </a>
                                 <button
                                     onClick={() => setFeatured(null)}
-                                    className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+                                    className="text-slate-400 hover:text-slate-600 text-lg leading-none dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)]"
                                     aria-label="Close embed"
                                 >
                                     ×
@@ -223,7 +230,7 @@ export function Calendar() {
                         return (
                             <div
                                 key={source.id}
-                                className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+                                className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.4)] dark:hover:border-[var(--accent)]/40 dark:hover:shadow-[0_8px_24px_-10px_rgba(0,0,0,0.55)]"
                             >
                                 {/* tier indication */}
                                 <div className="mb-3 flex items-center justify-between">
@@ -241,12 +248,12 @@ export function Calendar() {
                                 </div>
 
                                 {/* TITLE */}
-                                <h3 className="text-sm font-semibold leading-snug text-slate-800 group-hover:text-[rgba(20,31,45,0.9)]">
+                                <h3 className="text-sm font-semibold leading-snug text-slate-800 group-hover:text-[rgba(20,31,45,0.9)] dark:text-[var(--foreground)] dark:group-hover:text-white">
                                     {source.label}
                                 </h3>
 
                                 {/* DESCRIPTION */}
-                                <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-500">
+                                <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">
                                     {source.description}
                                 </p>
 
@@ -256,7 +263,7 @@ export function Calendar() {
                                         href={source.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 rounded-lg bg-[rgba(20,31,45,0.85)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[rgba(20,31,45,1)]"
+                                        className="inline-flex items-center gap-1 rounded-lg bg-[rgba(20,31,45,0.85)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[rgba(20,31,45,1)] dark:bg-[var(--foreground)] dark:text-[var(--background)] dark:hover:bg-white"
                                     >
                                         Visit
                                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -266,7 +273,7 @@ export function Calendar() {
                                     {source.embedUrl && (
                                         <button
                                             onClick={() => setFeatured(source)}
-                                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-[var(--border)] dark:text-[var(--foreground-secondary)] dark:hover:bg-[var(--surface-elevated)] dark:hover:text-[var(--foreground)]"
                                         >
                                             Preview
                                         </button>
@@ -280,23 +287,23 @@ export function Calendar() {
 
             {/* sources - footer */}
             <MotionReveal className="mt-16">
-                <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8">
-                    <h3 className="text-base font-semibold text-slate-800">All Sources</h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+                    <h3 className="text-base font-semibold text-slate-800 dark:text-[var(--foreground)]">All Sources</h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-[var(--foreground-secondary)]">
                         Direct links to all civic calendars and public meeting resources used by Civic Spiegel.
                     </p>
-                    <div className="mt-6 divide-y divide-slate-100">
+                    <div className="mt-6 divide-y divide-slate-100 dark:divide-[var(--border)]">
                         {SOURCES.map((s) => (
                             <div key={s.id} className="flex flex-col gap-0.5 py-3 sm:flex-row sm:items-baseline sm:gap-4">
                                 <a
                                     href={s.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="min-w-55 text-sm font-medium text-[rgba(20,31,45,0.85)] underline-offset-2 hover:underline"
+                                    className="min-w-55 text-sm font-medium text-[rgba(20,31,45,0.85)] underline-offset-2 hover:underline dark:text-[var(--foreground)]"
                                 >
                                     {s.shortLabel} ↗
                                 </a>
-                                <p className="text-xs text-slate-500">{s.description}</p>
+                                <p className="text-xs text-slate-500 dark:text-[var(--foreground-secondary)]">{s.description}</p>
                             </div>
                         ))}
                     </div>
