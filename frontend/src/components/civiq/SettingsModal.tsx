@@ -45,19 +45,19 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1b2a]/60 backdrop-blur-sm p-4 sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1b2a]/60 p-4 backdrop-blur-sm dark:bg-black/65 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-2xl rounded-2xl bg-white flex flex-col shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+      <div className="flex max-h-[90vh] w-full max-w-2xl animate-in flex-col rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] fade-in zoom-in duration-300 dark:border dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
         <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-[var(--border)] shrink-0 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-limelight text-xl font-bold text-[var(--foreground)] tracking-tight">Edit profile</h2>
               <p className="font-work-sans text-xs text-[var(--muted)] mt-1">Configure your personalized assistant details.</p>
             </div>
-            <button onClick={onClose} className="text-[var(--muted)] hover:text-black font-bold p-2 text-xl">&times;</button>
+            <button onClick={onClose} className="p-2 text-xl font-bold text-[var(--muted)] hover:text-[var(--foreground)]">&times;</button>
           </div>
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-[var(--border)]">
             <button
               onClick={() => setActiveTab("Profile")}
               className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
@@ -73,7 +73,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 overflow-y-auto scrollbar-thin flex-1 bg-gray-50/50">
+        <div className="scrollbar-thin flex-1 overflow-y-auto bg-gray-50/50 p-5 dark:bg-[var(--surface-elevated)]/40 sm:p-6">
           {activeTab === "Profile" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>

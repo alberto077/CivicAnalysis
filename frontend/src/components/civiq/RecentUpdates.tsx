@@ -36,7 +36,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <MotionReveal>
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 transition-colors dark:bg-[var(--surface-elevated)] dark:ring-[var(--border)]">
             <Rss className="h-4 w-4" strokeWidth={1.65} aria-hidden />
           </span>
           <h2 className="font-limelight text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
@@ -74,7 +74,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                   <motion.li
                     key={p.id}
                     variants={staggerItem}
-                    className="lift-row flex flex-col gap-2 px-6 py-6 transition-colors hover:bg-white/45 sm:flex-row sm:items-start sm:gap-8 md:px-8"
+                    className="lift-row flex flex-col gap-2 px-6 py-6 transition-colors hover:bg-white/45 sm:flex-row sm:items-start sm:gap-8 md:px-8 dark:hover:bg-[rgba(255,255,255,0.04)]"
                   >
                     <div className="min-w-0 flex-1">
                       <a 
