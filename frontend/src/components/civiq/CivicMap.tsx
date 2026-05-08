@@ -107,12 +107,12 @@ export function CivicMap({
               placeholder={activeTab === "nys" ? "Search address or zip code..." : "Search rep, district, or zip..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-24 py-3 rounded-2xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow shadow-sm"
+              className="w-full pl-10 pr-24 py-3 rounded-2xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-(--accent-soft) transition-shadow shadow-sm"
             />
             {activeTab === "nys" && (
               <button
                 type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[var(--accent)] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[var(--accent-hover)] transition-colors"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-(--accent) text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-(--accent-hover) transition-colors"
               >
                 Locate
               </button>
@@ -126,7 +126,7 @@ export function CivicMap({
         <button
           onClick={() => setActiveTab("nys")}
           className={`px-4 py-2 font-bold text-sm transition-colors border-b-2 ${activeTab === "nys"
-            ? "border-[var(--accent)] text-[var(--accent)]"
+            ? "border-(--accent) text-(--accent)"
             : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
         >
@@ -135,7 +135,7 @@ export function CivicMap({
         <button
           onClick={() => setActiveTab("nyc")}
           className={`px-4 py-2 font-bold text-sm transition-colors border-b-2 ${activeTab === "nyc"
-            ? "border-[var(--accent)] text-[var(--accent)]"
+            ? "border-(--accent) text-(--accent)"
             : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
         >
@@ -145,15 +145,15 @@ export function CivicMap({
 
       {activeTab === "nys" ? (
         /* NYS ArcGIS Tab */
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden h-[700px] relative flex flex-col group animate-in fade-in zoom-in-95 duration-300">
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden h-175 relative flex flex-col group animate-in fade-in zoom-in-95 duration-300">
           <div className="bg-slate-50 border-b border-slate-100 px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-              <MapIcon className="h-4 w-4 text-[var(--accent)]" />
+              <MapIcon className="h-4 w-4 text-(--accent)" />
               Interactive Boundary Map (NYS)
             </div>
             <button
               onClick={() => window.open(iframeSrc, '_blank')}
-              className="text-xs font-semibold text-slate-400 hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
+              className="text-xs font-semibold text-slate-400 hover:text-(--accent) transition-colors flex items-center gap-1.5"
               title="Open full map in new tab"
             >
               <Maximize2 className="h-3.5 w-3.5" />
@@ -182,11 +182,11 @@ export function CivicMap({
         /* NYC Local Tab */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Map Area */}
-          <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden h-[700px] relative">
+          <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden h-175 relative">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-50/50 backdrop-blur-sm z-20">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[var(--accent)]" />
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-(--accent)" />
                   <p className="text-sm font-medium text-slate-500">Loading Geographic Data...</p>
                 </div>
               </div>
@@ -262,10 +262,10 @@ export function CivicMap({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm"
+                  className="bg-white rounded-4xl border border-slate-200 p-8 shadow-sm"
                 >
                   <div className="flex items-start justify-between mb-8">
-                    <div className="h-14 w-14 rounded-2xl bg-[var(--accent-soft)]/20 flex items-center justify-center text-[var(--accent)] font-bold text-2xl">
+                    <div className="h-14 w-14 rounded-2xl bg-(--accent-soft)/20 flex items-center justify-center text-(--accent) font-bold text-2xl">
                       {selectedDistrict.id}
                     </div>
                     <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase tracking-widest">District</span>
@@ -299,19 +299,19 @@ export function CivicMap({
                   )}
                 </motion.div>
               ) : (
-                <div className="bg-slate-100/50 rounded-[2rem] border-2 border-dashed border-slate-200 p-12 text-center h-[400px] flex flex-col items-center justify-center">
+                <div className="bg-slate-100/50 rounded-4xl border-2 border-dashed border-slate-200 p-12 text-center h-100 flex flex-col items-center justify-center">
                   <MapPin className="h-10 w-10 text-slate-300 mb-4" />
                   <h3 className="text-slate-900 font-bold mb-2">No District Selected</h3>
-                  <p className="text-sm text-slate-400 max-w-[200px]">Select a shape on the map or search to see representative data.</p>
+                  <p className="text-sm text-slate-400 max-w-50">Select a shape on the map or search to see representative data.</p>
                 </div>
               )}
             </AnimatePresence>
 
             {/* Quick List Search Results */}
             {searchTerm && (
-              <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm mt-6">
+              <div className="bg-white rounded-4xl border border-slate-200 p-6 shadow-sm mt-6">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Search Results</h4>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-50 overflow-y-auto pr-2">
                   {filteredDistricts.slice(0, 5).map(d => (
                     <button
                       key={d.id}
@@ -322,7 +322,7 @@ export function CivicMap({
                         <p className="font-bold text-slate-900">{d.rep}</p>
                         <p className="text-xs text-slate-500">District {d.id} ({d.name})</p>
                       </div>
-                      <span className="opacity-0 group-hover:opacity-100 transition text-[var(--accent)] font-bold">→</span>
+                      <span className="opacity-0 group-hover:opacity-100 transition text-(--accent) font-bold">→</span>
                     </button>
                   ))}
                 </div>
@@ -333,7 +333,7 @@ export function CivicMap({
       )}
 
 
-      <div className="mt-12 bg-blue-50/50 rounded-[2rem] border border-blue-100/50 p-8 flex flex-col md:flex-row items-center gap-6">
+      <div className="mt-12 bg-blue-50/50 rounded-4xl border border-blue-100/50 p-8 flex flex-col md:flex-row items-center gap-6">
         <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
           <Info className="h-6 w-6 text-blue-600" />
         </div>
@@ -350,7 +350,7 @@ export function CivicMap({
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Info className="h-5 w-5 text-[var(--accent)]" />
+              <Info className="h-5 w-5 text-(--accent)" />
               Civic Map Resources
             </h3>
             <p className="text-slate-500 mt-1">Explore authoritative GIS data and district boundaries for New York.</p>
@@ -359,7 +359,7 @@ export function CivicMap({
             href="https://opdgig.dos.ny.gov/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-bold text-[var(--accent)] hover:underline flex items-center gap-1.5"
+            className="text-sm font-bold text-(--accent) hover:underline flex items-center gap-1.5"
           >
             Visit NYS Open Data <ExternalLink className="h-3.5 w-3.5" />
           </a>
@@ -411,7 +411,7 @@ export function CivicMap({
                 <span className="px-2.5 py-1 rounded-md bg-slate-100 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                   {resource.tag}
                 </span>
-                <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-[var(--accent)] transition-colors">
+                <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-(--accent) transition-colors">
                   <MapIcon className="h-4 w-4" />
                 </div>
               </div>
@@ -423,7 +423,7 @@ export function CivicMap({
                 href={resource.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-50 text-slate-600 text-xs font-bold hover:bg-[var(--accent)] hover:text-white transition-all"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-50 text-slate-600 text-xs font-bold hover:bg-(--accent) hover:text-white transition-all"
               >
                 Explore Map <ExternalLink className="h-3.5 w-3.5" />
               </a>
