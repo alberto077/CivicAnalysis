@@ -1,5 +1,7 @@
 "use client";
 
+//import { useEffect, useMemo, useRef, useState } from "react";
+import { Accessibility as AccessibilityIcon } from "lucide-react"; //used https://lucide.dev/icons/accessibility
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type AccessibilitySettings = {
@@ -314,8 +316,8 @@ export function AccessibilityWidget() {
           <div className="bg-gradient-to-br from-[#12355b] via-[#0b1f3a] to-[#061525] px-5 py-4 text-white">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-black text-[#12355b] shadow-sm">
-                  A+
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#12355b] shadow-sm">
+                  <AccessibilityIcon className="h-5 w-5" />
                 </span>
 
                 <div>
@@ -443,12 +445,12 @@ export function AccessibilityWidget() {
       ) : null}
 
       <button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#12355b] text-sm font-black uppercase tracking-tight text-white shadow-2xl transition hover:-translate-y-1 hover:opacity-95"
-        aria-label="Open accessibility menu"
-      >
-        A+
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#12355b] text-white shadow-2xl transition hover:-translate-y-1 hover:opacity-95"
+          aria-label="Open accessibility menu"
+        >
+          <AccessibilityIcon className="h-6 w-6" />
         {activeCount > 0 ? (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#facc15] px-1 text-[10px] font-black text-[#061525]">
             {activeCount}
