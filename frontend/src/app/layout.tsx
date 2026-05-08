@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Limelight, Playfair_Display, Work_Sans } from "next/font/google";
 
 import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
+import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
 import { ThemeProvider } from "@/components/civiq/ThemeProvider";
 
 import "./globals.css";
