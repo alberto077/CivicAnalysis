@@ -5,7 +5,8 @@ import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, Search, X, RotateCcw, Info, ExternalLink,
-  MapPin, ChevronDown, ChevronUp, Briefcase, Sparkles, BookOpen, Users
+  MapPin, ChevronDown, ChevronUp, Briefcase, Sparkles, BookOpen, Users,
+  ChevronsUp, ChevronsDown
 } from "lucide-react";
 import {
   getPoliticians,
@@ -131,7 +132,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
               </div>
             </div>
 
-            <div className="space-y-4 flex-1">
+            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--muted)] font-medium">Borough</span>
                 <span className="font-bold text-[var(--foreground)]">{p.borough || "N/A"}</span>
@@ -145,18 +146,6 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${getStanceStyles(p.political_stance)}`}>
                   {p.political_stance || "N/A"}
                 </span>
-              </div>
-
-              <div className="mt-auto pt-4 flex flex-col gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Contact Information</span>
-                {(ext.email || ext.phone) ? (
-                  <div className="flex flex-col gap-1">
-                    {ext.email && <span className="text-[11px] text-slate-600 font-medium truncate"><span className="font-bold">Email:</span> {ext.email}</span>}
-                    {ext.phone && <span className="text-[11px] text-slate-600 font-medium"><span className="font-bold">Phone:</span> {ext.phone}</span>}
-                  </div>
-                ) : (
-                  <span className="text-[10px] text-slate-400 italic">No contact info available</span>
-                )}
               </div>
             </div>
 
@@ -176,20 +165,48 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
           <div className="p-8 flex flex-col flex-1 overflow-hidden">
 
             <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+
+
+
+
               {p.committees && p.committees.length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Committee Assignments</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Committees</span>
                   <div className="flex flex-wrap gap-1.5">
                     {p.committees.map((c, i) => (
-                      <span key={`${c}-${i}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
-                        <Users className="h-3 w-3 text-blue-400" />{c}
+                      <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                        {c}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
 
+              {p.subcommittees && p.subcommittees.length > 0 && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Subcommittees</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.subcommittees.map((sc, i) => (
+                      <span key={`${sc}-${i}`} className="px-2 py-1 rounded-md bg-white border border-dashed border-slate-200 text-[10px] font-medium text-slate-500">
+                        {sc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
+              {p.caucuses && p.caucuses.length > 0 && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Caucuses</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.caucuses.map((c, i) => (
+                      <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
                 <div>
@@ -390,9 +407,27 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         const data = await getPoliticians();
 
         if (requestId === politicianRequestIdRef.current) {
-          // randomized sorting on initial load
-          const shuffled = [...data].sort(() => Math.random() - 0.5);
-          setPoliticians(shuffled);
+          // sort strictly by Level -> District -> Name
+          const levelOrder = ["U.S. Senate", "U.S. House", "State Senate", "State Assembly", "City Council"];
+          const sorted = [...data].sort((a, b) => {
+            const lA = levelOrder.indexOf(a.level);
+            const lB = levelOrder.indexOf(b.level);
+            if (lA !== lB) return lA - lB;
+
+            if (a.district && b.district) {
+              const dnumA = parseInt(a.district, 10);
+              const dnumB = parseInt(b.district, 10);
+              if (!isNaN(dnumA) && !isNaN(dnumB) && dnumA !== dnumB) return dnumA - dnumB;
+              if (a.district !== b.district) return a.district.localeCompare(b.district);
+            } else if (a.district) {
+              return -1;
+            } else if (b.district) {
+              return 1;
+            }
+
+            return a.name.localeCompare(b.name);
+          });
+          setPoliticians(sorted);
         }
       } catch (e) {
         if (requestId === politicianRequestIdRef.current) {
@@ -802,19 +837,47 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             )}
 
             {visibleCount < filteredPoliticians.length && (
-              <div className="mt-16 flex justify-center">
+              <div className="mt-16 flex flex-wrap justify-center gap-4">
                 <button
                   onClick={() => setVisibleCount(prev => prev + 24)}
                   className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-[var(--accent)] hover:shadow-lg active:scale-95"
                 >
-                  <span>Show More Representatives</span>
+                  <span>Show More</span>
                   <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
                   <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm">
                     +{filteredPoliticians.length - visibleCount}
                   </div>
                 </button>
+                <button
+                  onClick={() => setVisibleCount(filteredPoliticians.length)}
+                  className="relative flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-bold transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 text-sm"
+                >
+                  <span>Show All</span>
+                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
+                  <span className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm border-1 border-slate-200">
+                    = {filteredPoliticians.length}
+                  </span>
+                </button>
               </div>
             )}
+
+            {/* Scroll arrows */}
+            <div className="fixed bottom-28 right-8 z-50 flex flex-col gap-2">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95"
+                title="Scroll to top"
+              >
+                <ChevronsUp className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95"
+                title="Scroll to bottom"
+              >
+                <ChevronsDown className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
