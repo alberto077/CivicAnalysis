@@ -79,8 +79,12 @@ function cleanPoliticianData(name: string) {
 
 function getLearnMoreUrl(p: Politician) {
   if (p.bio_url?.trim()) return p.bio_url.trim();
+  const name = p.name || "Unknown";
+  const office = p.office || "Representative";
+  const district = p.district || "";
+  const borough = p.borough || "NYC";
   return `https://www.google.com/search?q=${encodeURIComponent(
-    `${p.name} ${p.office} District ${p.district ?? ""} ${p.borough} official profile`,
+    `${name} ${office} District ${district} ${borough} official profile`,
   )}`;
 }
 
@@ -101,14 +105,14 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
   const level = getLevelKey(p);
   const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string };
 
-  const { cleanedName, title } = cleanPoliticianData(p.name);
+  const { cleanedName, title } = cleanPoliticianData(p.name || "");
 
   return (
     /* main container - controls the flip */
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="relative h-[480px] w-full [perspective:1000px] group"
+      className="relative h-[440px] w-full [perspective:1000px] group"
       onClick={() => setIsFlipped(f => !f)}
     >
       <motion.div
@@ -173,7 +177,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Committees</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.committees.map((c, i) => (
+                    {(p.committees || []).map((c: string, i: number) => (
                       <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
                         {c}
                       </span>
@@ -186,7 +190,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Subcommittees</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.subcommittees.map((sc, i) => (
+                    {(p.subcommittees || []).map((sc: string, i: number) => (
                       <span key={`${sc}-${i}`} className="px-2 py-1 rounded-md bg-white border border-dashed border-slate-200 text-[10px] font-medium text-slate-500">
                         {sc}
                       </span>
@@ -199,7 +203,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Caucuses</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.caucuses.map((c, i) => (
+                    {(p.caucuses || []).map((c: string, i: number) => (
                       <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
                         {c}
                       </span>
@@ -408,7 +412,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
         if (requestId === politicianRequestIdRef.current) {
           // sort strictly by Level -> District -> Name
-          const levelOrder = ["U.S. Senate", "U.S. House", "State Senate", "State Assembly", "City Council"];
+          const levelOrder = ["City Council", "State Assembly", "State Senate", "U.S. Senate", "U.S. House"];
           const sorted = [...data].sort((a, b) => {
             const lA = levelOrder.indexOf(a.level);
             const lB = levelOrder.indexOf(b.level);
