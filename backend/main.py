@@ -9,6 +9,7 @@ import logging
 
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
+from sqlalchemy.exc import OperationalError
 from db import engine
 from schema import District, DocumentChunk, PolicyDocument, Politician
 from embed import get_query_embedding
@@ -253,114 +254,125 @@ def get_db_context(
     effective_top_k = max(4, top_k)
     logger.info("RAG retrieval start query='%s' top_k=%s", normalized_query, top_k)
 
-    with Session(engine) as session:
-        location_terms = _derive_location_terms(demographics or {})
-        location_terms = _expand_location_terms_with_zip(
-            session, location_terms, (demographics or {}).get("zip")
-        )
-        if location_terms:
-            embed_query = f"{normalized_query} {' '.join(location_terms)}".strip()
-            logger.info("Retrieval augmented terms=%s", len(location_terms))
-        else:
-            embed_query = normalized_query
+    for _attempt in (0, 1):
+        try:
+            with Session(engine) as session:
+                location_terms = _derive_location_terms(demographics or {})
+                location_terms = _expand_location_terms_with_zip(
+                    session, location_terms, (demographics or {}).get("zip")
+                )
+                if location_terms:
+                    embed_query = f"{normalized_query} {' '.join(location_terms)}".strip()
+                    logger.info("Retrieval augmented terms=%s", len(location_terms))
+                else:
+                    embed_query = normalized_query
 
-        query_embedding = get_query_embedding(embed_query)
-        embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
-        logger.info(
-            "Query embedding generated dim=%s sample=%s",
-            embedding_dim,
-            query_embedding[:5] if isinstance(query_embedding, list) else [],
-        )
+                query_embedding = get_query_embedding(embed_query)
+                embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
+                logger.info(
+                    "Query embedding generated dim=%s sample=%s",
+                    embedding_dim,
+                    query_embedding[:5] if isinstance(query_embedding, list) else [],
+                )
 
-        total_chunks = session.exec(select(func.count(DocumentChunk.id))).one()
-        chunks_with_text = session.exec(
-            select(func.count(DocumentChunk.id)).where(DocumentChunk.text_content.is_not(None))
-        ).one()
-        chunks_with_embedding = session.exec(
-            select(func.count(DocumentChunk.id)).where(DocumentChunk.embedding.is_not(None))
-        ).one()
-        logger.info(
-            "DB stats total_chunks=%s chunks_with_text=%s chunks_with_embedding=%s",
-            total_chunks,
-            chunks_with_text,
-            chunks_with_embedding,
-        )
+                total_chunks = session.exec(select(func.count(DocumentChunk.id))).one()
+                chunks_with_text = session.exec(
+                    select(func.count(DocumentChunk.id)).where(DocumentChunk.text_content.is_not(None))
+                ).one()
+                chunks_with_embedding = session.exec(
+                    select(func.count(DocumentChunk.id)).where(DocumentChunk.embedding.is_not(None))
+                ).one()
+                logger.info(
+                    "DB stats total_chunks=%s chunks_with_text=%s chunks_with_embedding=%s",
+                    total_chunks,
+                    chunks_with_text,
+                    chunks_with_embedding,
+                )
 
-        vector_results = session.exec(
-            select(DocumentChunk, PolicyDocument)
-            .join(PolicyDocument)
-            .where(DocumentChunk.embedding.is_not(None))
-            .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
-            .limit(effective_top_k * 8)
-        ).all()
-        logger.info("Vector search raw_results=%s", len(vector_results))
+                vector_results = session.exec(
+                    select(DocumentChunk, PolicyDocument)
+                    .join(PolicyDocument)
+                    .where(DocumentChunk.embedding.is_not(None))
+                    .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+                    .limit(effective_top_k * 8)
+                ).all()
+                logger.info("Vector search raw_results=%s", len(vector_results))
 
-        context = _map_context(session, vector_results, effective_top_k)
-        logger.info(
-            "Vector search mapped_context=%s filtered_out=%s",
-            len(context),
-            max(0, len(vector_results) - len(context)),
-        )
+                context = _map_context(session, vector_results, effective_top_k)
+                logger.info(
+                    "Vector search mapped_context=%s filtered_out=%s",
+                    len(context),
+                    max(0, len(vector_results) - len(context)),
+                )
 
-        if context:
-            logger.info(
-                "Final context count=%s sample_titles=%s",
-                len(context),
-                [item["title"] for item in context[:3]],
+                if context:
+                    logger.info(
+                        "Final context count=%s sample_titles=%s",
+                        len(context),
+                        [item["title"] for item in context[:3]],
+                    )
+                    return context, "vector"
+
+                # Fallback retrieval when vector search returns no usable context.
+                if normalized_query:
+                    terms = [term for term in normalized_query.split() if len(term) >= 3][:6]
+                    lexical_filters = [DocumentChunk.text_content.ilike(f"%{normalized_query}%")]
+                    lexical_filters.extend(
+                        [DocumentChunk.text_content.ilike(f"%{term}%") for term in terms]
+                    )
+                    lexical_results = session.exec(
+                        select(DocumentChunk, PolicyDocument)
+                        .join(PolicyDocument)
+                        .where(or_(*lexical_filters))
+                        .limit(effective_top_k * 8)
+                    ).all()
+                    logger.info(
+                        "Lexical fallback raw_results=%s terms=%s",
+                        len(lexical_results),
+                        terms,
+                    )
+                    context = _map_context(session, lexical_results, effective_top_k)
+                    logger.info("Lexical fallback mapped_context=%s", len(context))
+
+                if context:
+                    logger.info(
+                        "Final context count=%s sample_titles=%s",
+                        len(context),
+                        [item["title"] for item in context[:3]],
+                    )
+                    return context, "lexical"
+
+                # Final safety fallback: return latest raw documents if data exists.
+                raw_results = session.exec(
+                    select(DocumentChunk, PolicyDocument)
+                    .join(PolicyDocument)
+                    .where(DocumentChunk.text_content.is_not(None))
+                    .order_by(PolicyDocument.published_date.desc(), DocumentChunk.id.desc())
+                    .limit(effective_top_k * 8)
+                ).all()
+                logger.info("Raw fallback results=%s", len(raw_results))
+                context = _map_context(session, raw_results, effective_top_k)
+                logger.info("Raw fallback mapped_context=%s", len(context))
+
+                if context:
+                    logger.info(
+                        "Final context count=%s sample_titles=%s",
+                        len(context),
+                        [item["title"] for item in context[:3]],
+                    )
+                    return context, "recent"
+
+                logger.warning("Final context is empty after all retrieval steps")
+                return [], "none"
+        except OperationalError as e:
+            logger.warning(
+                "RAG database OperationalError (attempt %s): %s",
+                _attempt + 1,
+                e,
             )
-            return context, "vector"
-
-        # Fallback retrieval when vector search returns no usable context.
-        if normalized_query:
-            terms = [term for term in normalized_query.split() if len(term) >= 3][:6]
-            lexical_filters = [DocumentChunk.text_content.ilike(f"%{normalized_query}%")]
-            lexical_filters.extend(
-                [DocumentChunk.text_content.ilike(f"%{term}%") for term in terms]
-            )
-            lexical_results = session.exec(
-                select(DocumentChunk, PolicyDocument)
-                .join(PolicyDocument)
-                .where(or_(*lexical_filters))
-                .limit(effective_top_k * 8)
-            ).all()
-            logger.info(
-                "Lexical fallback raw_results=%s terms=%s",
-                len(lexical_results),
-                terms,
-            )
-            context = _map_context(session, lexical_results, effective_top_k)
-            logger.info("Lexical fallback mapped_context=%s", len(context))
-
-        if context:
-            logger.info(
-                "Final context count=%s sample_titles=%s",
-                len(context),
-                [item["title"] for item in context[:3]],
-            )
-            return context, "lexical"
-
-        # Final safety fallback: return latest raw documents if data exists.
-        raw_results = session.exec(
-            select(DocumentChunk, PolicyDocument)
-            .join(PolicyDocument)
-            .where(DocumentChunk.text_content.is_not(None))
-            .order_by(PolicyDocument.published_date.desc(), DocumentChunk.id.desc())
-            .limit(effective_top_k * 8)
-        ).all()
-        logger.info("Raw fallback results=%s", len(raw_results))
-        context = _map_context(session, raw_results, effective_top_k)
-        logger.info("Raw fallback mapped_context=%s", len(context))
-
-        if context:
-            logger.info(
-                "Final context count=%s sample_titles=%s",
-                len(context),
-                [item["title"] for item in context[:3]],
-            )
-            return context, "recent"
-
-        logger.warning("Final context is empty after all retrieval steps")
-        return [], "none"
+            if _attempt == 1:
+                raise
+    raise RuntimeError("get_db_context: unexpected fall-through")
 
 
 def build_retrieval_sources_payload(
