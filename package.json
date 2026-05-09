@@ -1,0 +1,15 @@
+{
+  "name": "civic-analysis",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build -w frontend",
+    "lint": "npm run lint -w frontend",
+    "dev": "npm run dev -w frontend"
+  }
+}

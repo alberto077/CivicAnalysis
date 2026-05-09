@@ -1,24 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, Khand, Atkinson_Hyperlegible } from "next/font/google";
+import { Limelight, Playfair_Display, Work_Sans } from "next/font/google";
 
 import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
+import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
+import { DevConsoleFilter } from "@/components/civiq/DevConsoleFilter";
+import { ThemeProvider } from "@/components/civiq/ThemeProvider";
 
 import "./globals.css";
 
-const inter = Inter({
+const playfairDisplay = Playfair_Display({
+  weight: ["400", "500", "600"],
+  variable: "--font-serif-display",
+  subsets: ["latin"],
+});
+
+const workSans = Work_Sans({
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans-body",
   subsets: ["latin"],
 });
 
-const khand = Khand({
-  weight: ["400", "600"],
-  variable: "--font-condensed",
-  subsets: ["latin"],
-});
-
-const atkinson = Atkinson_Hyperlegible({
-  weight: ["400", "700"],
-  variable: "--font-mono",
+const limelight = Limelight({
+  weight: ["400"],
+  variable: "--font-limelight",
   subsets: ["latin"],
 });
 
@@ -36,18 +40,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${khand.variable} ${atkinson.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${playfairDisplay.variable} ${workSans.variable} ${limelight.variable} h-full antialiased`}
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=tanker@400&f[]=erode@400,600&display=swap"
-        />
-      </head>
-
       <body className="flex min-h-full flex-col">
-        {children}
-        <FloatingChatBot />
+        <ThemeProvider>
+          <DevConsoleFilter />
+          {children}
+          <FloatingChatBot />
+          <AccessibilityWidget />
+        </ThemeProvider>
       </body>
     </html>
   );

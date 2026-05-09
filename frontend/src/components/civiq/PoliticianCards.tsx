@@ -1,6 +1,11 @@
 "use client";
 
+<<<<<<< rep-cards-data-filter
 import { useEffect, useRef, useState, useMemo } from "react";
+=======
+import { useEffect, useId, useRef, useState } from "react";
+import { motion } from "framer-motion";
+>>>>>>> main
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,7 +18,11 @@ import {
   getPoliticianFilters,
   type Politician,
 } from "@/lib/api";
+<<<<<<< rep-cards-data-filter
 import { useProfile } from "@/lib/useProfile";
+=======
+import { ThemedSelect } from "./ThemedSelect";
+>>>>>>> main
 
 
 
@@ -279,6 +288,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
   const politicianRequestIdRef = useRef(0);
 
+<<<<<<< rep-cards-data-filter
   const officeInfo = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -328,6 +338,12 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       }
     ];
   }, []);
+=======
+  const boroughInstance = useId().replace(/:/g, "");
+  const districtInstance = useId().replace(/:/g, "");
+  const boroughSelectId = `borough-select-${boroughInstance}`;
+  const districtSelectId = `district-select-${districtInstance}`;
+>>>>>>> main
 
   useEffect(() => {
     if (userBorough && selectedBoroughs.length === 0) {
@@ -514,10 +530,27 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <MotionReveal>
+<<<<<<< rep-cards-data-filter
         <div className="flex items-start justify-between">
           <h1 className="font-display text-4xl font-bold tracking-tight text-[var(--foreground)] sm:text-5xl">
             Representative Directory
           </h1>
+=======
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-limelight text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
+            Local Representatives
+          </h2>
+
+          {(selectedLocation !== "All" || selectedDistrict !== "All") && (
+            <span className="font-work-sans rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white shadow-sm">
+              Filtered for{" "}
+              {selectedLocation !== "All" ? selectedLocation : "All Boroughs"}
+              {selectedDistrict !== "All"
+                ? ` • District ${selectedDistrict}`
+                : ""}
+            </span>
+          )}
+>>>>>>> main
         </div>
 
         {/* Understanding Your Representation Section */}
@@ -628,6 +661,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         </div>
       </MotionReveal>
 
+<<<<<<< rep-cards-data-filter
       {/* Tabs: Levels of Government — reset legislature-specific filters on switch */}
       <MotionReveal className="mt-12 mb-6 border-b border-slate-200">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full">
@@ -698,8 +732,56 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 Reset
               </button>
             </div>
+=======
+      <MotionReveal className="mt-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Borough
+            </span>
+
+            <ThemedSelect
+              instanceId={boroughSelectId}
+              ariaLabel="Borough"
+              value={selectedLocation}
+              options={locationOptions.map((option) => ({
+                value: option,
+                label: option,
+              }))}
+              onChange={(next) => {
+                setSelectedLocation(normalizeBorough(next));
+                setSelectedDistrict("All");
+              }}
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              District
+            </span>
+
+            <ThemedSelect
+              instanceId={districtSelectId}
+              ariaLabel="District"
+              value={selectedDistrict}
+              options={districtOptions.map((district) => ({
+                value: district,
+                label: district === "All" ? "All" : `District ${district}`,
+              }))}
+              onChange={setSelectedDistrict}
+            />
+          </label>
+        </div>
+      </MotionReveal>
+
+      <MotionReveal className="mt-10">
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/45 dark:text-red-100">
+            {error}
+>>>>>>> main
           </div>
 
+<<<<<<< rep-cards-data-filter
           {/* Row 2: Borough chips + Party chips side by side */}
           <div className="flex flex-col lg:flex-row gap-4 pt-4 border-t border-slate-100">
             {/* Boroughs */}
@@ -734,8 +816,14 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 );
               })}
             </div>
+=======
+        {loading ? (
+          <div className="rounded-xl border border-[var(--border)] bg-white/70 px-4 py-6 text-sm text-[var(--muted)] dark:bg-[var(--surface-card)]/80">
+            Loading representatives...
+>>>>>>> main
           </div>
 
+<<<<<<< rep-cards-data-filter
           {/* Row 3: Committee / Subcommittee / Caucus dropdowns */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
             <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
@@ -774,6 +862,65 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
         </div>
       </MotionReveal>
+=======
+        {!loading && !error && filteredPoliticians.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)]/80 dark:text-[var(--foreground-secondary)]">
+            No representatives matched these filters.
+          </div>
+        ) : null}
+
+        {!loading && !error && filteredPoliticians.length > 0 ? (
+          <motion.div
+            key={`${selectedLocation}-${selectedDistrict}`}
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            animate="show"
+            variants={staggerContainer}
+          >
+            {filteredPoliticians.map((p) => (
+              <motion.div
+                key={`${p.name}-${p.borough}-${p.district ?? "na"}`}
+                variants={staggerItem}
+                className="glass-card group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] p-6 transition duration-300 hover:-translate-y-1"
+              >
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-limelight text-xl font-bold leading-tight text-[var(--foreground)]">
+                      {p.name}
+                    </h3>
+
+                    <p className="font-work-sans text-sm font-medium text-[var(--muted)]">
+                      {p.office}
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-[70px] flex-col items-center justify-center rounded-xl border border-[var(--border)] bg-white px-2 py-2 dark:bg-[var(--surface-elevated)]">
+                    <span className="font-work-sans text-[10px] font-bold uppercase leading-none tracking-widest text-[var(--muted)]">
+                      Stance
+                    </span>
+
+                    <span className="font-work-sans mt-1 text-center text-xs font-semibold leading-tight text-[var(--foreground)]">
+                      {p.political_stance || "Unknown"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      Borough
+                    </p>
+
+                    <p className="text-[13px] leading-snug text-[var(--foreground)]">
+                      {p.borough || "Unknown"}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-[var(--border)] pt-4">
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      District
+                    </p>
+>>>>>>> main
 
       {/* RESULTS */}
       <div>
@@ -781,6 +928,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 mb-8">{error}</div>
         )}
 
+<<<<<<< rep-cards-data-filter
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -805,12 +953,19 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 <PoliticianCard key={`${p.id || p.name}-${idx}`} p={p} userIssues={profile?.issues} />
               ))}
             </motion.div>
+=======
+                  <div className="border-t border-[var(--border)] pt-4">
+                    <p className="font-work-sans mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      Party
+                    </p>
+>>>>>>> main
 
             {filteredPoliticians.length === 0 && !loading && (
               <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-dashed border-slate-300">
                 <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
                   <Search className="h-8 w-8" />
                 </div>
+<<<<<<< rep-cards-data-filter
                 <h3 className="text-xl font-bold text-slate-900">No representatives found</h3>
                 <p className="text-slate-500 mt-2">Try adjusting your filters or search term</p>
                 <button onClick={clearAllFilters} className="mt-6 text-[var(--accent)] font-bold hover:underline">
@@ -853,6 +1008,30 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
         )}
       </div>
+=======
+
+                <div className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
+                  <div className="min-w-0">
+                    <p className="font-work-sans text-xs text-[var(--muted)]">
+                      View official profile and details
+                    </p>
+                  </div>
+
+                  <a
+                    href={getLearnMoreUrl(p)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-work-sans shrink-0 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-90"
+                  >
+                    Learn More
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : null}
+      </MotionReveal>
+>>>>>>> main
     </section>
   );
 }

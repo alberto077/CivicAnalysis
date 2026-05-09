@@ -81,21 +81,21 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
     >
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] animate-in fade-in zoom-in duration-300">
         <div className="mb-6 flex items-center justify-between">
-          <p className="font-condensed text-sm font-semibold tracking-widest text-[var(--accent-mid)] uppercase">
+          <p className="font-work-sans text-sm font-semibold tracking-widest text-[var(--accent-mid)] uppercase">
             Step {step} of 5
           </p>
-          <p className="text-xs text-[var(--muted)]">Privacy: Saved only to your browser</p>
+          <p className="font-work-sans text-xs font-normal text-[var(--muted)]">Privacy: Saved only to your browser</p>
         </div>
 
         {step === 1 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Where do you live?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Where do you live?</h2>
             <div className="grid grid-cols-2 gap-3">
               {BOROUGHS.map((b) => (
                 <button
                   key={b}
                   onClick={() => setData({ ...data, borough: data.borough === b ? "" : b })}
-                  className={`rounded-xl border p-3 text-left font-sans text-sm font-medium transition ${data.borough === b
+                  className={`rounded-xl border p-3 text-left font-work-sans text-sm font-medium transition ${data.borough === b
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
                     : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
                     }`}
@@ -109,16 +109,16 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 2 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Housing & Income</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Housing & Income</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--muted)]">Housing Status</label>
+                <label className="font-work-sans mb-2 block text-sm font-medium text-[var(--muted)]">Housing Status</label>
                 <div className="flex flex-wrap gap-2">
                   {HOUSING.map((h) => (
                     <button
                       key={h}
                       onClick={() => setData({ ...data, housing: data.housing === h ? "" : h })}
-                      className={`rounded-lg border px-4 py-2 text-sm transition ${data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                      className={`font-work-sans rounded-lg border px-4 py-2 text-sm font-normal transition ${data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] font-semibold text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
                         }`}
                     >
                       {h}
@@ -127,13 +127,13 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--muted)]">Household Income</label>
+                <label className="font-work-sans mb-2 block text-sm font-medium text-[var(--muted)]">Household Income</label>
                 <div className="flex flex-wrap gap-2">
                   {INCOME.map((i) => (
                     <button
                       key={i}
                       onClick={() => setData({ ...data, income: data.income === i ? "" : i })}
-                      className={`rounded-lg border px-4 py-2 text-sm transition ${data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                      className={`font-work-sans rounded-lg border px-4 py-2 text-sm font-normal transition ${data.income === i ? "border-[var(--accent)] bg-[var(--accent)] font-semibold text-white" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
                         }`}
                     >
                       {i}
@@ -147,13 +147,13 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 3 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">What issues matter to you?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">What issues matter to you?</h2>
             <div className="flex flex-wrap gap-2 max-h-[35vh] overflow-y-auto pr-2 pb-4 scrollbar-thin">
               {ISSUES.map((issue) => (
                 <button
                   key={issue}
                   onClick={() => toggleIssue(issue)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${data.issues.includes(issue)
+                  className={`font-work-sans rounded-xl border px-4 py-2 text-sm font-medium transition ${data.issues.includes(issue)
                     ? "border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white shadow-md"
                     : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent)]"
                     }`}
@@ -167,13 +167,13 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 4 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">What is your age?</h2>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">What is your age?</h2>
             <div className="flex flex-wrap gap-2">
               {AGE.map((a) => (
                 <button
                   key={a}
                   onClick={() => setData({ ...data, age: data.age === a ? "" : a })}
-                  className={`rounded-lg border px-4 py-2 text-sm transition ${data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
+                  className={`font-work-sans rounded-lg border px-4 py-2 text-sm font-normal transition ${data.age === a ? "border-[var(--accent)] bg-[var(--accent)] font-semibold text-white shadow-md" : "border-[var(--border)] bg-gray-50 text-[var(--muted)] hover:bg-gray-100"
                     }`}
                 >
                   {a}
@@ -185,14 +185,14 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         {step === 5 && (
           <div className="space-y-6">
-            <h2 className="font-sans text-2xl font-bold text-[var(--foreground)] tracking-tight">Any demographics apply?</h2>
-            <p className="text-sm text-[var(--muted)]">Select all that apply.</p>
+            <h2 className="font-limelight text-2xl font-bold text-[var(--foreground)] tracking-tight">Any demographics apply?</h2>
+            <p className="font-work-sans text-sm font-normal text-[var(--muted)]">Select all that apply.</p>
             <div className="flex flex-wrap gap-2 max-h-[35vh] overflow-y-auto pr-2 pb-4 scrollbar-thin">
               {DEMOGRAPHICS.map((demo) => (
                 <button
                   key={demo}
                   onClick={() => toggleDemographic(demo)}
-                  className={`rounded-xl border px-4 py-2 text-[13px] font-medium transition ${data.demographics.includes(demo)
+                  className={`font-work-sans rounded-xl border px-4 py-2 text-[13px] font-medium transition ${data.demographics.includes(demo)
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-md"
                     : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent-mid)]"
                     }`}
@@ -206,7 +206,7 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
 
         <div className="mt-10 flex items-center justify-between border-t border-[var(--border)] pt-5">
           {step < 5 ? (
-            <button onClick={handleNext} className="text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition">
+            <button onClick={handleNext} className="font-work-sans text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition">
               Skip Question
             </button>
           ) : (
@@ -214,11 +214,11 @@ export function OnboardingModal({ isOpen, onSave, onSkip, initialProfile }: Prop
           )}
 
           {step < 5 ? (
-            <button onClick={handleNext} className="rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--accent-mid)]">
+            <button onClick={handleNext} className="font-work-sans rounded-xl bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--accent-mid)]">
               Next
             </button>
           ) : (
-            <button onClick={handleFinish} className="rounded-xl bg-[var(--accent-mid)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:scale-105">
+            <button onClick={handleFinish} className="font-work-sans rounded-xl bg-[var(--accent-mid)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:scale-105">
               Complete Profile
             </button>
           )}

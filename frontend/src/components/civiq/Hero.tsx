@@ -1,42 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
 
-function SkylineDecor({ className }: { className?: string }) {
-  return (
-    <div
-      className={`pointer-events-none absolute inset-x-0 bottom-0 ${className ?? ""}`}
-      aria-hidden
-    >
-      <svg
-        viewBox="0 0 1200 200"
-        className="h-44 w-full min-w-[800px] text-[var(--accent-soft)] opacity-[0.38] sm:h-52 md:h-60"
-        preserveAspectRatio="xMidYMax slice"
-      >
-        <defs>
-          <linearGradient id="bldg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="currentColor" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="currentColor" stopOpacity="0.12" />
-          </linearGradient>
-        </defs>
-        <rect x="40" y="70" width="52" height="130" rx="4" fill="url(#bldg)" />
-        <rect x="110" y="95" width="44" height="105" rx="4" fill="url(#bldg)" />
-        <rect x="175" y="50" width="68" height="150" rx="4" fill="url(#bldg)" />
-        <rect x="265" y="85" width="56" height="115" rx="4" fill="url(#bldg)" />
-        <rect x="340" y="60" width="48" height="140" rx="4" fill="url(#bldg)" />
-        <rect x="405" y="100" width="72" height="100" rx="4" fill="url(#bldg)" />
-        <rect x="495" y="45" width="60" height="155" rx="4" fill="url(#bldg)" />
-        <rect x="575" y="78" width="40" height="122" rx="4" fill="url(#bldg)" />
-        <rect x="635" y="55" width="80" height="145" rx="4" fill="url(#bldg)" />
-        <rect x="735" y="92" width="55" height="108" rx="4" fill="url(#bldg)" />
-        <rect x="810" y="65" width="64" height="135" rx="4" fill="url(#bldg)" />
-        <rect x="895" y="88" width="48" height="112" rx="4" fill="url(#bldg)" />
-        <rect x="960" y="52" width="90" height="148" rx="4" fill="url(#bldg)" />
-        <rect x="1065" y="75" width="50" height="125" rx="4" fill="url(#bldg)" />
-      </svg>
-    </div>
-  );
-}
-
 type HeroProps = {
   query: string;
   onQueryChange: (value: string) => void;
@@ -44,118 +8,177 @@ type HeroProps = {
   onSearch: () => void | Promise<void>;
 };
 
+const HEADLINE_LETTER_STAGGER = 0.14;
+const HEADLINE_LETTER_DURATION = 1.05;
+const headlineLetterEase: [number, number, number, number] = [0.16, 1, 0.32, 1];
+
+const headlineLetterVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: HEADLINE_LETTER_DURATION,
+      ease: headlineLetterEase,
+    },
+  },
+};
+
 export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
+  const headlineIntro = "A Reflection";
+  const headlineFocus = "Of Your City";
+  const introLen = headlineIntro.length;
+  /** Same rhythm as line 1: start after line 1’s letters have begun their cascade (+ short pause). */
+  const line2DelayChildren =
+    0.22 + introLen * HEADLINE_LETTER_STAGGER + 0.12;
+
   return (
     <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16">
       <div
-        className="pointer-events-none absolute -top-28 left-1/2 h-[480px] w-[min(920px,120vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(230,57,70,0.08)_0%,rgba(26,54,93,0.05)_45%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.82]"
+        style={{ backgroundImage: "url('/images/skylinehero.png')" }}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-x-0 top-10 h-[420px] bg-[linear-gradient(180deg,rgba(255,255,255,0.32)_0%,rgba(255,255,255,0)_100%)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,251,255,0.48)_0%,rgba(248,251,255,0.28)_42%,rgba(248,251,255,0.42)_100%)] dark:bg-[linear-gradient(180deg,rgba(11,15,20,0.55)_0%,rgba(11,15,20,0.75)_45%,rgba(11,15,20,0.88)_100%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute right-[7%] top-[26%] h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(230,57,70,0.14)_0%,rgba(230,57,70,0)_70%)] blur-2xl"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(248,251,255,0)_0%,rgba(248,251,255,0.92)_100%)] dark:bg-[linear-gradient(180deg,rgba(11,15,20,0)_0%,rgba(11,15,20,0.97)_100%)]"
         aria-hidden
       />
-      <SkylineDecor className="text-[var(--accent)] opacity-20" />
-      <SkylineDecor className="text-[var(--accent-mid)] opacity-[0.08] translate-x-4 translate-y-2" />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(231,241,250,0.7)_0%,rgba(231,241,250,0.28)_56%,rgba(231,241,250,0)_100%)] dark:bg-[linear-gradient(180deg,rgba(20,28,38,0.5)_0%,rgba(11,15,20,0)_100%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-36 w-[52%] bg-[radial-gradient(ellipse_at_top_right,rgba(229,240,250,0.86)_0%,rgba(229,240,250,0.5)_44%,rgba(229,240,250,0.18)_70%,rgba(229,240,250,0)_100%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(60,80,108,0.25)_0%,rgba(11,15,20,0)_70%)]"
+        aria-hidden
+      />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-        <div className="lg:pr-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display mt-5 max-w-3xl text-[2.9rem] font-bold leading-[0.97] tracking-[-0.01em] text-[var(--foreground)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem]"
-          >
-            Understand Policies That Shape{" "}
-            <span className="hero-gradient-text hero-wordmark-reflect" data-reflect="Your Neighborhood">
-              Your Neighborhood
-            </span>
-          </motion.h1>
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 opacity-85 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full min-w-0 max-w-4xl">
+        <div className="grid grid-cols-1 items-center gap-12">
+          <div className="mx-auto w-full text-center">
+          <h1 className="font-limelight mx-auto mt-5 max-w-3xl text-center text-[2.9rem] leading-[1.08] tracking-[3.8px] text-[rgba(20,31,45,0.92)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem] dark:text-[var(--foreground)]">
+            <motion.span
+              className="block w-full"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: HEADLINE_LETTER_STAGGER,
+                    delayChildren: 0.22,
+                  },
+                },
+              }}
+            >
+              {headlineIntro.split("").map((char, index) => (
+                <motion.span
+                  key={`headline-intro-${index}`}
+                  className="inline-block"
+                  variants={headlineLetterVariants}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </motion.span>
+            <motion.span
+              className="hero-wordmark-reflect mt-1.5 block w-full text-center"
+              data-reflect="Of Your City"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: HEADLINE_LETTER_STAGGER,
+                    delayChildren: line2DelayChildren,
+                  },
+                },
+              }}
+            >
+              {headlineFocus.split("").map((char, index) => (
+                <motion.span
+                  key={`headline-focus-${index}`}
+                  className="hero-gradient-text inline-block"
+                  variants={headlineLetterVariants}
+                >
+                  {char === " " ? "\u00A0" : char}
+                </motion.span>
+              ))}
+            </motion.span>
+          </h1>
           <motion.p
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-            className="mt-6 max-w-2xl text-base leading-relaxed text-[var(--muted)]/80 sm:text-lg"
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
+            className="font-limelight mx-auto mt-4 max-w-2xl text-balance text-[18px] font-extrabold tracking-[1.3px] text-[rgba(20,31,45,1)] dark:text-[var(--foreground-secondary)]"
           >
-            Your AI-powered civic research assistant
+            Where Policy Decisions Become Visible
           </motion.p>
-
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
-            className="mt-10 max-w-full lg:max-w-3xl"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void onSearch();
-            }}
-          >
-            <label htmlFor="location-search" className="sr-only">
-              Ask about your neighborhood, local policies, budgets, or city decisions
-            </label>
-            <div className="glass-card search-shell command-shell group flex min-h-[5.3rem] items-center gap-3 rounded-[1.7rem] border border-white/80 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] px-5 py-3 shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] sm:gap-4 sm:px-7 sm:py-4 md:min-h-[5.8rem]">
-              <span className="text-[var(--muted)]" aria-hidden>
-                <svg
-                  width="26"
-                  height="26"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.65"
-                  className="opacity-75 transition-transform duration-300 group-focus-within:scale-105"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-4-4" strokeLinecap="round" />
-                </svg>
-              </span>
-              <input
-                id="location-search"
-                type="search"
-                name="location"
-                value={query}
-                onChange={(e) => onQueryChange(e.target.value)}
-                placeholder="Ask about your Neighborhood"
-                disabled={loading}
-                className="min-w-0 flex-1 border-0 bg-transparent py-2 text-[1.1rem] text-[var(--foreground)] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 sm:text-[1.18rem]"
-              />
-              <button
-                type="submit"
-                disabled={loading || !query.trim()}
-                aria-label={loading ? "Loading briefing" : "Submit briefing request"}
-                className="command-submit shrink-0 rounded-[1.15rem] bg-[var(--accent-mid)] px-4 py-3 text-white shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-50 sm:px-5"
-              >
-                <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden
-                >
-                  <path d="M5 12h13" strokeLinecap="round" />
-                  <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </motion.form>
+          </div>
         </div>
 
-        <div className="hidden lg:flex justify-end items-center drop-shadow-2xl opacity-95 hover:opacity-100 transition-opacity duration-500">
-          <img
-            src="/image2.png"
-            alt="Civic Spiegel Network"
-            className="w-full max-w-[540px] xl:max-w-[620px] object-contain scale-[1.05]"
-            style={{
-              WebkitMaskImage: "radial-gradient(circle at center, black 40%, transparent 75%)",
-              maskImage: "radial-gradient(circle at center, black 40%, transparent 75%)"
-            }}
-          />
+        <motion.form
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
+          className="mt-10 w-full min-w-0"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSearch();
+          }}
+        >
+          <label htmlFor="location-search" className="font-work-sans sr-only">
+            Ask about your neighborhood, local policies, budgets, or city decisions
+          </label>
+          <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)] dark:bg-[linear-gradient(165deg,rgba(28,34,42,0.96)_0%,rgba(17,22,28,0.94)_100%)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_-20px_rgba(0,0,0,0.55)]">
+            <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.65"
+                className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-4-4" strokeLinecap="round" />
+              </svg>
+            </span>
+            <input
+              id="location-search"
+              type="text"
+              name="location"
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="Ask about your Neighborhood"
+              disabled={loading}
+              className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 placeholder:font-normal focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 dark:text-[var(--foreground)] dark:opacity-100 dark:placeholder:text-[var(--muted)]"
+            />
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              aria-label={loading ? "Loading briefing" : "Submit briefing request"}
+              className="command-submit box-border flex aspect-square h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center rounded-[1.05rem] bg-[var(--accent-mid)] p-1 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/85 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--accent-mid)] disabled:pointer-events-none disabled:opacity-50 sm:p-1.5 sm:rounded-[1.1rem] md:rounded-[1.15rem]"
+            >
+              <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="block h-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] w-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] shrink-0"
+                aria-hidden
+              >
+                <path d="M5 12h13" strokeLinecap="round" />
+                <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </motion.form>
         </div>
       </div>
     </section>

@@ -1,7 +1,9 @@
 "use client";
 
 import { motion, type HTMLMotionProps } from "framer-motion";
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+
+const noopSubscribe = () => () => {};
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -21,11 +23,7 @@ export function MotionReveal({
   delay = 0,
   ...rest
 }: MotionRevealProps) {
-  const [motionReady, setMotionReady] = useState(false);
-
-  useEffect(() => {
-    setMotionReady(true);
-  }, []);
+  const motionReady = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   if (!motionReady) {
     return <div className={className}>{children}</div>;

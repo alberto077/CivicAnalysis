@@ -31,7 +31,7 @@ export function NeighborhoodInsights() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <MotionReveal>
-        <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
+        <h2 className="font-limelight text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
           Neighborhood insights
         </h2>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">
@@ -54,11 +54,11 @@ export function NeighborhoodInsights() {
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,rgba(232,121,166,0.1)_0%,rgba(91,127,163,0.1)_100%)] text-[var(--accent)] ring-1 ring-white/55">
               <item.Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.65} aria-hidden />
             </span>
-            <h3 className="font-display mt-4 text-base font-semibold text-[var(--foreground)]">
+            <h3 className="font-limelight mt-4 text-base font-semibold text-[var(--foreground)]">
               {item.title}
             </h3>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--muted)]">{item.body}</p>
-            <span className="mt-5 text-xs font-semibold text-[var(--accent)] transition group-hover:translate-x-0.5">
+            <span className="font-work-sans mt-5 text-xs font-semibold text-[var(--accent)] transition group-hover:translate-x-0.5">
               Coming soon →
             </span>
           </motion.article>

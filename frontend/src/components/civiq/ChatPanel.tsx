@@ -57,11 +57,11 @@ function Section({
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-sm transition hover:shadow-md">
-      <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
+    <div className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-sm transition hover:shadow-md dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
+      <h3 className="font-limelight mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
         {title}
       </h3>
-      <ul className="space-y-3 text-[15px] text-slate-800 leading-relaxed">
+      <ul className="space-y-3 text-[15px] leading-relaxed text-slate-800 dark:text-[var(--foreground-secondary)]">
         {items.map((item, index) => (
           <li key={`${title}-${index}`} className="flex gap-3">
             <span className="shrink-0 text-[var(--accent)]">•</span>
@@ -159,16 +159,16 @@ export function ChatPanel({
 
   return (
     <section className={`mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6 lg:px-8 ${isStandalone ? "pt-12" : "mt-8"}`}>
-      <div className="rounded-[40px] border border-white/60 bg-white/40 p-8 shadow-2xl backdrop-blur-xl md:p-12">
+      <div className="rounded-[40px] border border-white/60 bg-white/40 p-8 shadow-2xl backdrop-blur-xl dark:border-[var(--border)] dark:bg-[var(--surface-card)]/85 md:p-12">
         <div className="flex items-center gap-3 mb-6">
            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
              <MessageSquare className="h-5 w-5" />
            </div>
            <div>
-              <h2 className="text-3xl font-display font-bold tracking-tight text-slate-900">
+              <h2 className="font-limelight text-3xl font-bold tracking-tight text-slate-900 dark:text-[var(--foreground)]">
                 {isStandalone ? "Policy AI Explorer" : "Briefing Assistant"}
               </h2>
-              <p className="text-slate-600 text-sm">
+              <p className="text-sm text-slate-600 dark:text-[var(--foreground-secondary)]">
                 {isStandalone 
                   ? "Ask anything about NYC policy, legislation, or city services." 
                   : `Deeper insights for "${briefingQuery}"`}
@@ -177,13 +177,13 @@ export function ChatPanel({
         </div>
 
         {/* Personalization Toggle */}
-        <div className="flex items-center gap-3 mb-6 bg-slate-50 border border-slate-100 p-2 rounded-2xl w-fit">
+        <div className="mb-6 flex w-fit items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-2 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
           <button
             onClick={() => setIsPersonalized(false)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`font-work-sans flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               !isPersonalized
-                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                ? "border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)]"
+                : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 dark:text-[var(--foreground-secondary)] dark:hover:bg-[var(--surface-card)] dark:hover:text-[var(--foreground)]"
             }`}
           >
             <Globe2 className="h-4 w-4" />
@@ -191,10 +191,10 @@ export function ChatPanel({
           </button>
           <button
             onClick={() => setIsPersonalized(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`font-work-sans flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               isPersonalized
                 ? "bg-[var(--accent)] text-white shadow-sm border border-[var(--accent-soft)]"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 dark:text-[var(--foreground-secondary)] dark:hover:bg-[var(--surface-card)] dark:hover:text-[var(--foreground)]"
             }`}
           >
             <UserCircle2 className="h-4 w-4" />
@@ -214,7 +214,7 @@ export function ChatPanel({
               key={prompt}
               type="button"
               onClick={() => setMessage(prompt)}
-              className="rounded-full border border-slate-200 bg-white shadow-sm px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-[var(--accent-soft)] hover:text-[var(--accent)] transition-all"
+              className="font-work-sans rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition-all hover:border-[var(--accent-soft)] hover:text-[var(--accent)] dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--accent-soft)]"
             >
               {prompt}
             </button>
@@ -229,9 +229,9 @@ export function ChatPanel({
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void handleAsk()}
               placeholder={isStandalone ? "Ask a policy question..." : "Ask a follow-up..."}
-              className="w-full h-14 pl-5 pr-14 rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-inner outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all"
+              className="font-work-sans h-14 w-full rounded-2xl border border-slate-200 bg-white pl-5 pr-14 text-sm font-normal text-slate-900 shadow-inner outline-none transition-all focus:ring-2 focus:ring-[var(--accent-soft)] dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]"
             />
-            <div className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-colors ${message.trim() ? "text-[var(--accent)]" : "text-slate-300"}`}>
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 rounded-xl p-2 transition-colors ${message.trim() ? "text-[var(--accent)]" : "text-slate-300 dark:text-[var(--muted)]"}`}>
                <Sparkles className="h-5 w-5" />
             </div>
           </div>
@@ -239,21 +239,21 @@ export function ChatPanel({
           <button
             onClick={handleAsk}
             disabled={loading || !message.trim()}
-            className="h-14 aspect-square flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg transition hover:bg-slate-800 disabled:opacity-40"
+            className="flex aspect-square h-14 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg transition hover:bg-slate-800 disabled:opacity-40 dark:bg-[var(--accent-mid)] dark:hover:bg-[var(--accent)]"
           >
             {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send className="h-5 w-5" />}
           </button>
         </div>
 
         {error && (
-          <div className="mt-6 rounded-2xl bg-red-50 p-4 text-sm text-red-700 border border-red-100 italic">
+          <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm italic text-red-700 dark:border-red-900/35 dark:bg-red-950/40 dark:text-red-100">
             {error}
           </div>
         )}
 
         {lastQuestion && !loading && (
-          <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
-            <span className="font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
+          <div className="mt-6 flex items-center gap-2 text-sm text-slate-400 dark:text-[var(--foreground-secondary)]">
+            <span className="font-work-sans font-semibold uppercase tracking-tighter text-[10px]">Previously:</span>
             <span className="font-medium italic">&quot;{lastQuestion}&quot;</span>
           </div>
         )}
@@ -261,9 +261,9 @@ export function ChatPanel({
         {response && (
           <div className="mt-12 space-y-6">
             {!hasContent ? (
-              <div className="rounded-3xl border border-amber-100 bg-amber-50 p-8 text-center text-amber-900">
-                 <p className="font-medium">No specific policy facts found for this query.</p>
-                 <p className="mt-1 text-sm opacity-80">Try asking about recent legislation, borough programs, or city council actions.</p>
+              <div className="rounded-3xl border border-amber-100 bg-amber-50 p-8 text-center text-amber-900 dark:border-amber-700/40 dark:bg-amber-950/35 dark:text-amber-100">
+                 <p className="font-work-sans font-medium">No specific policy facts found for this query.</p>
+                 <p className="font-work-sans mt-1 text-sm font-normal opacity-80">Try asking about recent legislation, borough programs, or city council actions.</p>
               </div>
             ) : (
               <>
@@ -273,16 +273,16 @@ export function ChatPanel({
                 <Section title="Recommended Steps" items={response.relevant_actions} />
 
                 {sources.length > 0 && (
-                  <div className="rounded-[32px] border border-white/60 bg-white/80 p-8 shadow-sm">
-                    <h3 className="mb-4 text-xs font-bold tracking-[0.2em] text-slate-400 uppercase">
+                  <div className="rounded-[32px] border border-white/60 bg-white/80 p-8 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
+                    <h3 className="font-limelight mb-4 text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-[var(--muted)]">
                       Evidence Library
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {sources.map((source, index) => (
-                        <div key={index} className="rounded-2xl border border-slate-100 bg-white p-5 transition hover:border-[var(--accent-soft)]">
-                          <div className="font-bold text-slate-900 text-sm mb-1">{source.title}</div>
+                        <div key={index} className="rounded-2xl border border-slate-100 bg-white p-5 transition hover:border-[var(--accent-soft)] dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+                          <div className="mb-1 text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">{source.title}</div>
                           {source.description && (
-                            <div className="text-[13px] text-slate-600 leading-relaxed italic">{source.description}</div>
+                            <div className="text-[13px] leading-relaxed italic text-slate-600 dark:text-[var(--foreground-secondary)]">{source.description}</div>
                           )}
                         </div>
                       ))}
