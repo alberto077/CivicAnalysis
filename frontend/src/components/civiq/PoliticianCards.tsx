@@ -50,28 +50,27 @@ function getLevelAccent(level: string): string {
   return "bg-slate-400";
 }
 
-function getStanceStyles(stance: string) {
-  const s = (stance || "").toLowerCase();
-  if (s === "n/a" || s === "unknown") return "bg-slate-50 text-slate-400 border-slate-200";
-  if (s.includes("progressive")) return "bg-teal-50 text-teal-700 border-teal-100";
-  if (s.includes("liberal")) return "bg-blue-50 text-blue-700 border-blue-100";
-  if (s.includes("conservative")) return "bg-red-50 text-red-700 border-red-100";
-  if (s.includes("independent")) return "bg-orange-50 text-orange-700 border-orange-100";
-  return "bg-slate-50 text-slate-600 border-slate-200";
+function getPartyStyles(party: string) {
+  const p = (party || "").toLowerCase();
+  if (p === "democrat") return "border-blue-300 bg-blue-50 text-blue-700";
+  if (p === "republican") return "border-red-300 bg-red-50 text-red-700";
+  if (p === "conservative") return "border-orange-300 bg-orange-50 text-orange-700";
+  if (p === "working families") return "border-teal-300 bg-teal-50 text-teal-700";
+  if (p === "green") return "border-green-300 bg-green-50 text-green-700";
+  if (p === "independent") return "border-purple-300 bg-purple-50 text-purple-700";
+  return "border-slate-200 bg-slate-50 text-slate-500";
 }
 
 function cleanPoliticianData(name: string) {
   let cleanedName = name;
   let title = "";
 
-  // extract titles, eg. "Majority Leader", "Deputy Speaker", etc
   const titleMatch = name.match(/^(Majority Leader|Minority Leader|Deputy Speaker|Speaker|President Pro Tempore|Deputy Leader|Rep\.|Sen\.)\s+/i);
   if (titleMatch) {
     title = titleMatch[1];
     cleanedName = cleanedName.replace(titleMatch[0], "");
   }
 
-  // remove [D-NY] or similar brackets in name
   cleanedName = cleanedName.replace(/\s*\[[A-Z]-[A-Z]{2}.*?\]/g, "");
 
   return { cleanedName: cleanedName.trim(), title };
@@ -88,9 +87,6 @@ function getLearnMoreUrl(p: Politician) {
   )}`;
 }
 
-
-
-
 // TODO: replace with better/relevant data for state/federal
 const SCOPE_BULLETS: Record<string, string[]> = {
   "State Assembly": ["Lower chamber of NY Legislature", "State budget & education", "Represents ~130k residents"],
@@ -103,16 +99,16 @@ const SCOPE_BULLETS: Record<string, string[]> = {
 function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: string[] }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const level = getLevelKey(p);
-  const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string };
+  const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string; allParties?: string[] };
 
   const { cleanedName, title } = cleanPoliticianData(p.name || "");
+  const allParties: string[] = ext.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : []);
 
   return (
-    /* main container - controls the flip */
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="relative h-[440px] w-full [perspective:1000px] group"
+      className="relative h-[420px] w-full [perspective:1000px] group"
       onClick={() => setIsFlipped(f => !f)}
     >
       <motion.div
@@ -122,10 +118,11 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
       >
 
         {/* Card Front */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--border)] bg-white [backface-visibility:hidden] shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden">
+        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--border)] bg-white [backface-visibility:hidden] shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden min-h-0">
           <div className={`h-1 w-full flex-shrink-0 ${getLevelAccent(level)}`} />
-          <div className="p-8 flex flex-col flex-1">
-            <div className="mb-6 flex items-start justify-between">
+          <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
+            {/* Header */}
+            <div className="mb-5 flex items-start justify-between flex-shrink-0">
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-2xl font-bold leading-tight text-[var(--foreground)]">{cleanedName}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -136,43 +133,37 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
               </div>
             </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-4">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--muted)] font-medium">Borough/County</span>
                 <span className="font-bold text-[var(--foreground)]">{p.borough || "N/A"}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--muted)] font-medium">Party</span>
-                <span className="font-bold text-[var(--foreground)]">{p.party || "N/A"}</span>
+
+              {/* Party chips */}
+              <div className="flex justify-between items-start text-sm gap-2">
+                <span className="text-[var(--muted)] font-medium flex-shrink-0">Party</span>
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {allParties.length > 0 ? allParties.map((party, i) => (
+                    <span key={i} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${getPartyStyles(party)}`}>
+                      {party}
+                    </span>
+                  )) : (
+                    <span className="text-[var(--foreground)] font-bold text-sm">N/A</span>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--muted)] font-medium">Stance</span>
-                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${getStanceStyles(p.political_stance)}`}>
-                  {p.political_stance || "N/A"}
+
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Areas Represented</span>
+                <span className="text-[11px] text-slate-800">
+                  {level === "U.S. Senate" ? "All of New York State" : level === "City Council" ? `NYC District ${p.district ?? "—"} (${p.borough})` : `NY District ${p.district ?? "—"} (${p.borough})`}
                 </span>
               </div>
 
-              {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Neighborhoods Served</span>
-                  <div className="flex flex-wrap gap-1.5 text-xs">
-                    {p.neighborhoods!.map((n, i) => <span key={`${n}-${i}`} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">{n}</span>)}
-                  </div>
-                </div>
-              )}
-
-              {/* TODO: zip code mapping from district info? -- or remove */}
-              {(p.zip_codes ?? []).length > 0 && (
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">ZIP Codes Served</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-[var(--accent)]">{z}</span>)}
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-100">
+            <div className="mt-5 pt-4 border-t border-slate-100 flex-shrink-0">
               <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
@@ -181,13 +172,35 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
           </div>
         </div>
 
-
         {/* Card Back */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--accent-soft)] bg-slate-50 [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-inner flex flex-col overflow-hidden">
+        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--accent-soft)] bg-slate-50 [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-inner flex flex-col overflow-hidden min-h-0">
           <div className={`h-1 w-full flex-shrink-0 ${getLevelAccent(level)}`} />
-          <div className="p-8 flex flex-col flex-1 overflow-hidden">
+          <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-4">
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Neighborhoods Served</span>
+                  <div className="max-h-[80px] overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.neighborhoods!.map((n, i) => (
+                        <span key={`${n}-${i}`} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg whitespace-nowrap">
+                          {n}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(p.zip_codes ?? []).length > 0 && (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">ZIP Codes Served</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-[var(--accent)]">{z}</span>)}
+                  </div>
+                </div>
+              )}
 
               {p.committees && p.committees.length > 0 && (
                 <div>
@@ -228,19 +241,9 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 </div>
               )}
 
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Areas Represented</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="text-[11px] text-slate-800">
-                    {level === "U.S. Senate" ? "All of New York State" : level === "City Council" ? `NYC District ${p.district ?? "—"} (${p.borough})` : `NY District ${p.district ?? "—"} (${p.borough})`}
-                  </span>
-                </div>
-              </div>
-
             </div>
 
-            {/* button - redirect to politician profile */}
-            <div className="mt-4 pt-4 border-t border-slate-200">
+            <div className="mt-4 pt-4 border-t border-slate-200 flex-shrink-0">
               <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
@@ -258,7 +261,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
 // ----------------------------------------------------------------------------------------------
 export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [politicians, setPoliticians] = useState<Politician[]>([]);
-  const [loading, setLoading] = useState(true); // true = show spinner immediately on mount
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const { profile } = useProfile();
@@ -268,8 +271,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [dynamicBoroughs, setDynamicBoroughs] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("All");
-  const [selectedParty, setSelectedParty] = useState("All");
-  const [selectedStance, setSelectedStance] = useState("All");
+  const [selectedParties, setSelectedParties] = useState<string[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState("All");
   const [selectedCommittee, setSelectedCommittee] = useState("All");
   const [selectedSubcommittee, setSelectedSubcommittee] = useState("All");
@@ -280,70 +282,47 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const officeInfo = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
-    const m = now.getMonth(); // 0-indexed
+    const m = now.getMonth();
 
-    // NYC municipal: odd-year cycle starting 2021 (2021, 2025, 2029…)
     const nextMunicipal = (() => {
       let yr = 2021;
       while (yr < y || (yr === y && m >= 10)) yr += 4;
       return yr.toString();
     })();
 
-    // state/federal House: every even year
     const nextEven = (() => {
       let yr = y % 2 === 0 ? y : y + 1;
       if (yr === y && m >= 10) yr += 2;
       return yr.toString();
     })();
 
-    // NY US Senate: dynamic 6-year cycle. Class 2 base 2026 (Gillibrand), Class 3 base 2028 (Schumer)
     const nextInCycle = (base: number) => { let yr = base; while (yr < y || (yr === y && m >= 10)) yr += 6; return yr; };
     const c2 = nextInCycle(2026), c3 = nextInCycle(2028);
     const nextSenate = c2 === c3 ? String(c2) : [c2, c3].sort((a, b) => a - b).join(" / ");
 
     return [
       {
-        office: "City Council",
-        members: 51,
-        term: "4 Years",
-        limit: "2 Terms",
-        next: nextMunicipal,
+        office: "City Council", members: 51, term: "4 Years", limit: "2 Terms", next: nextMunicipal,
         power: "Local laws, city budget, zoning & land use, sanitation, parks.",
         color: "text-blue-700 bg-blue-50 border-blue-200"
       },
       {
-        office: "State Assembly",
-        members: 150,
-        term: "2 Years",
-        limit: "None",
-        next: nextEven,
+        office: "State Assembly", members: 150, term: "2 Years", limit: "None", next: nextEven,
         power: "State legislation (lower chamber), education, labor, state budget approval.",
         color: "text-emerald-700 bg-emerald-50 border-emerald-200"
       },
       {
-        office: "State Senate",
-        members: 63,
-        term: "2 Years",
-        limit: "None",
-        next: nextEven,
+        office: "State Senate", members: 63, term: "2 Years", limit: "None", next: nextEven,
         power: "State legislation (upper chamber), judicial confirmations, state budget oversight.",
         color: "text-amber-700 bg-amber-50 border-amber-200"
       },
       {
-        office: "U.S. House",
-        members: 26,
-        term: "2 Years",
-        limit: "None",
-        next: nextEven,
+        office: "U.S. House", members: 26, term: "2 Years", limit: "None", next: nextEven,
         power: "Federal laws & appropriations, constituent services, committee oversight.",
         color: "text-purple-700 bg-purple-50 border-purple-200"
       },
       {
-        office: "U.S. Senate",
-        members: 2,
-        term: "6 Years",
-        limit: "None",
-        next: nextSenate,
+        office: "U.S. Senate", members: 2, term: "6 Years", limit: "None", next: nextSenate,
         power: "Federal legislation, treaty ratification, confirms federal judges & cabinet.",
         color: "text-violet-700 bg-violet-50 border-violet-200"
       }
@@ -359,20 +338,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const isAnyFilterActive = useMemo(() => {
     return selectedBoroughs.length > 0 ||
       selectedLevel !== "All" ||
-      selectedParty !== "All" ||
-      selectedStance !== "All" ||
+      selectedParties.length > 0 ||
       selectedDistrict !== "All" ||
       selectedCommittee !== "All" ||
       selectedSubcommittee !== "All" ||
       selectedCaucus !== "All" ||
       searchTerm !== "";
-  }, [selectedBoroughs, selectedLevel, selectedParty, selectedStance, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus, searchTerm]);
+  }, [selectedBoroughs, selectedLevel, selectedParties, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus, searchTerm]);
 
   const clearAllFilters = () => {
     setSelectedBoroughs([]);
     setSelectedLevel("All");
-    setSelectedParty("All");
-    setSelectedStance("All");
+    setSelectedParties([]);
     setSelectedDistrict("All");
     setSelectedCommittee("All");
     setSelectedSubcommittee("All");
@@ -381,9 +358,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   };
 
   const toggleBorough = (b: string) => {
-    setSelectedBoroughs(prev =>
-      prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]
-    );
+    setSelectedBoroughs(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
+  };
+
+  const toggleParty = (party: string) => {
+    setSelectedParties(prev => prev.includes(party) ? prev.filter(x => x !== party) : [...prev, party]);
   };
 
   useEffect(() => {
@@ -391,7 +370,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       try {
         const filters = await getPoliticianFilters();
         if (filters.boroughs?.length) {
-          // exclude statewide/upstate values from the borough chip filter
           const NYC_BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
           const filtered = filters.boroughs.filter((b: string) =>
             NYC_BOROUGHS.some(nb => b.toLowerCase().includes(nb.toLowerCase()))
@@ -399,7 +377,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           setDynamicBoroughs(filtered.length ? filtered : NYC_BOROUGHS);
         }
       } catch (e) {
-        console.warn("Failed to load dynamic filters, using defaults", e);
         setDynamicBoroughs(["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]);
       }
     }
@@ -416,24 +393,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         const data = await getPoliticians();
 
         if (requestId === politicianRequestIdRef.current) {
-          // sort strictly by Level -> District -> Name
           const levelOrder = ["City Council", "State Assembly", "State Senate", "U.S. Senate", "U.S. House"];
           const sorted = [...data].sort((a, b) => {
             const lA = levelOrder.indexOf(a.level);
             const lB = levelOrder.indexOf(b.level);
             if (lA !== lB) return lA - lB;
-
             if (a.district && b.district) {
               const dnumA = parseInt(a.district, 10);
               const dnumB = parseInt(b.district, 10);
               if (!isNaN(dnumA) && !isNaN(dnumB) && dnumA !== dnumB) return dnumA - dnumB;
               if (a.district !== b.district) return a.district.localeCompare(b.district);
-            } else if (a.district) {
-              return -1;
-            } else if (b.district) {
-              return 1;
-            }
-
+            } else if (a.district) return -1;
+            else if (b.district) return 1;
             return a.name.localeCompare(b.name);
           });
           setPoliticians(sorted);
@@ -444,35 +415,30 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           setPoliticians([]);
         }
       } finally {
-        if (requestId === politicianRequestIdRef.current) {
-          setLoading(false);
-        }
+        if (requestId === politicianRequestIdRef.current) setLoading(false);
       }
     }
-
     void load();
   }, []);
 
-  // reset pagination when filters change
   useEffect(() => {
     setVisibleCount(24);
-  }, [searchTerm, selectedBoroughs, selectedLevel, selectedParty, selectedStance, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
+  }, [searchTerm, selectedBoroughs, selectedLevel, selectedParties, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
 
-  // filters - parties, stances, districts, committees, level, search-term, boroughs ??
-  // options relative to current level
   const filteredByLevel = useMemo(() => {
     if (selectedLevel === "All") return politicians;
     return politicians.filter(p => p.level === selectedLevel);
   }, [politicians, selectedLevel]);
 
+  // Derive available parties from current level's data — normalized & deduplicated
   const availableParties = useMemo(() => {
-    const parties = new Set(filteredByLevel.map(p => p.party || "N/A"));
-    return ["All", ...Array.from(parties).sort()];
-  }, [filteredByLevel]);
-
-  const availableStances = useMemo(() => {
-    const stances = new Set(filteredByLevel.map(p => p.political_stance || "N/A"));
-    return ["All", ...Array.from(stances).sort()];
+    const parties = new Set<string>();
+    filteredByLevel.forEach(p => {
+      const all = (p as any).allParties as string[] | undefined;
+      if (all && all.length > 0) all.forEach(pt => parties.add(pt));
+      else if (p.party && p.party !== "N/A") parties.add(p.party);
+    });
+    return Array.from(parties).sort();
   }, [filteredByLevel]);
 
   const availableDistricts = useMemo(() => {
@@ -501,7 +467,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const filteredPoliticians = useMemo(() => {
     return politicians.filter(p => {
       const searchLower = searchTerm.toLowerCase();
-
       const matchesSearch = !searchTerm ||
         p.name.toLowerCase().includes(searchLower) ||
         p.office.toLowerCase().includes(searchLower) ||
@@ -510,7 +475,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         (p.neighborhoods && p.neighborhoods.some(n => n.toLowerCase().includes(searchLower))) ||
         p.borough.toLowerCase().includes(searchLower) ||
         (p.party && p.party.toLowerCase().includes(searchLower)) ||
-        (p.political_stance && p.political_stance.toLowerCase().includes(searchLower)) ||
         (p.committees && p.committees.some(c => c.toLowerCase().includes(searchLower))) ||
         (p.subcommittees && p.subcommittees.some(s => s.toLowerCase().includes(searchLower))) ||
         (p.caucuses && p.caucuses.some(c => c.toLowerCase().includes(searchLower)));
@@ -533,17 +497,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         }
       }
 
-      const matchesParty = selectedParty === "All" || (p.party || "N/A") === selectedParty;
-      const matchesStance = selectedStance === "All" || (p.political_stance || "N/A") === selectedStance;
+      const pAllParties = ((p as any).allParties as string[] | undefined) ?? (p.party && p.party !== "N/A" ? [p.party] : []);
+      const matchesParty = selectedParties.length === 0 ||
+        selectedParties.some(sp => pAllParties.includes(sp));
+
       const matchesDistrict = selectedDistrict === "All" || p.district === selectedDistrict;
       const matchesCommittee = selectedCommittee === "All" || (p.committees && p.committees.includes(selectedCommittee));
       const matchesSubcommittee = selectedSubcommittee === "All" || (p.subcommittees && p.subcommittees.includes(selectedSubcommittee));
       const matchesCaucus = selectedCaucus === "All" || (p.caucuses && p.caucuses.includes(selectedCaucus));
 
-      return matchesSearch && matchesBorough && matchesLevel && matchesParty && matchesStance && matchesDistrict && matchesCommittee && matchesSubcommittee && matchesCaucus;
+      return matchesSearch && matchesBorough && matchesLevel && matchesParty && matchesDistrict && matchesCommittee && matchesSubcommittee && matchesCaucus;
     });
-  }, [politicians, searchTerm, selectedBoroughs, selectedLevel, selectedParty, selectedStance, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
-
+  }, [politicians, searchTerm, selectedBoroughs, selectedLevel, selectedParties, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
 
 
   return (
@@ -555,7 +520,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </h1>
         </div>
 
-        {/* Understanding Your Representation Section (collapsable) - info on NY govt offices & types of representatives */}
+        {/* Understanding Your Representation Section */}
         <div className="mt-10 mb-16 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300">
           <button
             onClick={() => setIsReferenceOpen(!isReferenceOpen)}
@@ -603,17 +568,13 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                       {officeInfo.map((info) => (
                         <tr key={info.office} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-8 py-4">
-                            <span className={`px-2.5 py-1 rounded-md font-bold text-[11px] border ${info.color}`}>
-                              {info.office}
-                            </span>
+                            <span className={`px-2.5 py-1 rounded-md font-bold text-[11px] border ${info.color}`}>{info.office}</span>
                           </td>
                           <td className="px-4 py-4 font-medium text-slate-600">{info.members}</td>
                           <td className="px-4 py-4 font-medium text-slate-600">{info.term}</td>
                           <td className="px-4 py-4 font-medium text-slate-600">{info.limit}</td>
                           <td className="px-4 py-4">
-                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold">
-                              {info.next}
-                            </span>
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold">{info.next}</span>
                           </td>
                           <td className="px-8 py-4 text-slate-500 text-xs leading-relaxed">{info.power}</td>
                         </tr>
@@ -622,19 +583,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   </table>
                 </div>
 
-                {/* TODO: update links and content to more relevant stuff */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-8 bg-slate-50/30 border-t border-slate-100">
-                  <a
-                    href="https://www.nysenate.gov/legislation/laws/CONSOLIDATED"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group"
-                  >
+                  <a href="https://www.nysenate.gov/legislation/laws/CONSOLIDATED" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
+                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600"><BookOpen className="h-5 w-5" /></div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">Consolidated Laws of NY</p>
                         <p className="text-[10px] text-slate-500">Official NY State Legislative database</p>
@@ -642,18 +595,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     </div>
                     <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-[var(--accent)]" />
                   </a>
-
-                  <a
-                    href="https://www.nysenate.gov/senators-committees"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group"
-                  >
+                  <a href="https://www.nysenate.gov/senators-committees" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-                        <Users className="h-5 w-5" />
-                      </div>
+                      <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Users className="h-5 w-5" /></div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">Legislative Committees</p>
                         <p className="text-[10px] text-slate-500">View Senate committee assignments</p>
@@ -661,18 +606,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     </div>
                     <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-[var(--accent)]" />
                   </a>
-
-                  <a
-                    href="https://www.house.gov/representatives#new-york"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group"
-                  >
+                  <a href="https://www.house.gov/representatives#new-york" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
-                        <Info className="h-5 w-5" />
-                      </div>
+                      <div className="p-2 rounded-lg bg-purple-50 text-purple-600"><Info className="h-5 w-5" /></div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">Federal Delegation</p>
                         <p className="text-[10px] text-slate-500">US House & Senate members</p>
@@ -691,15 +628,19 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         </div>
       </MotionReveal>
 
-
-
-      {/* Tabs : Levels of Government */}
+      {/* Tabs: Levels of Government — reset legislature-specific filters on switch */}
       <MotionReveal className="mt-12 mb-6 border-b border-slate-200">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full">
           {GOV_LEVELS.map(level => (
             <button
               key={level}
-              onClick={() => setSelectedLevel(level)}
+              onClick={() => {
+                setSelectedLevel(level);
+                // Reset legislature-specific filters when switching tabs
+                setSelectedCommittee("All");
+                setSelectedSubcommittee("All");
+                setSelectedCaucus("All");
+              }}
               className={`px-2 py-4 font-bold text-sm transition-colors border-b-2 text-center ${selectedLevel === level
                 ? "border-[var(--accent)] text-[var(--accent)] bg-slate-50/50"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/30"
@@ -713,186 +654,140 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
       {/* FILTERS */}
       <MotionReveal className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm mb-12">
-        <div className="space-y-6">
-          <div className="flex flex-col xl:flex-row gap-4 items-center justify-between">
-            {/* search : name, zip, committee, district */}
-            <div className="relative w-full xl:max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search name, committee, district..."
-                className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow"
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+        <div className="space-y-5">
 
-            <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto flex-1">
-              {/* row 1 of dropdowns */}
-              <div className="flex flex-wrap gap-3 w-full">
-                {/* filter : district */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">District</span>
-                  <div className="relative">
-                    <select
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableDistricts.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
-
-                {/* filter : party */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Party</span>
-                  <div className="relative">
-                    <select
-                      value={selectedParty}
-                      onChange={(e) => setSelectedParty(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableParties.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
-
-                {/* filter : stance */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Stance</span>
-                  <div className="relative">
-                    <select
-                      value={selectedStance}
-                      onChange={(e) => setSelectedStance(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableStances.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
-
-                {/* clear all - reset button */}
-                <div className="flex items-end">
-                  <button
-                    onClick={clearAllFilters}
-                    disabled={!isAnyFilterActive}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all h-[42px] ${isAnyFilterActive
-                      ? "bg-red-500 text-white shadow-md hover:bg-red-600"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"
-                      }`}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Reset
+          {/* Row 1: Search + District + Reset */}
+          <div className="flex flex-wrap gap-3 items-end">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1.5 px-1">Search</span>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Name, committee, district..."
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow"
+                />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <X className="h-4 w-4" />
                   </button>
-                </div>
-              </div>
-
-              {/* row 2 of dropdowns (Legislative Assignments) */}
-              <div className="flex flex-wrap gap-3 w-full pt-4 mt-4 border-t border-slate-100">
-
-                {/* filter : multi-select boroughs */}
-                <div className="pt-6 border-t border-slate-100">
-                  {/* <div className="flex flex-col xl:flex-row gap-4 items-center justify-between"> */}
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-2">Boroughs:</span>
-                    {dynamicBoroughs.map((b) => {
-                      const active = selectedBoroughs.includes(b);
-                      return (
-                        <button
-                          key={b}
-                          onClick={() => toggleBorough(b)}
-                          className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-[11px] font-bold transition-all ${active
-                            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                            : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-                            }`}
-                        >
-                          {active && <Check className="h-3 w-3" />}
-                          {b}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-
-                {/* filter : committee */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Committee</span>
-                  <div className="relative">
-                    <select
-                      value={selectedCommittee}
-                      onChange={(e) => setSelectedCommittee(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableCommittees.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
-
-                {/* filter : subcommittee */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Subcommittee</span>
-                  <div className="relative">
-                    <select
-                      value={selectedSubcommittee}
-                      onChange={(e) => setSelectedSubcommittee(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableSubcommittees.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
-
-                {/* filter : caucus */}
-                <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Caucus</span>
-                  <div className="relative">
-                    <select
-                      value={selectedCaucus}
-                      onChange={(e) => setSelectedCaucus(e.target.value)}
-                      className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer"
-                    >
-                      {availableCaucuses.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </label>
+                )}
               </div>
             </div>
 
+            {/* District */}
+            <label className="flex flex-col gap-1.5 min-w-[130px]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">District</span>
+              <div className="relative">
+                <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  {availableDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </label>
+
+            {/* Reset */}
+            <div className="flex items-end">
+              <button onClick={clearAllFilters} disabled={!isAnyFilterActive}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all h-[42px] ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"}`}>
+                <RotateCcw className="h-4 w-4" />
+                Reset
+              </button>
+            </div>
           </div>
+
+          {/* Row 2: Borough chips + Party chips side by side */}
+          <div className="flex flex-col lg:flex-row gap-4 pt-4 border-t border-slate-100">
+            {/* Boroughs */}
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Borough:</span>
+              {dynamicBoroughs.map((b) => {
+                const active = selectedBoroughs.includes(b);
+                return (
+                  <button key={b} onClick={() => toggleBorough(b)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}>
+                    {active && <Check className="h-3 w-3" />}
+                    {b}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div className="hidden lg:block w-px bg-slate-100 self-stretch" />
+
+            {/* Party chips */}
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Party:</span>
+              {availableParties.map((party) => {
+                const active = selectedParties.includes(party);
+                return (
+                  <button key={party} onClick={() => toggleParty(party)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-300`}`}>
+                    {active && <Check className="h-3 w-3" />}
+                    {party}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 3: Committee / Subcommittee / Caucus dropdowns */}
+          <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
+            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Committee</span>
+              <div className="relative">
+                <select value={selectedCommittee} onChange={(e) => setSelectedCommittee(e.target.value)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  {availableCommittees.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Subcommittee</span>
+              <div className="relative">
+                <select value={selectedSubcommittee} onChange={(e) => setSelectedSubcommittee(e.target.value)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  {availableSubcommittees.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Caucus</span>
+              <div className="relative">
+                <select value={selectedCaucus} onChange={(e) => setSelectedCaucus(e.target.value)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  {availableCaucuses.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </label>
+          </div>
+
         </div>
       </MotionReveal>
 
       {/* RESULTS */}
       <div>
         {error && (
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 mb-8">
-            {error}
-          </div>
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 mb-8">{error}</div>
         )}
 
-        {/* loading skeleton when loading data */}
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-[440px] animate-pulse rounded-3xl bg-slate-100" />
+              <div key={i} className="h-[420px] animate-pulse rounded-3xl bg-slate-100" />
             ))}
           </div>
         ) : (
-          /* GRID : Politicians */
           <div className="relative">
             <div className="flex items-center justify-between mb-6 px-2">
               <p className="text-sm text-slate-500 font-medium">
@@ -926,22 +821,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
             {visibleCount < filteredPoliticians.length && (
               <div className="mt-16 flex flex-wrap justify-center gap-4">
-                <button
-                  onClick={() => setVisibleCount(prev => prev + 24)}
-                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-[var(--accent)] hover:shadow-lg active:scale-95"
-                >
+                <button onClick={() => setVisibleCount(prev => prev + 24)}
+                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-[var(--accent)] hover:shadow-lg active:scale-95">
                   <span>Show More</span>
                   <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
                   <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm">
                     +{filteredPoliticians.length - visibleCount}
                   </div>
                 </button>
-                <button
-                  onClick={() => setVisibleCount(filteredPoliticians.length)}
-                  className="relative flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-bold transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 text-sm"
-                >
+                <button onClick={() => setVisibleCount(filteredPoliticians.length)}
+                  className="relative flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-bold transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 text-sm">
                   <span>Show All</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
+                  <ChevronDown className="h-5 w-5 text-slate-400" />
                   <span className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm border-1 border-slate-200">
                     = {filteredPoliticians.length}
                   </span>
@@ -949,20 +840,13 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               </div>
             )}
 
-            {/* Scroll arrows */}
             <div className="fixed bottom-28 right-8 z-50 flex flex-col gap-2">
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95"
-                title="Scroll to top"
-              >
+              <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95" title="Scroll to top">
                 <ChevronsUp className="h-5 w-5" />
               </button>
-              <button
-                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95"
-                title="Scroll to bottom"
-              >
+              <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95" title="Scroll to bottom">
                 <ChevronsDown className="h-5 w-5" />
               </button>
             </div>
