@@ -268,18 +268,25 @@ export type FloatingChatTurn = {
 export async function postFloatingChatOrchestrated(params: {
   messages: FloatingChatTurn[];
   currentPath?: string;
+  demographics?: Record<string, string>;
 }): Promise<FloatingChatResult> {
   if (!params.messages.length) {
     throw new Error("At least one message is required.");
   }
 
+  const payload: Record<string, unknown> = {
+    messages: params.messages,
+    currentPath: params.currentPath?.trim() || "/",
+  };
+  const demo = params.demographics;
+  if (demo && Object.keys(demo).length > 0) {
+    payload.demographics = demo;
+  }
+
   const res = await fetch(`${CIVIC_API}/floating-chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messages: params.messages,
-      currentPath: params.currentPath?.trim() || "/",
-    }),
+    body: JSON.stringify(payload),
     cache: "no-store",
   });
 

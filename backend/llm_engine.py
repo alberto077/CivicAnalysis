@@ -190,7 +190,10 @@ class LLMEngine:
         """Concise markdown answer; no JSON sections."""
         system_prompt = (
             "You are CivicAnalysis, a concise assistant for New York City civic policy and local government.\n\n"
-            f"User location notes (may be empty):\n{demo_text or '(none)'}\n\n"
+            f"User profile notes (may be empty). May include borough, income band, housing, age, policy interests, "
+            f"and tags such as Student or Veteran:\n{demo_text or '(none)'}\n\n"
+            "When notes describe the user's situation (e.g. student, renter, age band), tailor implications and next "
+            "steps where relevant; do not invent exact eligibility thresholds or fine-print rules not in the excerpts.\n\n"
             f"Reference excerpts from the document index (may be incomplete):\n{context_text}\n\n"
         )
         if session_preamble and session_preamble.strip():
