@@ -1066,8 +1066,8 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             })()}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredResources.map((r, i) => (
-                <motion.div key={r.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+              {filteredResources.map((r) => (
+                <motion.div key={r.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.01 }}
                   className="bg-white rounded-3xl border border-slate-200 p-6 hover:shadow-xl transition-all group flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-widest ${TAG_COLORS[r.tag] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>{r.tag}</span>
