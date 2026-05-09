@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -304,18 +305,11 @@ h3.section-title,
 
 /* Hero: animated gradient highlight (WebKit needs text-fill with clip) */
 .hero-gradient-text {
-<<<<<<< rep-cards-data-filter
-  background: linear-gradient(112deg,
-      var(--foreground) 0%,
-      #22466f 38%,
-      var(--accent-mid) 100%);
-=======
   background: linear-gradient(
     112deg,
     rgba(13, 27, 42, 1) 0%,
     rgba(230, 57, 70, 1) 100%
   );
->>>>>>> main
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -395,11 +389,6 @@ h3.section-title,
 }
 
 .glass-card {
-<<<<<<< rep-cards-data-filter
-  background: linear-gradient(155deg,
-      var(--surface-glass-strong) 0%,
-      var(--surface-glass) 100%);
-=======
   position: relative;
   isolation: isolate;
   background: linear-gradient(
@@ -407,7 +396,6 @@ h3.section-title,
     var(--surface-glass-strong) 0%,
     var(--surface-glass) 100%
   );
->>>>>>> main
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.9);
@@ -560,19 +548,12 @@ h3.section-title,
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-<<<<<<< rep-cards-data-filter
-  background: linear-gradient(118deg,
-      rgba(26, 54, 93, 0.36) 0%,
-      rgba(255, 255, 255, 0.68) 48%,
-      rgba(230, 57, 70, 0.34) 100%);
-=======
   background: linear-gradient(
     118deg,
     rgba(26, 54, 93, 0.36) 0%,
     rgba(255, 255, 255, 0.68) 48%,
     rgba(26, 54, 93, 0.22) 100%
   );
->>>>>>> main
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -729,29 +710,6 @@ html.access-high-contrast strong {
   color: #ffffff !important;
 }
 
-<<<<<<< rep-cards-data-filter
-/* scrollbar for rep card sections */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-=======
 html.access-high-contrast a {
   color: #facc15 !important;
 }
@@ -809,5 +767,41 @@ html.access-focus-mode *:focus,
 html.access-focus-mode *:focus-visible {
   outline: 4px solid #facc15 !important;
   outline-offset: 4px !important;
->>>>>>> main
+}
+
+
+/* map */
+.civic-tooltip {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  padding: 10px 12px;
+}
+
+.civic-tooltip::before {
+  display: none;
+
+
+ /* scrollbar for rep card sections */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
