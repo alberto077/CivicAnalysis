@@ -626,33 +626,7 @@ async def get_politician_filters():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")
 
-@app.get("/api/districts/map")
-async def get_districts_map():
-    import json
-    import os
-    
-    file_path = os.path.join(os.path.dirname(__file__), "districts.geojson")
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="GeoJSON map data not found. Please run sync script.")
-    
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data
-
-@app.get("/api/neighborhoods/map")
-async def get_neighborhoods_map():
-    import json
-    import os
-
-    file_path = os.path.join(os.path.dirname(__file__), "neighborhoods.geojson")
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Neighborhood GeoJSON not found.")
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data
-
-@app.get("/api/districts")
+@app.get("/districts")
 async def get_districts():
     try:
         with Session(engine) as session:
@@ -691,5 +665,5 @@ async def get_districts():
                 })
             return {"districts": sorted(out, key=lambda x: x["id"])}
     except Exception as e:
-        logger.warning(f"/api/districts failed: {e}")
+        logger.warning(f"/districts failed: {e}")
         return {"districts": []}
