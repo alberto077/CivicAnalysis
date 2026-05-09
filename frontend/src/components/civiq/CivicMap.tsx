@@ -2,7 +2,8 @@
 
 import {
   MapPin, Users, Layers, Search, Map as MapIcon, ExternalLink, Info,
-  ChevronRight, Building2, Landmark, Flag, AlertCircle,
+  ChevronRight, Building2, Flag, AlertCircle,
+  // Landmark,
   Loader2, X, Maximize2, Calendar, Eye, EyeOff, ChevronDown, ChevronUp,
   Phone, Mail
 } from "lucide-react";
@@ -18,6 +19,7 @@ type GeoResult = { label: string; lat: number; lng: number };
 type RepCard = {
   level: string;
   sublabel: string;
+  compact?: boolean;
   icon: React.ReactNode;
   colorClasses: string;
   accentColor: string;
@@ -68,13 +70,22 @@ const BOROUGH_PRESIDENTS: Record<string, { name: string; url: string }> = {
   "Staten Island":{ name: "Vito Fossella",      url: "https://www.statenislandusa.com/" },
 };
 
+const BOROUGH_CB_URLS: Record<string, string> = {
+  Manhattan:      "https://www.nyc.gov/site/cau/community-boards/manhattan-boards.page",
+  Bronx:          "https://www.nyc.gov/site/cau/community-boards/bronx-boards.page",
+  Brooklyn:       "https://www.nyc.gov/site/cau/community-boards/brooklyn-boards.page",
+  Queens:         "https://www.nyc.gov/site/cau/community-boards/queens-boards.page",
+  "Staten Island":"https://www.nyc.gov/site/cau/community-boards/staten-island-boards.page",
+};
+
 function buildRepCards(district: District, distId: number): RepCard[] {
   const borough = boroughFromId(distId);
   const bp = BOROUGH_PRESIDENTS[borough];
   return [
+    // NYC cards
     {
       level: "City Council",
-      sublabel: `District ${distId} · ${district.name}`,
+      sublabel: `District ${distId}`,
       icon: <Building2 className="h-4 w-4" />,
       colorClasses: "bg-blue-50 border-blue-100",
       accentColor: "#2563eb",
@@ -83,17 +94,6 @@ function buildRepCards(district: District, distId: number): RepCard[] {
       district: `District ${distId}`,
       website: `https://council.nyc.gov/district-${distId}/`,
       resolved: true,
-    },
-    {
-      level: "Community Board",
-      sublabel: `${borough} — advisory body`,
-      icon: <Users className="h-4 w-4" />,
-      colorClasses: "bg-emerald-50 border-emerald-100",
-      accentColor: "#059669",
-      name: `${borough} Community Board`,
-      title: "Advisory Board",
-      website: "https://www.nyc.gov/site/cau/community-boards/community-boards.page",
-      resolved: false,
     },
     {
       level: "Borough President",
@@ -107,38 +107,53 @@ function buildRepCards(district: District, distId: number): RepCard[] {
       resolved: true,
     },
     {
-      level: "State Assembly",
-      sublabel: "New York State Legislature",
-      icon: <Landmark className="h-4 w-4" />,
-      colorClasses: "bg-amber-50 border-amber-100",
-      accentColor: "#d97706",
-      name: "NYS Assembly Member",
-      title: "NY State Assembly",
-      website: "https://data.gis.ny.gov/datasets/sharegisny::nys-assembly-districts/explore?location=40.807870%2C-73.766162%2C10",
+      level: "Community Board",
+      sublabel: `${borough} — Neighborhood Advisory Body`,
+      icon: <Users className="h-4 w-4" />,
+      colorClasses: "bg-emerald-50 border-emerald-100",
+      accentColor: "#059669",
+      name: `Find Your ${borough} Community Board`,
+      title: `${borough} Community Boards`,
+      website: BOROUGH_CB_URLS[borough],
       resolved: false,
     },
-    {
-      level: "State Senate",
-      sublabel: "New York State Legislature",
-      icon: <Landmark className="h-4 w-4" />,
-      colorClasses: "bg-rose-50 border-rose-100",
-      accentColor: "#dc2626",
-      name: "NYS Senator",
-      title: "NY State Senate",
-      website: "https://www.nysenate.gov/find-my-senator",
-      resolved: false,
-    },
-    {
-      level: "US Congress",
-      sublabel: "Federal — House of Representatives",
-      icon: <Flag className="h-4 w-4" />,
-      colorClasses: "bg-slate-100 border-slate-200",
-      accentColor: "#475569",
-      name: "US Representative",
-      title: "US House of Representatives",
-      website: "https://www.house.gov/representatives/find-your-representative",
-      resolved: false,
-    },
+    // compact state/federal row
+    // {
+    //   level: "State Assembly",
+    //   sublabel: `${borough}`,
+    //   icon: <Landmark className="h-4 w-4" />,
+    //   colorClasses: "bg-amber-50 border-amber-100",
+    //   accentColor: "#d97706",
+    //   name: "Find Assembly Member",
+    //   title: "NYS Assembly",
+    //   website: "https://data.gis.ny.gov/datasets/sharegisny::nys-assembly-districts/explore?location=40.807870%2C-73.766162%2C10",
+    //   resolved: false,
+    //   compact: true,
+    // },
+    // {
+    //   level: "State Senate",
+    //   sublabel: `${borough}`,
+    //   icon: <Landmark className="h-4 w-4" />,
+    //   colorClasses: "bg-rose-50 border-rose-100",
+    //   accentColor: "#dc2626",
+    //   name: "Find State Senator",
+    //   title: "NYS Senate",
+    //   website: "https://www.nysenate.gov/find-my-senator",
+    //   resolved: false,
+    //   compact: true,
+    // },
+    // {
+    //   level: "US Congress",
+    //   sublabel: `${borough}`,
+    //   icon: <Flag className="h-4 w-4" />,
+    //   colorClasses: "bg-slate-100 border-slate-200",
+    //   accentColor: "#475569",
+    //   name: "Find US Rep",
+    //   title: "US House",
+    //   website: "https://www.house.gov/representatives/find-your-representative",
+    //   resolved: false,
+    //   compact: true,
+    // },
   ];
 }
 
@@ -302,45 +317,89 @@ const ARCGIS_BASE = "https://nysboe.maps.arcgis.com/apps/instant/lookup/index.ht
 
 // rep card components for explorer
 function RepCardItem({ card }: { card: RepCard }) {
+  if (card.compact) {
+    return (
+      <div className={`rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2 ${card.colorClasses}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          {/* <div className="shrink-0" style={{ color: card.accentColor }}>{card.icon}</div> */}
+          <div className="min-w-0">
+          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none"
+              style={{ color: card.accentColor }}>
+            <span className="shrink-0">{card.icon}</span>
+            <span>{card.level}</span>
+          </div>
+            <p className="text-xs font-semibold text-slate-700">{card.name}</p>
+          </div>
+        </div>
+        {card.website && (
+          <a href={card.website} target="_blank" rel="noopener noreferrer"
+            className="shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors opacity-50 hover:opacity-100">
+            <ExternalLink className="h-3.5 w-3.5" style={{ color: card.accentColor }} />
+          </a>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`rounded-2xl border p-4 shadow-sm ${card.colorClasses}`}>
       <div className="flex items-start gap-3">
-
-        {/* Text */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider leading-none mb-1"
-                style={{ color: card.accentColor }}>
-                {card.level}
-              </p>
-              <p className="text-sm font-bold text-slate-800 leading-tight truncate">{card.name}</p>
-              <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{card.sublabel}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none mb-1" style={{ color: card.accentColor }}>{card.level}</p>
+              <p className="text-sm font-bold text-slate-800 leading-tight">{card.name}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">{card.sublabel}</p>
             </div>
             {card.website && (
               <a href={card.website} target="_blank" rel="noopener noreferrer"
-                className="mt-2 mb- 2 shrink-0 p-1.5 rounded-lg hover:bg-black/5 transition-colors"
-                title="Official page">
-                  <span className="m-1 flex items-center justify-center gap-1 text-xs leading-relaxed">
-                    Lookup  <ExternalLink className="h-3.5 w-3.5" style={{ color: card.accentColor }} />
+                className="shrink-0 p-1.5 rounded-lg hover:bg-black/5 transition-colors opacity-50 hover:opacity-100">
+                  <span className="mt-1 mb-1 flex items-center justify-center gap-1 text-xs leading-relaxed">
+                    Visit  <ExternalLink className="h-3.5 w-3.5" style={{ color: card.accentColor }} />
                   </span>
               </a>
             )}
           </div>
-
-          {/* contact ?? */}
+          {card.level === "City Council" && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Your NYC Council member makes decisions on the city budget, laws, zoning, and agency oversight—and you can contact their office for help with housing, permits, and city services.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {["Lawmaking", "Budget Approval", "Land Use Votes (ULURP)", "Oversight Hearings", "Constituent Services"].map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 rounded-md bg-blue-100/60 text-blue-700 text-[10px] font-semibold">{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {card.level === "Community Board" && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Community Boards are 50-member volunteer advisory groups. They hold public monthly meetings—open to residents & an accessible way to get involved and have input on local decisions.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {["Land Use Advisory (ULURP)", "Liquor License Review", "Street & Transit", "Budget Priorities", "District Issues", "Public Meetings"].map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 rounded-md bg-emerald-100/60 text-emerald-700 text-[10px] font-semibold">{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {card.level === "Borough President" && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                The Borough President advocates for their borough, reviews land use, sets budget priorities, appoints half of Community Boards, and supports major projects—but doesn’t pass laws or control budgets.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {["Land Use Advisory (ULURP Review)", "Budget Recommendations", "Community Board Appointments", "Advocacy for Borough Needs", "Capital Project Influence"].map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 rounded-md bg-violet-100/60 text-violet-700 text-[10px] font-semibold">{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
           {(card.phone || card.email) && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {card.phone && (
-                <a href={`tel:${card.phone}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700">
-                  <Phone className="h-3 w-3" />{card.phone}
-                </a>
-              )}
-              {card.email && (
-                <a href={`mailto:${card.email}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700">
-                  <Mail className="h-3 w-3" />{card.email}
-                </a>
-              )}
+              {card.phone && <a href={`tel:${card.phone}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700"><Phone className="h-3 w-3" />{card.phone}</a>}
+              {card.email && <a href={`mailto:${card.email}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700"><Mail className="h-3 w-3" />{card.email}</a>}
             </div>
           )}
         </div>
@@ -398,13 +457,14 @@ function CivicEventsMap() {
           html: `<div style="width:11px;height:11px;border-radius:50%;background:${meta.color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>`,
           iconSize: [11, 11], iconAnchor: [5, 5],
         });
-        L.marker([pin.lat, pin.lng], { icon }).bindPopup(
+        L.marker([pin.lat, pin.lng], { icon }).bindTooltip(
           `<div style="font-family:system-ui;min-width:190px;padding:2px">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${meta.color};margin-bottom:3px">${meta.label}</div>
             <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px">${pin.name}</div>
             <div style="font-size:11px;color:#64748b;margin-bottom:6px">${pin.address}</div>
             ${pin.url ? `<a href="${pin.url}" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:600;color:${meta.color}">Official page ↗</a>` : ""}
-          </div>`
+          </div>`,
+          { sticky: true, opacity: 1, className: "civic-tooltip" }
         ).addTo(group);
       });
       group.addTo(mapInstanceRef.current);
@@ -637,13 +697,22 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   const resolveDistrict = useCallback((distId: number, geo?: GeoResult) => {
     setSelectedId(distId);
     setGeocodeResult(geo ?? null);
-    const dist = districts.find((d) => d.id === distId) ??
-      ({ id: distId, name: `District ${distId}`, rep: "Council Member", issues: [], zip_codes: [] } as District);
-    setRepCards(buildRepCards(dist, distId));
-    setSearchMode("found");
     setShowSuggestions(false);
     setSearchInput("");
-  }, [districts]);
+    // wait for districts to load if needed
+    if (!mapLoaded) return;
+    const dist = districts.find((d) => d.id === distId);
+    if (!dist) {
+      // districts loaded but this ID not found — use minimal fallback
+      setRepCards(buildRepCards(
+        { id: distId, name: `District ${distId}`, rep: "Council Member", issues: [], zip_codes: [] } as District,
+        distId
+      ));
+    } else {
+      setRepCards(buildRepCards(dist, distId));
+    }
+    setSearchMode("found");
+  }, [districts, mapLoaded]);
 
   /* handle address/zip search submission */
   const handleSearch = useCallback(async (e?: React.FormEvent) => {
@@ -796,7 +865,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                         const isHovered = hoveredId === distId;
                         return (
                           <Geography key={geo.rsmKey} geography={geo}
-                            onClick={() => resolveDistrict(distId)}
+                            onClick={() => { if (mapLoaded) resolveDistrict(distId); }}
                             onMouseEnter={() => setHoveredId(distId)}
                             onMouseLeave={() => setHoveredId(null)}
                             style={{
@@ -905,9 +974,28 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 {selectedDistrict && searchMode === "found" ? (
                   <motion.div key={selectedDistrict.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-2">
                     {/* all rep levels */}
-                    {repCards.map((card) => (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-2">
+                      Local Representatives
+                    </p>
+                  </div>
+                    {repCards.filter((c) => !c.compact).map((card) => (
                       <RepCardItem key={card.level} card={card} />
                     ))}
+                    {/* {repCards.some((c) => c.compact) && (
+                      <div className="mt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-2">
+                          State &amp; Federal
+                        </p>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {repCards.filter((c) => c.compact).map((card) => (
+                            <div key={card.level} className="w-full min-h-16 sm:w-[40%]">
+                              <RepCardItem card={card} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )} */}
                   </motion.div>
                 ) : (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
