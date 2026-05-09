@@ -207,6 +207,5 @@ export async function getPoliticians(filters?: {
 
 export async function getPoliticianFilters() {
     const all = await fetchAllPoliticians();
-    const opts = getFilterOptions(all);
-    return { boroughs: opts.boroughs, stances: opts.stances };
+    return getFilterOptions(all);
 }

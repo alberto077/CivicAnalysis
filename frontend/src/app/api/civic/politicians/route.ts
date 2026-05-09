@@ -43,14 +43,14 @@ function enrichBackend(raw: Partial<Politician>[]): Politician[] {
     .filter((p) => typeof p.name === "string" && typeof p.office === "string")
     .map((p, i): Politician => {
       const level = p.level ?? inferLevel(p.office ?? "");
-      const party = p.party?.trim() || "Unknown";
+      const party = p.party?.trim() || "N/A";
       return {
         id: String(p.id ?? `backend-${i}`),
         name: p.name!.trim(),
         office: p.office!.trim(),
         level,
-        party: party === "Unknown" ? "N/A" : party,
-        political_stance: p.political_stance?.trim() || (party !== "Unknown" ? partyToStance(party) : "N/A"),
+        party: (party === "Unknown" || party === "N/A") ? "N/A" : party,
+        political_stance: p.political_stance?.trim() || (party !== "Unknown" && party !== "N/A" ? partyToStance(party) : "N/A"),
         borough: p.borough?.trim() || "New York",
         district: p.district ?? null,
         neighborhoods: p.neighborhoods ?? [],

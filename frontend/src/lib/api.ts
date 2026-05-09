@@ -103,6 +103,9 @@ export type HealthResponse = {
 export type PoliticianFilterOptions = {
   boroughs: string[];
   stances: string[];
+  parties: string[];
+  districts: string[];
+  committees: string[];
 };
 
 export type OpenAiChatRole = "system" | "user" | "assistant";
@@ -354,6 +357,9 @@ export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
   return {
     boroughs: Array.isArray(opts.boroughs) ? opts.boroughs : [],
     stances: Array.isArray(opts.stances) ? opts.stances : [],
+    parties: Array.isArray(opts.parties) ? opts.parties : [],
+    districts: Array.isArray(opts.districts) ? opts.districts : [],
+    committees: Array.isArray(opts.committees) ? opts.committees : [],
   };
 }
 
