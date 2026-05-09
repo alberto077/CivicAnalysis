@@ -11,6 +11,29 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_CONVERSATION_MESSAGES = 32;
+const MAX_DEMOGRAPHICS_KEYS = 15;
+const MAX_DEMOGRAPHICS_VALUE_LEN = 400;
+
+function parseSanitizeClientDemographics(raw: unknown): Record<string, string> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (Object.keys(out).length >= MAX_DEMOGRAPHICS_KEYS) break;
+    const key = typeof k === "string" ? k.trim() : "";
+    if (!key || key.length > 64 || !/^[a-zA-Z0-9_]+$/.test(key)) continue;
+    if (typeof v !== "string") continue;
+    const val = v.trim().slice(0, MAX_DEMOGRAPHICS_VALUE_LEN);
+    if (!val) continue;
+    out[key] = val;
+  }
+  return out;
+}
+
+function formatDemographicsForPrompt(d: Record<string, string>): string {
+  const entries = Object.entries(d);
+  if (!entries.length) return "(none)";
+  return entries.map(([k, v]) => `- ${k}: ${v}`).join("\n");
+}
 
 export type FloatingChatApiMessage = {
   role: "user" | "assistant";
@@ -159,12 +182,18 @@ function ragInsufficient(args: {
 function buildOpenAiFallbackSystem(args: {
   backendReplyJson: string;
   hadPriorRagFailure: boolean;
+  userProfileNotes: string;
 }): string {
   const prior = args.hadPriorRagFailure
     ? "Internal note: the first-pass answer was empty or failed; answer the user helpfully and avoid invented specifics."
     : "";
 
   return `You are the CivicAnalysis floating assistant for New York City residents.
+
+User profile notes from the app (may be none). These can include role tags such as Student, Veteran, or renter; tailor practical angles when relevant (e.g. student resources, transit discounts, housing programs):
+${args.userProfileNotes}
+
+When notes include income band, housing situation, age bracket, policy interests, or demographic tags, reflect them in implications and next steps where appropriate. Do not invent exact eligibility cutoffs or rules not supported by context.
 
 Optional JSON from an earlier model step (may include a markdown field, an error field, or be empty):
 ${args.backendReplyJson}
@@ -228,6 +257,8 @@ export async function POST(request: Request) {
   }
 
   const sessionPreamble = buildFloatingSessionPreamble(currentPath);
+  const demographics = parseSanitizeClientDemographics(bodyObj?.demographics);
+  const userProfileNotesForFallback = formatDemographicsForPrompt(demographics);
 
   let upstream: Response;
   try {
@@ -236,7 +267,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         query: lastUserContent,
-        demographics: {},
+        demographics,
         response_style: "plain",
         messages: capped,
         session_preamble: sessionPreamble,
@@ -327,6 +358,7 @@ export async function POST(request: Request) {
   const systemContent = buildOpenAiFallbackSystem({
     backendReplyJson: JSON.stringify(reply, null, 2),
     hadPriorRagFailure,
+    userProfileNotes: userProfileNotesForFallback,
   });
 
   try {

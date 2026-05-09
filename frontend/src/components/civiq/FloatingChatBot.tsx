@@ -13,6 +13,8 @@ import {
   type FloatingChatTurn,
   type FloatingRetrievalSource,
 } from "@/lib/api";
+import { civicProfileToDemographics } from "@/lib/civicProfileDemographics";
+import { useProfile } from "@/lib/useProfile";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -110,6 +112,7 @@ const askSpiegelPanelHeight = "min(calc(100dvh - 2rem), min(920px, max(600px, 86
 
 export function FloatingChatBot() {
   const pathname = usePathname();
+  const { profile } = useProfile();
 
   /** Avoid FAB SSR/client DOM mismatch (e.g. motion/compiler wrappers vs native button). */
   const [launcherMounted, setLauncherMounted] = useState(false);
@@ -182,6 +185,7 @@ export function FloatingChatBot() {
       const result = await postFloatingChatOrchestrated({
         messages: apiMessages,
         currentPath,
+        demographics: civicProfileToDemographics(profile),
       });
 
       setMessages((current) => [

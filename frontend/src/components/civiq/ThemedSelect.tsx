@@ -60,12 +60,6 @@ export function ThemedSelect({
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      setActiveIndex(currentIndex >= 0 ? currentIndex : 0);
-    }
-  }, [open, currentIndex]);
-
-  useEffect(() => {
     if (!open || activeIndex < 0) return;
     const list = listRef.current;
     const node = list?.querySelector<HTMLElement>(
@@ -77,6 +71,9 @@ export function ThemedSelect({
   const onTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      if (!open) {
+        setActiveIndex(currentIndex >= 0 ? currentIndex : 0);
+      }
       setOpen(true);
     }
   };
@@ -116,7 +113,13 @@ export function ThemedSelect({
         aria-controls={listId}
         aria-label={ariaLabel}
         className={TRIGGER_CLASS}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() =>
+          setOpen((wasOpen) => {
+            if (wasOpen) return false;
+            setActiveIndex(currentIndex >= 0 ? currentIndex : 0);
+            return true;
+          })
+        }
         onKeyDown={onTriggerKeyDown}
       >
         <span className="min-w-0 flex-1 truncate text-left">
