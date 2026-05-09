@@ -254,12 +254,16 @@ const PIN_META: Record<PinCategory, { label: string; color: string }> = {
 };
 
 const INITIAL_BOUNDARY_LAYERS: BoundaryLayer[] = [
-  { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.", govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/api/districts/map", enabled: true },
-  { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",              govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "https://data.cityofnewyork.us/api/geospatial/7t3b-ywvw?method=export&type=GeoJSON", enabled: true },
-  { id: "ny-counties",  label: "NY Counties",           description: "New York's 62 counties, each with its own elected County Executive or Board of Supervisors. NYC's 5 boroughs are coterminous with 5 counties — e.g. Manhattan = New York County, Brooklyn = Kings County.",    govLevel: "County",  color: "#0891b2", weight: 1.5, opacity: 0.5, url: "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/NY-36-new-york-counties.json", enabled: true },
-  { id: "congressional",label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.",                                                     govLevel: "Federal", color: "#dc2626", weight: 2,   opacity: 0.6, url: "https://raw.githubusercontent.com/unitedstates/districts/gh-pages/cds/2022/NY/shape.geojson", enabled: true },
-  { id: "nys-senate",   label: "NYS Senate Districts",  description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.",                                            govLevel: "State",   color: "#d97706", weight: 1.5, opacity: 0.5, url: "https://raw.githubusercontent.com/NewYorkSenate/district-boundaries/main/nysenate_districts.geojson", enabled: true },
-  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.",                                     govLevel: "State",   color: "#059669", weight: 1.5, opacity: 0.5, url: "https://data.gis.ny.gov/api/download/v1/items/fdad3a30b1a64d549c9ceed1c9e62df5/geojson?layers=0", enabled: true },
+  { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.",             govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/boundaries-districts.geojson", enabled: true },
+  { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",                govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "/boundaries-boroughs.geojson", enabled: false },
+// # Neighborhoods — NYC DCP Neighborhood Tabulation Areas via Socrata
+  { id: "neighborhoods", label: "NYC Neighborhoods",    description: "195 Neighborhood Tabulation Areas (NTAs) defined by NYC Planning. These are aggregations of census tracts that approximate well-known neighborhood names — useful for understanding local character and community context within council districts.", govLevel: "City", color: "#db2777", weight: 1, opacity: 0.4, url: "/boundaries-neighborhoods.geojson", enabled: false },
+// # Congressional Districts — official NYS ITS GIS (all 26 NY districts)
+  { id: "congressional",label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.",                                                     govLevel: "Federal", color: "#dc2626", weight: 2,   opacity: 0.6, url: "/boundaries-congressional.geojson", enabled: true },
+// # NYS Senate Districts — official NYS ITS GIS (all 63 statewide)
+  { id: "nys-senate",   label: "NYS Senate Districts",  description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.",                                            govLevel: "State",   color: "#d97706", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-senate.geojson", enabled: true },
+// # NYS Assembly Districts — official NYS ITS GIS (all 150 statewide)
+  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.",                                     govLevel: "State",   color: "#059669", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-assembly.geojson", enabled: false },
 ];
 
 const BOUNDARY_GOV_COLORS: Record<string, string> = {
@@ -423,8 +427,23 @@ function CivicEventsMap() {
   const visiblePins = useMemo(() => CIVIC_PINS.filter((p) => activePinCats.has(p.category)), [activePinCats]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const container = mapContainerRef.current as any;
+    if (container._leaflet_id != null) {
+      try { container._leaflet_map?.remove(); } catch { /* ignore */ }
+      container._leaflet_id = null;
+    }
+    if (mapInstanceRef.current) {
+      try { mapInstanceRef.current.remove(); } catch { /* ignore */ }
+      mapInstanceRef.current = null;
+      layerGroupsRef.current = {};
+    }
+
+    let cancelled = false; // guard against async completing after unmount
+
     import("leaflet").then((L) => {
+      if (cancelled || !mapContainerRef.current) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -432,7 +451,14 @@ function CivicEventsMap() {
         iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = mapContainerRef.current as any;
+      if (container._leaflet_id != null) {
+        container._leaflet_id = null;
+      }
       const map = L.map(mapContainerRef.current!, { center: [40.73, -73.99], zoom: 11 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mapContainerRef.current as any)._leaflet_map = map;
       mapInstanceRef.current = map;
       L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution: "© OpenStreetMap © CARTO", subdomains: "abcd", maxZoom: 19,
@@ -440,8 +466,14 @@ function CivicEventsMap() {
       }).addTo(map as any);
       setMapReady(true);
     });
+
     return () => {
-      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; layerGroupsRef.current = {}; }
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove(); } catch { /* ignore */ }
+        mapInstanceRef.current = null;
+        layerGroupsRef.current = {};
+      }
     };
   }, []);
 
