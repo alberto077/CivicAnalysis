@@ -45,45 +45,45 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1b2a]/60 p-4 backdrop-blur-sm dark:bg-black/65 sm:p-6"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-[#0d1b2a]/60 p-4 backdrop-blur-sm dark:bg-black/65 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-2xl animate-in flex-col rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] fade-in zoom-in duration-300 dark:border dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
-        <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-[var(--border)] shrink-0 flex flex-col gap-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl animate-in flex-col rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] fade-in zoom-in duration-300 dark:border dark:border-(--border) dark:bg-(--surface-card) dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
+        <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-(--border) shrink-0 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-limelight text-xl font-bold text-[var(--foreground)] tracking-tight">Edit profile</h2>
-              <p className="font-work-sans text-xs text-[var(--muted)] mt-1">Configure your personalized assistant details.</p>
+              <h2 className="font-limelight text-xl font-bold text-foreground tracking-tight">Edit profile</h2>
+              <p className="font-work-sans text-xs text-(--muted) mt-1">Configure your personalized assistant details.</p>
             </div>
-            <button onClick={onClose} className="p-2 text-xl font-bold text-[var(--muted)] hover:text-[var(--foreground)]">&times;</button>
+            <button onClick={onClose} className="p-2 text-xl font-bold text-(--muted) hover:text-foreground">&times;</button>
           </div>
-          <div className="flex border-b border-[var(--border)]">
+          <div className="flex border-b border-(--border)">
             <button
               onClick={() => setActiveTab("Profile")}
-              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
+              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Profile" ? "border-(--accent) text-(--accent)" : "border-transparent text-(--muted) hover:text-foreground"}`}
             >
               Demographics
             </button>
             <button
               onClick={() => setActiveTab("Interests")}
-              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Interests" ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"}`}
+              className={`font-work-sans flex-1 text-center pb-3 text-sm font-semibold transition border-b-2 ${activeTab === "Interests" ? "border-(--accent) text-(--accent)" : "border-transparent text-(--muted) hover:text-foreground"}`}
             >
               Policy Interests
             </button>
           </div>
         </div>
 
-        <div className="scrollbar-thin flex-1 overflow-y-auto bg-gray-50/50 p-5 dark:bg-[var(--surface-elevated)]/40 sm:p-6">
+        <div className="scrollbar-thin flex-1 overflow-y-auto bg-gray-50/50 p-5 dark:bg-(--surface-elevated)/40 sm:p-6">
           {activeTab === "Profile" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Location</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Location</h3>
                 <div className="flex flex-wrap gap-2">
                   {BOROUGHS.map((b) => (
                     <button
                       key={b}
                       onClick={() => setSingle("borough", b)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.borough === b ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.borough === b ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border) bg-white text-foreground hover:border-(--accent-soft) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {b}
@@ -93,13 +93,13 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Housing & Income</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Housing & Income</h3>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {HOUSING.map((h) => (
                     <button
                       key={h}
                       onClick={() => setSingle("housing", h)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.housing === h ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.housing === h ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border) bg-white text-foreground hover:border-(--accent-soft) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {h}
@@ -111,7 +111,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={i}
                       onClick={() => setSingle("income", i)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.income === i ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.income === i ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border)hite text-text-foregroundr:border-[var(--accent-soft)] dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {i}
@@ -121,13 +121,13 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Age</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Age</h3>
                 <div className="flex flex-wrap gap-2">
                   {AGE.map((a) => (
                     <button
                       key={a}
                       onClick={() => setSingle("age", a)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.age === a ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm" : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-soft)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.age === a ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border) bg-white text-foreground hover:border-(--accent-soft) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {a}
@@ -137,15 +137,15 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Demographic Traits</h3>
+                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Demographic Traits</h3>
                 <div className="flex flex-wrap gap-2">
                   {DEMOGRAPHICS.map((demo) => (
                     <button
                       key={demo}
                       onClick={() => toggleArray("demographics", demo)}
                       className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${data.demographics.includes(demo)
-                          ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
-                          : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent-mid)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                          ? "border-(--accent) bg-(--accent) text-white shadow-sm"
+                          : "border-(--border) bg-white text-foreground hover:border-(--accent-mid) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {demo}
@@ -158,16 +158,16 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
           {activeTab === "Interests" && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h3 className="font-limelight text-xs font-bold tracking-widest text-[var(--accent)] uppercase mb-3">Issues Tracked</h3>
-              <p className="text-sm text-[var(--muted)] mb-4">Select the specific policy areas you want your civic assistant to monitor.</p>
+              <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Issues Tracked</h3>
+              <p className="text-sm text-(--muted) mb-4">Select the specific policy areas you want your civic assistant to monitor.</p>
               <div className="flex flex-wrap gap-2">
                 {ISSUES.map((issue) => (
                   <button
                     key={issue}
                     onClick={() => toggleArray("issues", issue)}
                     className={`rounded-lg border px-3 py-1.5 text-[13px] font-medium transition ${data.issues.includes(issue)
-                        ? "border-[var(--accent-mid)] bg-[var(--accent-mid)] text-white shadow-sm"
-                        : "border-[var(--border)] bg-white text-[var(--foreground)] hover:border-[var(--accent)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:hover:bg-[var(--surface-elevated)]"
+                        ? "border-(--accent-mid) bg-(--accent-mid) text-white shadow-sm"
+                        : "border-(--border) bg-white text-foreground hover:border-(--accent) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                       }`}
                   >
                     {issue}
@@ -178,15 +178,15 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           )}
         </div>
 
-        <div className="p-4 sm:p-5 border-t border-[var(--border)] shrink-0 flex justify-between items-center bg-white rounded-b-2xl dark:bg-[var(--surface-card)]">
+        <div className="p-4 sm:p-5 border-t border-(--border) shrink-0 flex justify-between items-center bg-white rounded-b-2xl dark:bg-(--surface-card)">
           <button onClick={handleClear} className="px-2 py-1 text-sm font-medium text-red-600 transition hover:underline dark:text-red-300">
             Clear all
           </button>
           <div className="flex gap-3">
-            <button onClick={onClose} className="rounded-xl bg-gray-100 hover:bg-gray-200 text-[var(--foreground)] px-5 py-2.5 text-sm font-semibold transition dark:bg-[var(--surface-elevated)] dark:hover:bg-[var(--surface-card)] dark:border dark:border-[var(--border)]">
+            <button onClick={onClose} className="rounded-xl bg-gray-100 hover:bg-gray-200 text-foreground px-5 py-2.5 text-sm font-semibold transition dark:bg-(--surface-elevated) dark:hover:bg-(--surface-card) dark:border dark:border-(--border)">
               Cancel
             </button>
-            <button onClick={handleSave} className="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-mid)] text-white px-6 py-2.5 text-sm font-semibold shadow-sm transition">
+            <button onClick={handleSave} className="rounded-xl bg-(--accent) hover:bg-(--accent-mid) text-white px-6 py-2.5 text-sm font-semibold shadow-sm transition">
               Save Profile
             </button>
           </div>
