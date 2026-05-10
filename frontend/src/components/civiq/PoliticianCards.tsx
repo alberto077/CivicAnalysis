@@ -13,8 +13,6 @@ import {
   getPoliticianFilters,
   type Politician,
 } from "@/lib/api";
-import { useProfile } from "@/lib/useProfile";
-
 
 
 // Levels of Government
@@ -88,7 +86,7 @@ function getLearnMoreUrl(p: Politician) {
 }
 
 
-function PoliticianCard({ p }: { p: Politician, userIssues?: string[] }) {
+function PoliticianCard({ p }: { p: Politician }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const level = getLevelKey(p);
   const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string; allParties?: string[] };
@@ -256,7 +254,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
-  const { profile } = useProfile();
   const [visibleCount, setVisibleCount] = useState(24);
 
   const [selectedBoroughs, setSelectedBoroughs] = useState<string[]>([]);
@@ -427,7 +424,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const availableParties = useMemo(() => {
     const parties = new Set<string>();
     filteredByLevel.forEach(p => {
-      const all = (p as any).allParties as string[] | undefined;
+      const all = p.allParties;
       if (all && all.length > 0) all.forEach(pt => parties.add(pt));
       else if (p.party && p.party !== "N/A") parties.add(p.party);
     });
@@ -472,7 +469,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         (p.subcommittees && p.subcommittees.some(s => s.toLowerCase().includes(searchLower))) ||
         (p.caucuses && p.caucuses.some(c => c.toLowerCase().includes(searchLower)));
 
+      const isStatewideSenator = p.level === "State Senate" || p.level === "U.S. Senate";
       const matchesBorough = selectedBoroughs.length === 0 ||
+        isStatewideSenator ||
         selectedBoroughs.some(b => p.borough.toLowerCase().includes(b.toLowerCase()));
 
       let matchesLevel = true;
@@ -490,7 +489,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         }
       }
 
-      const pAllParties = ((p as any).allParties as string[] | undefined) ?? (p.party && p.party !== "N/A" ? [p.party] : []);
+      const pAllParties = p.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : []);
       const matchesParty = selectedParties.length === 0 ||
         selectedParties.some(sp => pAllParties.includes(sp));
 
@@ -795,7 +794,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6"
             >
               {filteredPoliticians.slice(0, visibleCount).map((p, idx) => (
-                <PoliticianCard key={`${p.id || p.name}-${idx}`} p={p} userIssues={profile?.issues} />
+                <PoliticianCard key={`${p.id || p.name}-${idx}`} p={p} />
               ))}
             </motion.div>
 

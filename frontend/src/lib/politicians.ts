@@ -30,6 +30,7 @@ export interface Politician {
     next_election?: string;
     senate_class?: string;
     represents?: string;
+    allParties?: string[];
 }
 
 export interface FilterOptions {

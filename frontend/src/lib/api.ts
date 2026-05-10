@@ -344,30 +344,26 @@ export async function getPoliticians(filters?: {
   borough?: string;
   stance?: string;
 }): Promise<Politician[]> {
-  const { fetchAllPoliticians } = await import("@/lib/politicians");
-  const all = await fetchAllPoliticians();
-
-  return all.filter((p) => {
-    if (filters?.borough && filters.borough.toLowerCase() !== "all") {
-      if (!p.borough.toLowerCase().includes(filters.borough.toLowerCase())) return false;
-    }
-    if (filters?.stance && filters.stance.toLowerCase() !== "all") {
-      if (p.political_stance !== filters.stance) return false;
-    }
-    return true;
-  }) as Politician[];
+  const params = new URLSearchParams();
+  if (filters?.borough) params.set("borough", filters.borough);
+  if (filters?.stance) params.set("stance", filters.stance);
+  const res = await fetch(`${CIVIC_API}/politicians${params.size ? `?${params}` : ""}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from /api/civic/politicians`);
+  const data = (await res.json()) as { politicians: Politician[] };
+  return data.politicians ?? [];
 }
 
 export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
-  const { getPoliticianFilters: getFiltersShim } = await import("@/lib/politicians");
-  const opts = await getFiltersShim();
-  return {
-    boroughs: Array.isArray(opts.boroughs) ? opts.boroughs : [],
-    stances: Array.isArray(opts.stances) ? opts.stances : [],
-    parties: Array.isArray(opts.parties) ? opts.parties : [],
-    districts: Array.isArray(opts.districts) ? opts.districts : [],
-    committees: Array.isArray(opts.committees) ? opts.committees : [],
-  };
+  const all = await getPoliticians();
+  const boroughs = [...new Set(all.flatMap(p => p.borough.split(/[/,]/).map(b => b.trim()).filter(Boolean)))].sort();
+  const parties  = [...new Set(all.flatMap(p => p.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : [])))].sort();
+  const stances  = [...new Set(all.map(p => p.political_stance).filter(Boolean))].sort();
+  const districts = [...new Set(all.map(p => p.district ?? "").filter(Boolean))].sort((a, b) => {
+    const na = Number(a), nb = Number(b);
+    return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b);
+  });
+  const committees = [...new Set(all.flatMap(p => p.committees ?? []))].sort();
+  return { boroughs, parties, stances, districts, committees };
 }
 
 export async function sendOpenAiChat(

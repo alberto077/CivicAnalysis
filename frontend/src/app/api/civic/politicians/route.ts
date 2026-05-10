@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/backend-internal";
-import { Politician } from "@/lib/politicians";
+import { GovLevel, Politician } from "@/lib/politicians";
 import {
   fetchCityCouncil,
   fetchAssembly,
@@ -8,6 +8,8 @@ import {
   fetchHouse,
   fetchUSSenate
 } from "@/lib/scrapers";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -28,7 +30,7 @@ function partyToStance(party: string): string {
 }
 
 // backend data inference ----------------------------------------------------------------------
-function inferLevel(office: string): any {
+function inferLevel(office: string): GovLevel {
   const o = office.toLowerCase();
   if (o.includes("council")) return "City Council";
   if (o.includes("assembly")) return "State Assembly";
@@ -71,6 +73,16 @@ function enrichBackend(raw: Partial<Politician>[]): Politician[] {
     });
 }
 
+function loadCachedPoliticians(): Politician[] | null {
+  try {
+    const raw = readFileSync(join(process.cwd(), "public", "data", "politicians.json"), "utf-8");
+    const data = JSON.parse(raw) as { politicians: Politician[] };
+    return data.politicians ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchAllLive(): Promise<Politician[]> {
   const labels = ["City Council", "State Assembly", "State Senate", "US House", "US Senate"];
   const settled = await Promise.allSettled([
@@ -108,6 +120,13 @@ export async function GET(request: Request) {
   let backendPoliticians: Politician[] | null = null;
 
   // 1. Prefer Live HTML Scraping
+  const cached = loadCachedPoliticians();
+  if (cached) {
+    return NextResponse.json(
+      { politicians: cached, source: "cache", fetched_at: new Date().toISOString() },
+      { status: 200, headers: CACHE }
+    );
+  }
   try {
     livePoliticians = await fetchAllLive();
   } catch (e) {
