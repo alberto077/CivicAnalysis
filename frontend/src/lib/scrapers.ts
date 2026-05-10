@@ -135,7 +135,7 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
 
     const nMatch = row.match(/data-member-name="([^"]+)"/);
     if (!nMatch) continue;
-    const name = stripHtml(nMatch[1]);
+    const name = stripHtml(nMatch[1]) || "VACANT SEAT";
 
     const nbMatch = row.match(/class="[^"]*sort-neighborhoods[^"]*"[^>]*>([\s\S]+?)<\/td>/);
     let neighborhoods: string[] = [];
@@ -375,6 +375,7 @@ interface SenateApiMember {
   fullName?: string;
   shortName?: string;
   memberId?: number;
+  sessionYear?: number;
   party?: string;
   committees?: Array<{ name: string }>;
   person?: {
@@ -421,7 +422,9 @@ export async function fetchSenate(): Promise<Politician[]> {
 
   if (!senateRes.ok) throw new Error(`NY Senate API HTTP ${senateRes.status}`);
   const data = await senateRes.json();
-  const items = (data.result?.items as SenateApiMember[] ?? []).filter(m => m.incumbent && m.chamber === "SENATE");
+  const currentYear = new Date().getFullYear();
+  const sessionYear = currentYear % 2 === 0 ? currentYear - 1 : currentYear; // NY sessions are odd years
+  const items = (data.result?.items as SenateApiMember[] ?? []).filter(m => m.chamber === "SENATE" && m.sessionYear === sessionYear);
 
   const politicians: Politician[] = items.map((m): Politician => {
     const district = m.districtCode != null ? String(m.districtCode) : null;
