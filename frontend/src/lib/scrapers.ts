@@ -13,16 +13,19 @@ function stripHtml(s: string): string {
 function normalizeParty(raw: string): string {
   const p = (raw || "").toLowerCase().trim();
   if (!p || p === "n/a" || p === "unknown") return "N/A";
+  if (p === "blank" || p.includes("blank party")) return "N/A";
+  if (p === "d") return "Democrat";
+  if (p === "r") return "Republican";
+  if (p === "i") return "Independent";
   if (p.includes("working families")) return "Working Families";
+  if (p.includes("independence")) return "Independence";
+  if (p.includes("independent")) return "Independent";
   if (p.includes("green")) return "Green";
   if (p.includes("democrat")) return "Democrat";
   if (p.includes("republican")) return "Republican";
   if (p.includes("conservative")) return "Conservative";
-  if (p.includes("independent")) return "Independent";
   if (p.includes("libertarian")) return "Libertarian";
-  if (p === "d") return "Democrat";
-  if (p === "r") return "Republican";
-  if (p === "i") return "Independent";
+  if (p.includes("reform")) return "Reform";
   return raw.trim();
 }
 
@@ -77,7 +80,7 @@ async function fetchOpenStatesNY(): Promise<Map<string, string>> {
 
   while (page <= maxPage) {
     try {
-      const url = `https://v3.openstates.org/people?jurisdiction=ny&per_page=100&page=${page}&apikey=${apiKey}`;
+      const url = `https://v3.openstates.org/people?jurisdiction=ny&per_page=50&page=${page}&apikey=${apiKey}`;
       const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15_000) });
       if (!res.ok) { console.warn(`[scrapers] Open States page ${page} HTTP ${res.status}`); break; }
       const data = await res.json() as OpenStatesResponse;
