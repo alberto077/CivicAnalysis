@@ -254,12 +254,17 @@ const PIN_META: Record<PinCategory, { label: string; color: string }> = {
 };
 
 const INITIAL_BOUNDARY_LAYERS: BoundaryLayer[] = [
-  { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.", govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/api/districts/map", enabled: true },
-  { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",              govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "https://data.cityofnewyork.us/api/geospatial/7t3b-ywvw?method=export&type=GeoJSON", enabled: true },
-  { id: "ny-counties",  label: "NY Counties",           description: "New York's 62 counties, each with its own elected County Executive or Board of Supervisors. NYC's 5 boroughs are coterminous with 5 counties — e.g. Manhattan = New York County, Brooklyn = Kings County.",    govLevel: "County",  color: "#0891b2", weight: 1.5, opacity: 0.5, url: "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/us-states/NY-36-new-york-counties.json", enabled: true },
-  { id: "congressional",label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.",                                                     govLevel: "Federal", color: "#dc2626", weight: 2,   opacity: 0.6, url: "https://raw.githubusercontent.com/unitedstates/districts/gh-pages/cds/2022/NY/shape.geojson", enabled: true },
-  { id: "nys-senate",   label: "NYS Senate Districts",  description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.",                                            govLevel: "State",   color: "#d97706", weight: 1.5, opacity: 0.5, url: "https://raw.githubusercontent.com/NewYorkSenate/district-boundaries/main/nysenate_districts.geojson", enabled: true },
-  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.",                                     govLevel: "State",   color: "#059669", weight: 1.5, opacity: 0.5, url: "https://data.gis.ny.gov/api/download/v1/items/fdad3a30b1a64d549c9ceed1c9e62df5/geojson?layers=0", enabled: true },
+  { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.",             govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/boundaries-districts.geojson", enabled: true },
+// codeforgermany/click_that_hood (GitHub, MIT license) - original data: NYC Open Data Borough Boundaries (DCP)
+  { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",                govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "/boundaries-boroughs.geojson", enabled: false },
+// # Neighborhoods — NYC DCP Neighborhood Tabulation Areas via Socrata
+  { id: "neighborhoods", label: "NYC Neighborhoods",    description: "195 Neighborhood Tabulation Areas (NTAs) defined by NYC Planning. These are aggregations of census tracts that approximate well-known neighborhood names — useful for understanding local character and community context within council districts.", govLevel: "City", color: "#db2777", weight: 1, opacity: 0.4, url: "/boundaries-neighborhoods.geojson", enabled: false },
+// # Congressional Districts — official NYS ITS GIS (all 26 NY districts)
+  { id: "congressional",label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.",                                                     govLevel: "Federal", color: "#dc2626", weight: 2,   opacity: 0.6, url: "/boundaries-congressional.geojson", enabled: true },
+// # NYS Senate Districts — official NYS ITS GIS (all 63 statewide)
+  { id: "nys-senate",   label: "NYS Senate Districts",  description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.",                                            govLevel: "State",   color: "#d97706", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-senate.geojson", enabled: true },
+// # NYS Assembly Districts — official NYS ITS GIS (all 150 statewide)
+  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.",                                     govLevel: "State",   color: "#059669", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-assembly.geojson", enabled: false },
 ];
 
 const BOUNDARY_GOV_COLORS: Record<string, string> = {
@@ -408,7 +413,7 @@ function RepCardItem({ card }: { card: RepCard }) {
   );
 }
 
-//  Civic Events - leaflet map
+//  Civic Events/Hub - leaflet map
 function CivicEventsMap() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -423,8 +428,23 @@ function CivicEventsMap() {
   const visiblePins = useMemo(() => CIVIC_PINS.filter((p) => activePinCats.has(p.category)), [activePinCats]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const container = mapContainerRef.current as any;
+    if (container._leaflet_id != null) {
+      try { container._leaflet_map?.remove(); } catch { /* ignore */ }
+      container._leaflet_id = null;
+    }
+    if (mapInstanceRef.current) {
+      try { mapInstanceRef.current.remove(); } catch { /* ignore */ }
+      mapInstanceRef.current = null;
+      layerGroupsRef.current = {};
+    }
+
+    let cancelled = false; // guard against async completing after unmount
+
     import("leaflet").then((L) => {
+      if (cancelled || !mapContainerRef.current) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -432,7 +452,14 @@ function CivicEventsMap() {
         iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = mapContainerRef.current as any;
+      if (container._leaflet_id != null) {
+        container._leaflet_id = null;
+      }
       const map = L.map(mapContainerRef.current!, { center: [40.73, -73.99], zoom: 11 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mapContainerRef.current as any)._leaflet_map = map;
       mapInstanceRef.current = map;
       L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution: "© OpenStreetMap © CARTO", subdomains: "abcd", maxZoom: 19,
@@ -440,8 +467,14 @@ function CivicEventsMap() {
       }).addTo(map as any);
       setMapReady(true);
     });
+
     return () => {
-      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; layerGroupsRef.current = {}; }
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove(); } catch { /* ignore */ }
+        mapInstanceRef.current = null;
+        layerGroupsRef.current = {};
+      }
     };
   }, []);
 
@@ -521,6 +554,7 @@ function CivicEventsMap() {
   // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   const togglePin = (cat: PinCategory) => setActivePinCats((p) => { const n = new Set(p); n.has(cat) ? n.delete(cat) : n.add(cat); return n; });
   const toggleBoundary = (id: string) => setBoundaryLayers((prev) => prev.map((bl) => bl.id === id ? { ...bl, enabled: !bl.enabled } : bl));
+  // const [boundaryPanelOpen, setBoundaryPanelOpen] = useState(true);
 
   return (
     <div className="space-y-6">
@@ -537,13 +571,13 @@ function CivicEventsMap() {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-999 pointer-events-none">
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 backdrop-blur-md shadow-md border border-slate-200/60 text-[11px] font-semibold text-slate-500 whitespace-nowrap">
               <Calendar className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-              Permanent civic locations — live event pins coming soon
+              Permanent Locations — live event pins coming soon
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-4 space-y-4">
-          {/* pin toggles */}
+          {/* location toggles */}
           <div className="bg-white rounded-4xl border border-slate-200 p-5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Location Types</p>
             <div className="space-y-1.5">
@@ -569,7 +603,7 @@ function CivicEventsMap() {
 
           {/* boundary toggles */}
           <div className="bg-white rounded-4xl border border-slate-200 p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Boundary Lines</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Boundary Lines - City, State, Federal</p>
             <div className="space-y-1.5">
               {boundaryLayers.map((bl) => (
                 <button key={bl.id} onClick={() => toggleBoundary(bl.id)}
@@ -623,6 +657,7 @@ function CivicEventsMap() {
           <span className="font-bold text-slate-500">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
         </p>
       </div>
+
     </div>
   );
 }
@@ -757,7 +792,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "nys",       label: "NYS Explorer", icon: <Layers className="h-3.5 w-3.5" /> },
     { id: "nyc",       label: "NYC Explorer", icon: <MapIcon className="h-3.5 w-3.5" /> },
-    { id: "events",    label: "Civic Events", icon: <Calendar className="h-3.5 w-3.5" /> },
+    { id: "events",    label: "Civic Hub", icon: <Calendar className="h-3.5 w-3.5" /> },
     { id: "resources", label: "Resources",    icon: <Info className="h-3.5 w-3.5" /> },
   ];
 
@@ -1066,8 +1101,8 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             })()}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredResources.map((r, i) => (
-                <motion.div key={r.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+              {filteredResources.map((r) => (
+                <motion.div key={r.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.01 }}
                   className="bg-white rounded-3xl border border-slate-200 p-6 hover:shadow-xl transition-all group flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-widest ${TAG_COLORS[r.tag] ?? "bg-slate-100 text-slate-500 border-slate-200"}`}>{r.tag}</span>

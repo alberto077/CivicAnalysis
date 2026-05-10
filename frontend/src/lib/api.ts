@@ -24,11 +24,8 @@ export type District = {
 
 export async function getDistricts(): Promise<District[]> {
   try {
-    const res = await fetch(`${CIVIC_API}/districts`, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(2000),
-    });
-    if (!res.ok) throw new Error("Backend responded with error");
+    const res = await fetch("/districts-data.json", { cache: "force-cache" });
+    if (!res.ok) throw new Error("Failed to load districts-data.json");
     const data = await res.json();
     return data.districts || [];
   } catch (e) {
@@ -38,16 +35,9 @@ export async function getDistricts(): Promise<District[]> {
 }
 
 export async function getDistrictsMap(): Promise<unknown> {
-  try {
-    const res = await fetch(`${CIVIC_API}/districts/map`, { cache: "no-store", signal: AbortSignal.timeout(2000) });
-    if (!res.ok) throw new Error("Failed to load map data from backend");
-    return await res.json();
-  } catch (e) {
-    console.warn("Falling back to local districts.geojson", e);
-    const res = await fetch("/districts.geojson", { cache: "force-cache" });
-    if (!res.ok) throw new Error("Failed to load fallback map data");
-    return await res.json();
-  }
+  const res = await fetch("/districts.geojson", { cache: "force-cache" });
+  if (!res.ok) throw new Error("Failed to load districts.geojson");
+  return await res.json();
 }
 
 export async function getRecentPolicies(borough?: string, area?: string): Promise<{ policies: PolicyBriefing[] }> {
