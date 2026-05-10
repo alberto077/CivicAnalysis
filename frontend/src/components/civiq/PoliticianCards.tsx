@@ -98,7 +98,7 @@ function PoliticianCard({ p }: { p: Politician }) {
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="relative h-105 w-full perspective-[1000px] group"
+      className="relative h-95 w-full perspective-[1000px] group"
       onClick={() => setIsFlipped(f => !f)}
     >
       <motion.div
@@ -621,7 +621,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       </MotionReveal>
 
       {/* Tabs: Levels of Government — reset legislature-specific filters on switch */}
-      <MotionReveal className="mt-12 mb-6 border-b border-slate-200">
+      <MotionReveal className="mt-10 mb-6 border-b border-slate-200">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full">
           {GOV_LEVELS.map(level => (
             <button
@@ -693,15 +693,15 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
 
           {/* Row 2: Borough chips + Party chips side by side */}
-          <div className="flex flex-col lg:flex-row gap-4 pt-4 border-t border-slate-100">
+          <div className="flex flex-col lg:flex-row gap-4 border-t border-slate-100">
             {/* Boroughs */}
-            <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="flex flex-wrap items-center gap-2 pt-4 flex-1">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Borough:</span>
               {dynamicBoroughs.map((b) => {
                 const active = selectedBoroughs.includes(b);
                 return (
                   <button key={b} onClick={() => toggleBorough(b)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-600"}`}>
                     {active && <Check className="h-3 w-3" />}
                     {b}
                   </button>
@@ -713,13 +713,13 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             <div className="hidden lg:block w-px bg-slate-100 self-stretch" />
 
             {/* Party chips */}
-            <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="flex flex-wrap items-center gap-2 pt-4 flex-1">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Party:</span>
               {availableParties.map((party) => {
                 const active = selectedParties.includes(party);
                 return (
                   <button key={party} onClick={() => toggleParty(party)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-300`}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-600`}`}>
                     {active && <Check className="h-3 w-3" />}
                     {party}
                   </button>

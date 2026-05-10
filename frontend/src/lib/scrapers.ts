@@ -3,8 +3,17 @@ import { Politician } from "./politicians";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-// module-level cache so fetchAssembly + fetchSenate share one API call
-let _openStatesCache: Map<string, string> | null = null;
+// REST cache: district-based party lookup (upper:15, lower:47, etc.)
+let _restCache: Map<string, string> | null = null;
+
+// GraphQL cache: name-based committee lookup - stored as promise to prevent race conditions
+interface OpenStatesMember {
+  committees: string[];
+}
+let _graphqlCache: Promise<{
+  senate: Map<string, OpenStatesMember>;
+  assembly: Map<string, OpenStatesMember>;
+}> | null = null;
 
 function stripHtml(s: string): string {
   return s.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ").trim();
@@ -51,7 +60,7 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
 
-// Open States API - NY legislators
+// Open States REST - NY legislators party by district
 interface OpenStatePerson {
   party: string;
   current_role: {
@@ -65,8 +74,8 @@ interface OpenStatesResponse {
   pagination: { max_page: number };
 }
 
-async function fetchOpenStatesNY(): Promise<Map<string, string>> {
-  if (_openStatesCache) return _openStatesCache;
+async function fetchOpenStatesParty(): Promise<Map<string, string>> {
+  if (_restCache) return _restCache;
 
   const apiKey = process.env.OPEN_STATES_API_KEY;
   if (!apiKey) {
@@ -82,7 +91,7 @@ async function fetchOpenStatesNY(): Promise<Map<string, string>> {
     try {
       const url = `https://v3.openstates.org/people?jurisdiction=ny&per_page=50&page=${page}&apikey=${apiKey}`;
       const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15_000) });
-      if (!res.ok) { console.warn(`[scrapers] Open States page ${page} HTTP ${res.status}`); break; }
+      if (!res.ok) { console.warn(`[scrapers] Open States REST page ${page} HTTP ${res.status}`); break; }
       const data = await res.json() as OpenStatesResponse;
       maxPage = data.pagination.max_page;
       for (const p of data.results) {
@@ -91,14 +100,128 @@ async function fetchOpenStatesNY(): Promise<Map<string, string>> {
       }
       page++;
     } catch (e) {
-      console.warn(`[scrapers] Open States fetch failed on page ${page}:`, e);
+      console.warn(`[scrapers] Open States REST fetch failed on page ${page}:`, e);
       break;
     }
   }
 
-  console.log(`[scrapers] Open States: loaded ${partyMap.size} party entries`);
-  _openStatesCache = partyMap;
+  console.log(`[scrapers] Open States REST: loaded ${partyMap.size} party entries`);
+  _restCache = partyMap;
   return partyMap;
+}
+
+// Open States GraphQL - committees by name (single request for all legislators)
+interface OpenStatesNode {
+  name: string;
+  currentMemberships: Array<{
+    organization: {
+      name: string;
+      classification: string;
+    };
+  }>;
+}
+
+function parseCommitteeMembers(edges: Array<{ node: OpenStatesNode }>): Map<string, OpenStatesMember> {
+  const map = new Map<string, OpenStatesMember>();
+  for (const { node } of edges) {
+    const committees: string[] = [];
+    for (const m of node.currentMemberships) {
+      if (m.organization.classification === "committee") {
+        committees.push(m.organization.name.trim());
+      }
+    }
+    const member = { committees };
+    // index by full name AND last name for fuzzy fallback
+    map.set(node.name, member);
+    const lastName = node.name.split(" ").pop() ?? "";
+    if (lastName) map.set(`__last__${lastName.toLowerCase()}`, member);
+  }
+  return map;
+}
+
+async function _fetchOpenStatesCommittees(): Promise<{
+  senate: Map<string, OpenStatesMember>;
+  assembly: Map<string, OpenStatesMember>;
+}> {
+  const apiKey = process.env.OPEN_STATES_API_KEY;
+  if (!apiKey) {
+    console.warn("[scrapers] OPEN_STATES_API_KEY not set — committee data will be empty");
+    return { senate: new Map(), assembly: new Map() };
+  }
+
+  interface RawGraphQLResponse {
+    data?: {
+      senate?: { edges: Array<{ node: OpenStatesNode }> };
+      assembly1?: { edges: Array<{ node: OpenStatesNode }>; pageInfo: { hasNextPage: boolean; endCursor: string } };
+      assembly2?: { edges: Array<{ node: OpenStatesNode }> };
+    };
+    errors?: unknown[];
+  }
+
+  const query1 = `{
+    senate: people(memberOf: "ocd-organization/8291a233-623d-40e8-882d-21ec2d382c87", first: 100) {
+      edges { node { name currentMemberships { organization { name classification } } } }
+    }
+    assembly1: people(memberOf: "ocd-organization/26bb6306-85f0-4d10-bff7-d1cd5bdc0865", first: 100) {
+      edges { node { name currentMemberships { organization { name classification } } } }
+      pageInfo { hasNextPage endCursor }
+    }
+  }`;
+
+  const res1 = await fetch("https://openstates.org/graphql/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-KEY": apiKey, "User-Agent": UA },
+    body: JSON.stringify({ query: query1 }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res1.ok) throw new Error(`Open States GraphQL HTTP ${res1.status}`);
+
+  const data1 = await res1.json() as RawGraphQLResponse;
+  if (data1.errors?.length) console.warn("[scrapers] GraphQL errors:", JSON.stringify(data1.errors));
+
+  let assemblyEdges = [...(data1.data?.assembly1?.edges ?? [])];
+  const cursor = data1.data?.assembly1?.pageInfo?.endCursor;
+  const hasMore = data1.data?.assembly1?.pageInfo?.hasNextPage;
+
+  if (hasMore && cursor) {
+    const query2 = `{
+      assembly2: people(memberOf: "ocd-organization/26bb6306-85f0-4d10-bff7-d1cd5bdc0865", first: 100, after: "${cursor}") {
+        edges { node { name currentMemberships { organization { name classification } } } }
+      }
+    }`;
+    const res2 = await fetch("https://openstates.org/graphql/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-KEY": apiKey, "User-Agent": UA },
+      body: JSON.stringify({ query: query2 }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res2.ok) {
+      const data2 = await res2.json() as RawGraphQLResponse;
+      if (data2.errors?.length) console.warn("[scrapers] GraphQL page 2 errors:", JSON.stringify(data2.errors));
+      assemblyEdges = [...assemblyEdges, ...(data2.data?.assembly2?.edges ?? [])];
+    }
+  }
+
+  const result = {
+    senate: parseCommitteeMembers(data1.data?.senate?.edges ?? []),
+    assembly: parseCommitteeMembers(assemblyEdges),
+  };
+
+  console.log(`[scrapers] Open States GraphQL: ${result.senate.size} senators, ${result.assembly.size} assembly members`);
+  return result;
+}
+
+
+
+function fetchOpenStatesCommittees() {
+  if (!_graphqlCache) {
+    _graphqlCache = _fetchOpenStatesCommittees().catch(e => {
+      console.warn("[scrapers] Open States GraphQL failed:", e);
+      return { senate: new Map(), assembly: new Map() };
+      // don't reset cache - second caller shares this same empty result
+    });
+  }
+  return _graphqlCache;
 }
 
 
@@ -176,6 +299,7 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
   }
 
   await Promise.allSettled(members.map(async (p) => {
+    if (p.name === "VACANT SEAT") return;
     try {
       const pRes = await fetch(p.bio_url!, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(10_000) });
       if (!pRes.ok) return;
@@ -302,8 +426,11 @@ export async function fetchAssembly(): Promise<Politician[]> {
   const linkRe = /href="(?:https?:\/\/nyassembly\.gov)?\/mem\/([\w\-'.]+)"[^>]*>([\s\S]+?)<\/a>/g;
   let m: RegExpExecArray | null;
 
-  // fetch party map once for all members
-  const openStatesParty = await fetchOpenStatesNY();
+  // fetch party (REST) and committees (GraphQL) in parallel
+  const [openStatesParty, openStatesCommittees] = await Promise.all([
+    fetchOpenStatesParty(),
+    fetchOpenStatesCommittees(),
+  ]);
 
   while ((m = linkRe.exec(html)) !== null) {
     const slug = m[1];
@@ -316,10 +443,13 @@ export async function fetchAssembly(): Promise<Politician[]> {
     seen.add(district);
     const name = rawText.replace(/\s*District\s+\d+.*$/i, "").trim();
 
-    // resolve party from Open States map at parse time
+    // party from REST (district-based)
     const rawParty = openStatesParty.get(`lower:${district}`) ?? "";
     const rawParties = rawParty.split("/").map(s => s.trim()).filter(Boolean);
     const { party, allParties } = parseMultiParty(rawParties.length ? rawParties : (rawParty ? [rawParty] : []));
+
+    // committees from GraphQL (name-based)
+    const osCommittees = openStatesCommittees.assembly.get(name)?.committees ?? [];
 
     const politician: Politician = {
       id: `ny-assembly-${slug}`,
@@ -332,7 +462,7 @@ export async function fetchAssembly(): Promise<Politician[]> {
       district,
       neighborhoods: [],
       zip_codes: [],
-      committees: [],
+      committees: osCommittees,
       subcommittees: [],
       caucuses: [],
       bio_url: `https://nyassembly.gov/mem/${slug}`,
@@ -342,14 +472,18 @@ export async function fetchAssembly(): Promise<Politician[]> {
     members.push(politician);
   }
 
+  // enrich committees from nyassembly.gov (more detailed than Open States)
   const CHUNK = 10;
   for (let i = 0; i < members.length; i += CHUNK) {
     const chunk = members.slice(i, i + CHUNK);
     await Promise.allSettled(chunk.map(async (p) => {
       const slug = p.id.replace("ny-assembly-", "");
       const { committees, subcommittees } = await fetchAssemblyMemberCommittees(slug);
-      p.committees = committees;
-      p.subcommittees = subcommittees;
+      // only overwrite if nyassembly.gov returned real data; otherwise keep Open States committees
+      if (committees.length > 0 || subcommittees.length > 0) {
+        p.committees = committees;
+        p.subcommittees = subcommittees;
+      }
     }));
   }
 
@@ -415,16 +549,20 @@ export async function fetchSenate(): Promise<Politician[]> {
   const apiKey = process.env.NYS_SENATE_API_KEY;
   if (!apiKey) throw new Error("NYS_SENATE_API_KEY not set");
 
-  const [senateRes, openStatesParty] = await Promise.all([
-    fetch(`https://legislation.nysenate.gov/api/3/members/2025?key=${apiKey}&limit=200&full=true`, { signal: AbortSignal.timeout(15_000) }),
-    fetchOpenStatesNY(),
+  const currentYear = new Date().getFullYear();
+  const sessionYear = currentYear % 2 === 0 ? currentYear - 1 : currentYear;
+
+  // fetch Senate API, party (REST), and committees (GraphQL) all in parallel
+  const [senateRes, openStatesParty, openStatesCommittees] = await Promise.all([
+    fetch(`https://legislation.nysenate.gov/api/3/members/${sessionYear}?key=${apiKey}&limit=200&full=true`, { signal: AbortSignal.timeout(15_000) }),
+    fetchOpenStatesParty(),
+    fetchOpenStatesCommittees(),
   ]);
 
   if (!senateRes.ok) throw new Error(`NY Senate API HTTP ${senateRes.status}`);
   const data = await senateRes.json();
-  const currentYear = new Date().getFullYear();
-  const sessionYear = currentYear % 2 === 0 ? currentYear - 1 : currentYear; // NY sessions are odd years
-  const items = (data.result?.items as SenateApiMember[] ?? []).filter(m => m.chamber === "SENATE" && m.sessionYear === sessionYear);
+  const items = (data.result?.items as SenateApiMember[] ?? [])
+    .filter(m => m.chamber === "SENATE" && m.sessionYear === sessionYear);
 
   const politicians: Politician[] = items.map((m): Politician => {
     const district = m.districtCode != null ? String(m.districtCode) : null;
@@ -433,10 +571,19 @@ export async function fetchSenate(): Promise<Politician[]> {
     const name = m.fullName?.trim() ?? "N/A";
     const slug = senateSlug(m);
 
+    // party from REST (district-based)
     const rawParty = district ? (openStatesParty.get(`upper:${district}`) ?? "") : "";
     const rawParties = rawParty.split("/").map(s => s.trim()).filter(Boolean);
     const { party, allParties } = parseMultiParty(rawParties.length ? rawParties : (rawParty ? [rawParty] : []));
 
+    // committees from GraphQL (name-based)
+    const nameParts = name.replace(/\b(jr|sr|ii|iii|iv)\.?\s*$/i, "").trim().split(" ");
+    const lastName = nameParts.pop() ?? "";
+    const osCommittees =
+      openStatesCommittees.senate.get(name)?.committees ??
+      openStatesCommittees.senate.get(`__last__${lastName.toLowerCase()}`)?.committees ??
+      [];
+    
     const politician: Politician = {
       id: `ny-senate-${m.memberId ?? m.shortName}`,
       name,
@@ -448,7 +595,7 @@ export async function fetchSenate(): Promise<Politician[]> {
       district,
       neighborhoods: [],
       zip_codes: [],
-      committees: [],  // nysenate.gov is Cloudflare-blocked; committees unavailable for now
+      committees: osCommittees,
       subcommittees: [],
       caucuses: [],
       bio_url: `https://www.nysenate.gov/senators/${slug}`,
