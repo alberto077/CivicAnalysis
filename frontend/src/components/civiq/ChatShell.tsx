@@ -159,7 +159,7 @@ export function ChatShell() {
             </p>
           </div>
 
-          <div className="glass-card flex min-h-[420px] flex-1 flex-col p-4 sm:p-6">
+          <div className="glass-card feature-border-glow feature-border-glow-chat flex min-h-[420px] flex-1 flex-col p-4 sm:p-6">
             <div className="flex-1 space-y-4 overflow-y-auto pr-1">
               {messages.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">

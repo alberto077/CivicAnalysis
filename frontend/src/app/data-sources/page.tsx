@@ -1,6 +1,7 @@
 import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
+import { DataUsageKpis } from "@/components/civiq/DataUsageKpis";
 import { Database, Globe, Link2, Cpu, Zap, Layers, ShieldCheck, ExternalLink, Info } from "lucide-react";
 
 export default function DataSourcesPage() {
@@ -128,6 +129,7 @@ export default function DataSourcesPage() {
             </MotionReveal>
           </div>
         </div>
+        <DataUsageKpis />
 
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
