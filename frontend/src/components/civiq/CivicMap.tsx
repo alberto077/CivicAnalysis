@@ -255,6 +255,7 @@ const PIN_META: Record<PinCategory, { label: string; color: string }> = {
 
 const INITIAL_BOUNDARY_LAYERS: BoundaryLayer[] = [
   { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.",             govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/boundaries-districts.geojson", enabled: true },
+// codeforgermany/click_that_hood (GitHub, MIT license) - original data: NYC Open Data Borough Boundaries (DCP)
   { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",                govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "/boundaries-boroughs.geojson", enabled: false },
 // # Neighborhoods — NYC DCP Neighborhood Tabulation Areas via Socrata
   { id: "neighborhoods", label: "NYC Neighborhoods",    description: "195 Neighborhood Tabulation Areas (NTAs) defined by NYC Planning. These are aggregations of census tracts that approximate well-known neighborhood names — useful for understanding local character and community context within council districts.", govLevel: "City", color: "#db2777", weight: 1, opacity: 0.4, url: "/boundaries-neighborhoods.geojson", enabled: false },
@@ -553,6 +554,7 @@ function CivicEventsMap() {
   // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   const togglePin = (cat: PinCategory) => setActivePinCats((p) => { const n = new Set(p); n.has(cat) ? n.delete(cat) : n.add(cat); return n; });
   const toggleBoundary = (id: string) => setBoundaryLayers((prev) => prev.map((bl) => bl.id === id ? { ...bl, enabled: !bl.enabled } : bl));
+  // const [boundaryPanelOpen, setBoundaryPanelOpen] = useState(true);
 
   return (
     <div className="space-y-6">
@@ -569,13 +571,13 @@ function CivicEventsMap() {
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-999 pointer-events-none">
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 backdrop-blur-md shadow-md border border-slate-200/60 text-[11px] font-semibold text-slate-500 whitespace-nowrap">
               <Calendar className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-              Permanent civic locations — live event pins coming soon
+              Permanent Locations — live event pins coming soon
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-4 space-y-4">
-          {/* pin toggles */}
+          {/* location toggles */}
           <div className="bg-white rounded-4xl border border-slate-200 p-5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Location Types</p>
             <div className="space-y-1.5">
@@ -655,6 +657,7 @@ function CivicEventsMap() {
           <span className="font-bold text-slate-500">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
         </p>
       </div>
+
     </div>
   );
 }
