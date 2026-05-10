@@ -32,6 +32,7 @@
     "topojson-client": "^3.1.0"
   },
   "devDependencies": {
+    "@next/swc-win32-x64-msvc": "^16.2.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/d3-geo": "^3.1.0",
     "@types/node": "^20",
@@ -41,6 +42,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "lightningcss": "^1.32.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^5"
   }
