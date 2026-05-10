@@ -3,6 +3,9 @@ import { Politician } from "./politicians";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
+// module-level cache so fetchAssembly + fetchSenate share one API call
+let _openStatesCache: Map<string, string> | null = null;
+
 function stripHtml(s: string): string {
   return s.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -23,11 +26,9 @@ function normalizeParty(raw: string): string {
   return raw.trim();
 }
 
-// for multiple parties listed (eg. Republican, Conservative)
 function parseMultiParty(parties: string[]): { party: string; allParties: string[] } {
   const normalized = parties.map(normalizeParty).filter(p => p && p !== "N/A");
   if (normalized.length === 0) return { party: "N/A", allParties: [] };
-  // prefer primary party
   const primary = normalized.find(p => p === "Democrat" || p === "Republican") ?? normalized[0];
   return { party: primary, allParties: normalized };
 }
@@ -46,6 +47,58 @@ function ordinal(n: number): string {
   const v = n % 100;
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
 }
+
+// Open States API - NY legislators
+interface OpenStatePerson {
+  party: string;
+  current_role: {
+    org_classification: "upper" | "lower";
+    district: string;
+  };
+}
+
+interface OpenStatesResponse {
+  results: OpenStatePerson[];
+  pagination: { max_page: number };
+}
+
+async function fetchOpenStatesNY(): Promise<Map<string, string>> {
+  if (_openStatesCache) return _openStatesCache;
+
+  const apiKey = process.env.OPEN_STATES_API_KEY;
+  if (!apiKey) {
+    console.warn("[scrapers] OPEN_STATES_API_KEY not set — party data will be N/A");
+    return new Map();
+  }
+
+  const partyMap = new Map<string, string>();
+  let page = 1;
+  let maxPage = 1;
+
+  while (page <= maxPage) {
+    try {
+      const url = `https://v3.openstates.org/people?jurisdiction=ny&per_page=100&page=${page}&apikey=${apiKey}`;
+      const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15_000) });
+      if (!res.ok) { console.warn(`[scrapers] Open States page ${page} HTTP ${res.status}`); break; }
+      const data = await res.json() as OpenStatesResponse;
+      maxPage = data.pagination.max_page;
+      for (const p of data.results) {
+        const key = `${p.current_role.org_classification}:${p.current_role.district}`;
+        partyMap.set(key, p.party);
+      }
+      page++;
+    } catch (e) {
+      console.warn(`[scrapers] Open States fetch failed on page ${page}:`, e);
+      break;
+    }
+  }
+
+  console.log(`[scrapers] Open States: loaded ${partyMap.size} party entries`);
+  _openStatesCache = partyMap;
+  return partyMap;
+}
+
+
 
 // NYC Council ----------------------------------------------------------------------
 function councilBorough(d: number): string {
@@ -102,7 +155,7 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
 
     members.push({
       id: `nyc-council-d${district}`,
-      name: name,
+      name,
       office: "NYC Council Member",
       level: "City Council",
       party: rowParty,
@@ -119,7 +172,6 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
     });
   }
 
-  // Enrich in parallel
   await Promise.allSettled(members.map(async (p) => {
     try {
       const pRes = await fetch(p.bio_url!, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(10_000) });
@@ -146,7 +198,7 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
         const href = $(el).attr("href") || "";
         const text = $(el).text().trim();
         if (!text || text === "Committees" || text === "Caucuses") return;
-
+        
         if (href.includes("/committees/")) {
           if (text.toLowerCase().includes("subcommittee")) p.subcommittees!.push(text);
           else p.committees!.push(text);
@@ -170,8 +222,8 @@ export async function fetchCityCouncil(): Promise<Politician[]> {
 function assemblyBorough(d: number): string {
   // NYC boroughs (heuristic ranges; not exact fit)
   if (d >= 23 && d <= 39) return "Queens";
-  if (d >= 41 && d <= 63) return "Brooklyn";
-  if (d === 60) return "Staten Island"; // overlap: 60 spans SI + Brooklyn
+  if (d >= 40 && d <= 59) return "Brooklyn";
+  if (d === 60) return "Staten Island";
   if (d === 61) return "Staten Island";
   if (d === 62) return "Staten Island";
   if (d === 63) return "Staten Island";
@@ -200,27 +252,32 @@ async function fetchAssemblyMemberCommittees(slug: string): Promise<{ committees
     const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(8_000) });
     if (!res.ok) return { committees: [], subcommittees: [] };
     const html = await res.text();
+    if (html.length < 500 || html.includes("not in allowlist")) return { committees: [], subcommittees: [] };
     const $ = cheerio.load(html);
 
     const committees: string[] = [];
     const subcommittees: string[] = [];
 
-    $("a[href*='/comm/?id='], a[href*='comm/?id=']").each((_, el) => {
-      const text = $(el).text().trim();
-      if (!text || text.length < 3) return;
-      if (text.toLowerCase().includes("subcommittee")) subcommittees.push(text);
-      else committees.push(text);
+    // primary selector: <strong>Member, Committee on X</strong> followed by <a class="comm-mem-link">
+    $("a.comm-mem-link").each((_, el) => {
+      const strong = $(el).prev("strong");
+      if (!strong.length) return;
+      const raw = strong.text().trim();
+      const name = raw.replace(/^(Ranking Member|Member|Chair|Co-Chair),\s*/i, "").trim();
+      if (!name || name.length < 3) return;
+      if (name.toLowerCase().includes("subcommittee")) subcommittees.push(name);
+      else committees.push(name);
     });
 
+    // fallback: any /comm/?id= links
     if (committees.length === 0 && subcommittees.length === 0) {
-      $("a").each((_, el) => {
+      $("a[href*='/comm/']").each((_, el) => {
         const href = $(el).attr("href") ?? "";
+        if (!href.includes("?id=")) return;
         const text = $(el).text().trim();
         if (!text || text.length < 3 || text === "Committee Home") return;
-        if (href.match(/\/comm\//i) && !href.includes("/mem/") && !href.includes("index")) {
-          if (text.toLowerCase().includes("subcommittee")) subcommittees.push(text);
-          else committees.push(text);
-        }
+        if (text.toLowerCase().includes("subcommittee")) subcommittees.push(text);
+        else committees.push(text);
       });
     }
 
@@ -233,31 +290,6 @@ async function fetchAssemblyMemberCommittees(slug: string): Promise<{ committees
   }
 }
 
-async function fetchAssemblyMemberParty(slug: string): Promise<string> {
-  const url = `https://nyassembly.gov/mem/${slug}/`;
-  try {
-    const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(8_000) });
-    if (!res.ok) return "N/A";
-    const html = await res.text();
-    const $ = cheerio.load(html);
-
-    const partyEl = $(".party, .mem-party, [class*='party']").first().text().trim();
-    if (partyEl) return normalizeParty(partyEl);
-
-    const headerText = $("header, .mem-header, .assembly-member-header, h1, h2").first().parent().text();
-    const m = headerText.match(/\b(Working Families|Green|Republican|Conservative|Democrat(?:ic)?|Independent)\s+(?:Party\s+)?Member\b|\b(Working Families|Green|Republican|Conservative|Democrat(?:ic)?)\s+Party\b/i);
-    if (m) return normalizeParty(m[1] ?? m[2]);
-
-    const metaDesc = $('meta[name="description"]').attr("content") || "";
-    const mm = metaDesc.match(/\b(Working Families|Green|Republican|Conservative|Democrat(?:ic)?)\b/i);
-    if (mm) return normalizeParty(mm[1]);
-
-    return "N/A";
-  } catch {
-    return "N/A";
-  }
-}
-
 export async function fetchAssembly(): Promise<Politician[]> {
   const res = await fetch("https://nyassembly.gov/mem/", { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15_000) });
   if (!res.ok) throw new Error(`Assembly page HTTP ${res.status}`);
@@ -266,6 +298,9 @@ export async function fetchAssembly(): Promise<Politician[]> {
   const seen = new Set<string>();
   const linkRe = /href="(?:https?:\/\/nyassembly\.gov)?\/mem\/([\w\-'.]+)"[^>]*>([\s\S]+?)<\/a>/g;
   let m: RegExpExecArray | null;
+
+  // fetch party map once for all members
+  const openStatesParty = await fetchOpenStatesNY();
 
   while ((m = linkRe.exec(html)) !== null) {
     const slug = m[1];
@@ -278,13 +313,18 @@ export async function fetchAssembly(): Promise<Politician[]> {
     seen.add(district);
     const name = rawText.replace(/\s*District\s+\d+.*$/i, "").trim();
 
-    members.push({
+    // resolve party from Open States map at parse time
+    const rawParty = openStatesParty.get(`lower:${district}`) ?? "";
+    const rawParties = rawParty.split("/").map(s => s.trim()).filter(Boolean);
+    const { party, allParties } = parseMultiParty(rawParties.length ? rawParties : (rawParty ? [rawParty] : []));
+
+    const politician: Politician = {
       id: `ny-assembly-${slug}`,
       name,
       office: "NY Assembly Member",
       level: "State Assembly",
-      party: "N/A",
-      political_stance: "N/A",
+      party,
+      political_stance: partyToStance(party),
       borough: assemblyBorough(Number(district)),
       district,
       neighborhoods: [],
@@ -294,21 +334,17 @@ export async function fetchAssembly(): Promise<Politician[]> {
       caucuses: [],
       bio_url: `https://nyassembly.gov/mem/${slug}`,
       photo_url: `https://nyassembly.gov/mem/pic/${slug}.jpg`,
-    });
+    };
+    if (allParties.length > 1) politician.allParties = allParties;
+    members.push(politician);
   }
 
-  // Enrich party + committees in parallel (chunked to avoid hammering the server)
   const CHUNK = 10;
   for (let i = 0; i < members.length; i += CHUNK) {
     const chunk = members.slice(i, i + CHUNK);
     await Promise.allSettled(chunk.map(async (p) => {
       const slug = p.id.replace("ny-assembly-", "");
-      const [party, { committees, subcommittees }] = await Promise.all([
-        fetchAssemblyMemberParty(slug),
-        fetchAssemblyMemberCommittees(slug),
-      ]);
-      p.party = party;
-      p.political_stance = partyToStance(party);
+      const { committees, subcommittees } = await fetchAssemblyMemberCommittees(slug);
       p.committees = committees;
       p.subcommittees = subcommittees;
     }));
@@ -328,45 +364,6 @@ function senateBorough(d: number): string {
   return "New York";
 }
 
-function senateSlug(fullName: string): string {
-  return fullName
-    .toLowerCase()
-    .replace(/\b[a-z]\.\s*/g, "")
-    .replace(/\s+(jr|sr|ii|iii|iv)\.?\s*$/i, "")
-    .trim()
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-async function fetchSenatorDetails(slug: string): Promise<{ allParties: string[]; party: string; committees: string[] }> {
-  const url = `https://www.nysenate.gov/senators/${slug}/about`;
-  try {
-    const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(10_000) });
-    if (!res.ok) return { allParties: [], party: "N/A", committees: [] };
-    const html = await res.text();
-    const $ = cheerio.load(html);
-
-    // Party: the subtitle element lists party/parties
-    const partyRaw = $(".c-subpage-header--subtitle02.lgt-text").first().text().trim();
-    const rawParties = partyRaw.split(/[,\/]/).map(s => s.trim()).filter(Boolean);
-    const { party, allParties } = parseMultiParty(rawParties.length ? rawParties : (partyRaw ? [partyRaw] : []));
-
-    const committees: string[] = [];
-    $("[id*='senatorcommittees'] a, [id*='senatorcommittees'] li").each((_, el) => {
-      const text = $(el).text().trim();
-      if (!text || text.length < 4) return;
-      if (/^(committee on committees|view all|more|senator)$/i.test(text)) return;
-      committees.push(text);
-    });
-
-    return { allParties, party, committees: [...new Set(committees)] };
-  } catch {
-    return { allParties: [], party: "N/A", committees: [] };
-  }
-}
-
 interface SenateApiMember {
   incumbent: boolean;
   chamber: string;
@@ -377,15 +374,50 @@ interface SenateApiMember {
   memberId?: number;
   party?: string;
   committees?: Array<{ name: string }>;
+  person?: {
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    suffix?: string;
+  };
+}
+
+function senateSlug(m: SenateApiMember): string {
+  const p = m.person;
+  if (p?.firstName && p?.lastName) {
+    const parts = [
+      p.firstName,
+      p.middleName?.replace(/\.$/, ""),  // "P." → "P"
+      p.lastName,
+      p.suffix?.replace(/\.$/, ""),      // "Jr." → "Jr"
+    ].filter(Boolean).join(" ");
+    return parts
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+  // fallback to fullName
+  return (m.fullName ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export async function fetchSenate(): Promise<Politician[]> {
   const apiKey = process.env.NYS_SENATE_API_KEY;
   if (!apiKey) throw new Error("NYS_SENATE_API_KEY not set");
 
-  const res = await fetch(`https://legislation.nysenate.gov/api/3/members/2025?key=${apiKey}&limit=200&full=true`, { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok) throw new Error(`NY Senate API HTTP ${res.status}`);
-  const data = await res.json();
+  const [senateRes, openStatesParty] = await Promise.all([
+    fetch(`https://legislation.nysenate.gov/api/3/members/2025?key=${apiKey}&limit=200&full=true`, { signal: AbortSignal.timeout(15_000) }),
+    fetchOpenStatesNY(),
+  ]);
+
+  if (!senateRes.ok) throw new Error(`NY Senate API HTTP ${senateRes.status}`);
+  const data = await senateRes.json();
   const items = (data.result?.items as SenateApiMember[] ?? []).filter(m => m.incumbent && m.chamber === "SENATE");
 
   const politicians: Politician[] = items.map((m): Politician => {
@@ -393,45 +425,32 @@ export async function fetchSenate(): Promise<Politician[]> {
     const d = Number(district ?? 0);
     const photoUrl = m.imgName ? `https://www.nysenate.gov/sites/default/files/styles/4x3/public/${m.imgName}` : null;
     const name = m.fullName?.trim() ?? "N/A";
-    const apiSlug = (m.shortName as string | undefined)?.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-") ?? "";
-    const slug = apiSlug || senateSlug(name);
+    const slug = senateSlug(m);
 
-    return {
+    const rawParty = district ? (openStatesParty.get(`upper:${district}`) ?? "") : "";
+    const rawParties = rawParty.split("/").map(s => s.trim()).filter(Boolean);
+    const { party, allParties } = parseMultiParty(rawParties.length ? rawParties : (rawParty ? [rawParty] : []));
+
+    const politician: Politician = {
       id: `ny-senate-${m.memberId ?? m.shortName}`,
       name,
       office: "NY State Senator",
       level: "State Senate",
-      party: normalizeParty(m.party || "N/A"),
-      political_stance: "N/A",
+      party,
+      political_stance: partyToStance(party),
       borough: senateBorough(d),
       district,
       neighborhoods: [],
       zip_codes: [],
-      committees: m.committees?.map(c => c.name) || [],
+      committees: [],  // nysenate.gov is Cloudflare-blocked; committees unavailable for now
       subcommittees: [],
       caucuses: [],
       bio_url: `https://www.nysenate.gov/senators/${slug}`,
       photo_url: photoUrl,
     };
+    if (allParties.length > 1) politician.allParties = allParties;
+    return politician;
   });
-
-  // Enrich with scraped party + committees from each senator's about page
-  const CHUNK = 8;
-  for (let i = 0; i < politicians.length; i += CHUNK) {
-    const chunk = politicians.slice(i, i + CHUNK);
-    await Promise.allSettled(chunk.map(async (p) => {
-      const slug = p.bio_url?.split("/senators/")[1]?.replace(/\/$/, "") ?? senateSlug(p.name);
-      const { party, allParties, committees } = await fetchSenatorDetails(slug);
-      if (party && party !== "N/A") {
-        p.party = party;
-        (p as Politician & { allParties: string[] }).allParties = allParties;
-      }
-      p.political_stance = partyToStance(p.party);
-      // Only overwrite API-sourced committees if we actually scraped some
-      if (committees.length > 0) p.committees = committees;
-      // else keep whatever the API returned
-    }));
-  }
 
   return politicians;
 }
@@ -538,7 +557,7 @@ export async function fetchUSSenate(): Promise<Politician[]> {
         "Subcommittee on Transportation, Housing and Urban Development, and Related Agencies",
         "Subcommittee on Cybersecurity",
         "Subcommittee on Emerging Threats and Capabilities",
-        "Subcommittee on Strategic Forces"
+        "Subcommittee on Strategic Forces",
       ],
       caucuses: ["Women's Caucus"],
       bio_url: "https://www.gillibrand.senate.gov/",
