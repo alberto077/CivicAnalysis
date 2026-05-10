@@ -37,7 +37,9 @@ export async function getDistricts(): Promise<District[]> {
 }
 
 export async function getDistrictsMap(): Promise<unknown> {
-  const res = await fetch("/districts.geojson", { cache: "force-cache" });
+  const res = await fetch("/boundaries-districts.geojson", {
+  cache: "force-cache",
+});
   if (!res.ok) throw new Error("Failed to load districts.geojson");
   return await res.json();
 }
