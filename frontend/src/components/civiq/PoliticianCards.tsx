@@ -5,7 +5,7 @@ import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, Search, X, RotateCcw, Info, ExternalLink,
-  MapPin, ChevronDown, ChevronUp, Briefcase, Sparkles, BookOpen, Users,
+  ChevronDown, ChevronUp, BookOpen, Users,
   ChevronsUp, ChevronsDown
 } from "lucide-react";
 import {
@@ -87,16 +87,8 @@ function getLearnMoreUrl(p: Politician) {
   )}`;
 }
 
-// TODO: replace with better/relevant data for state/federal
-const SCOPE_BULLETS: Record<string, string[]> = {
-  "State Assembly": ["Lower chamber of NY Legislature", "State budget & education", "Represents ~130k residents"],
-  "State Senate": ["Upper chamber of NY Legislature", "Confirms judges & officials", "Represents ~310k residents"],
-  "U.S. House": ["Federal legislation & appropriations", "Represents ~760k residents", "Serves on House committees"],
-  "U.S. Senate": ["Represents all ~20M New Yorkers", "Treaties & federal judiciary", "Serves on Senate committees"],
-};
 
-
-function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: string[] }) {
+function PoliticianCard({ p }: { p: Politician, userIssues?: string[] }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const level = getLevelKey(p);
   const ext = p as { phone?: string; email?: string; senate_class?: string; next_election?: string; allParties?: string[] };
@@ -108,23 +100,23 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="relative h-[420px] w-full [perspective:1000px] group"
+      className="relative h-105 w-full perspective-[1000px] group"
       onClick={() => setIsFlipped(f => !f)}
     >
       <motion.div
-        className="relative h-full w-full [transform-style:preserve-3d] cursor-pointer"
+        className="relative h-full w-full transform-3d cursor-pointer"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
       >
 
         {/* Card Front */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--border)] bg-white [backface-visibility:hidden] shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden min-h-0">
-          <div className={`h-1 w-full flex-shrink-0 ${getLevelAccent(level)}`} />
+        <div className="absolute inset-0 h-full w-full rounded-3xl border border-(--border) bg-white backface-hidden shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden min-h-0">
+          <div className={`h-1 w-full shrink-0 ${getLevelAccent(level)}`} />
           <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
             {/* Header */}
-            <div className="mb-5 flex items-start justify-between flex-shrink-0">
+            <div className="mb-5 flex items-start justify-between shrink-0">
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-2xl font-bold leading-tight text-[var(--foreground)]">{cleanedName}</h3>
+                <h3 className="font-display text-2xl font-bold leading-tight text-foreground">{cleanedName}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className={`rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${getOfficeStyles(p.office)}`}>{p.office}</span>
                   {title && <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">{title}</span>}
@@ -136,20 +128,20 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-4">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--muted)] font-medium">Borough/County</span>
-                <span className="font-bold text-[var(--foreground)]">{p.borough || "N/A"}</span>
+                <span className="text-(--muted) font-medium">Borough/County</span>
+                <span className="font-bold text-foreground">{p.borough || "N/A"}</span>
               </div>
 
               {/* Party chips */}
               <div className="flex justify-between items-start text-sm gap-2">
-                <span className="text-[var(--muted)] font-medium flex-shrink-0">Party</span>
+                <span className="text-(--muted) font-medium shrink-0">Party</span>
                 <div className="flex flex-wrap gap-1 justify-end">
                   {allParties.length > 0 ? allParties.map((party, i) => (
                     <span key={i} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${getPartyStyles(party)}`}>
                       {party}
                     </span>
                   )) : (
-                    <span className="text-[var(--foreground)] font-bold text-sm">N/A</span>
+                    <span className="text-foreground font-bold text-sm">N/A</span>
                   )}
                 </div>
               </div>
@@ -163,7 +155,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
 
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100 flex-shrink-0">
+            <div className="mt-5 pt-4 border-t border-slate-100 shrink-0">
               <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
@@ -173,15 +165,15 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
         </div>
 
         {/* Card Back */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-[var(--accent-soft)] bg-slate-50 [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-inner flex flex-col overflow-hidden min-h-0">
-          <div className={`h-1 w-full flex-shrink-0 ${getLevelAccent(level)}`} />
+        <div className="absolute inset-0 h-full w-full rounded-3xl border border-(--accent-soft) bg-slate-50 backface-hidden transform-[rotateY(180deg)] shadow-inner flex flex-col overflow-hidden min-h-0">
+          <div className={`h-1 w-full shrink-0 ${getLevelAccent(level)}`} />
           <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
-            <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-4">
+            <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4">
 
               {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Neighborhoods Served</span>
-                  <div className="max-h-[80px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="max-h-full pr-1">
                     <div className="flex flex-wrap gap-1.5">
                       {p.neighborhoods!.map((n, i) => (
                         <span key={`${n}-${i}`} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg whitespace-nowrap">
@@ -197,7 +189,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">ZIP Codes Served</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-[var(--accent)]">{z}</span>)}
+                    {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-(--accent)">{z}</span>)}
                   </div>
                 </div>
               )}
@@ -243,7 +235,7 @@ function PoliticianCard({ p, userIssues = [] }: { p: Politician, userIssues?: st
 
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-200 flex-shrink-0">
+            <div className="mt-4 pt-4 border-t border-slate-200 shrink-0">
               <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
@@ -333,7 +325,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     if (userBorough && selectedBoroughs.length === 0) {
       setSelectedBoroughs([userBorough]);
     }
-  }, [userBorough]);
+  }, [selectedBoroughs.length, userBorough]);
 
   const isAnyFilterActive = useMemo(() => {
     return selectedBoroughs.length > 0 ||
@@ -376,6 +368,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           );
           setDynamicBoroughs(filtered.length ? filtered : NYC_BOROUGHS);
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         setDynamicBoroughs(["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]);
       }
@@ -512,16 +505,16 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto mt-10 max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <MotionReveal>
         <div className="flex items-start justify-between">
-          <h1 className="font-display text-4xl font-bold tracking-tight text-[var(--foreground)] sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
             Representative Directory
           </h1>
         </div>
 
         {/* Understanding Your Representation Section */}
-        <div className="mt-10 mb-16 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300">
+        <div className="mt-10 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300">
           <button
             onClick={() => setIsReferenceOpen(!isReferenceOpen)}
             className={`w-full bg-slate-50 px-8 flex items-center justify-between hover:bg-slate-100/50 transition-all ${isReferenceOpen ? 'py-6 border-b border-slate-100' : 'py-4'}`}
@@ -585,7 +578,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-8 bg-slate-50/30 border-t border-slate-100">
                   <a href="https://www.nysenate.gov/legislation/laws/CONSOLIDATED" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-blue-50 text-blue-600"><BookOpen className="h-5 w-5" /></div>
                       <div>
@@ -593,10 +586,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500">Official NY State Legislative database</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-[var(--accent)]" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
                   </a>
                   <a href="https://www.nysenate.gov/senators-committees" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Users className="h-5 w-5" /></div>
                       <div>
@@ -604,10 +597,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500">View Senate committee assignments</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-[var(--accent)]" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
                   </a>
                   <a href="https://www.house.gov/representatives#new-york" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-[var(--accent)] transition-all group">
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-purple-50 text-purple-600"><Info className="h-5 w-5" /></div>
                       <div>
@@ -615,12 +608,12 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500">US House & Senate members</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-[var(--accent)]" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
                   </a>
                 </div>
 
                 <div className="bg-slate-50/50 p-4 px-8 text-[11px] text-slate-400 italic border-t border-slate-100">
-                  *Note: Directory reflects fresh data sourced from live integrations and official government directories. See <a className="text-[var(--accent)] hover:underline" href="/data-sources">data-sources</a> for more info.
+                  *Note: Directory reflects fresh data sourced from live integrations and official government directories. See <a className="text-(--accent) hover:underline" href="/data-sources">data-sources</a> for more info.
                 </div>
               </motion.div>
             )}
@@ -642,7 +635,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 setSelectedCaucus("All");
               }}
               className={`px-2 py-4 font-bold text-sm transition-colors border-b-2 text-center ${selectedLevel === level
-                ? "border-[var(--accent)] text-[var(--accent)] bg-slate-50/50"
+                ? "border-(--accent) text-(--accent) bg-slate-50/50"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/30"
                 }`}
             >
@@ -653,13 +646,13 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       </MotionReveal>
 
       {/* FILTERS */}
-      <MotionReveal className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm mb-12">
+      <MotionReveal className="bg-white p-6 rounded-4xl border border-slate-200 shadow-sm mb-12">
         <div className="space-y-5">
 
           {/* Row 1: Search + District + Reset */}
           <div className="flex flex-wrap gap-3 items-end">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 min-w-50">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1.5 px-1">Search</span>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -668,7 +661,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Name, committee, district..."
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-shadow"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-(--accent-soft) transition-shadow"
                 />
                 {searchTerm && (
                   <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -679,11 +672,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             </div>
 
             {/* District */}
-            <label className="flex flex-col gap-1.5 min-w-[130px]">
+            <label className="flex flex-col gap-1.5 min-w-32.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">District</span>
               <div className="relative">
                 <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
                   {availableDistricts.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -693,7 +686,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             {/* Reset */}
             <div className="flex items-end">
               <button onClick={clearAllFilters} disabled={!isAnyFilterActive}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all h-[42px] ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"}`}>
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all h-10.5 ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"}`}>
                 <RotateCcw className="h-4 w-4" />
                 Reset
               </button>
@@ -709,7 +702,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 const active = selectedBoroughs.includes(b);
                 return (
                   <button key={b} onClick={() => toggleBorough(b)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}>
                     {active && <Check className="h-3 w-3" />}
                     {b}
                   </button>
@@ -727,7 +720,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 const active = selectedParties.includes(party);
                 return (
                   <button key={party} onClick={() => toggleParty(party)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-300`}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-300`}`}>
                     {active && <Check className="h-3 w-3" />}
                     {party}
                   </button>
@@ -738,33 +731,33 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
           {/* Row 3: Committee / Subcommittee / Caucus dropdowns */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Committee</span>
               <div className="relative">
                 <select value={selectedCommittee} onChange={(e) => setSelectedCommittee(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
                   {availableCommittees.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </label>
 
-            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Subcommittee</span>
               <div className="relative">
                 <select value={selectedSubcommittee} onChange={(e) => setSelectedSubcommittee(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
                   {availableSubcommittees.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               </div>
             </label>
 
-            <label className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Caucus</span>
               <div className="relative">
                 <select value={selectedCaucus} onChange={(e) => setSelectedCaucus(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-all cursor-pointer">
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
                   {availableCaucuses.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -784,7 +777,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-[420px] animate-pulse rounded-3xl bg-slate-100" />
+              <div key={i} className="h-105 animate-pulse rounded-3xl bg-slate-100" />
             ))}
           </div>
         ) : (
@@ -813,7 +806,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">No representatives found</h3>
                 <p className="text-slate-500 mt-2">Try adjusting your filters or search term</p>
-                <button onClick={clearAllFilters} className="mt-6 text-[var(--accent)] font-bold hover:underline">
+                <button onClick={clearAllFilters} className="mt-6 text-(--accent) font-bold hover:underline">
                   Clear all filters
                 </button>
               </div>
@@ -822,10 +815,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             {visibleCount < filteredPoliticians.length && (
               <div className="mt-16 flex flex-wrap justify-center gap-4">
                 <button onClick={() => setVisibleCount(prev => prev + 24)}
-                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-[var(--accent)] hover:shadow-lg active:scale-95">
+                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-(--accent) hover:shadow-lg active:scale-95">
                   <span>Show More</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-[var(--accent)] transition-transform group-hover:translate-y-0.5" />
-                  <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm">
+                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-(--accent) transition-transform group-hover:translate-y-0.5" />
+                  <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-(--accent) text-white text-[10px] font-bold shadow-sm">
                     +{filteredPoliticians.length - visibleCount}
                   </div>
                 </button>
@@ -833,7 +826,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   className="relative flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-bold transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 text-sm">
                   <span>Show All</span>
                   <ChevronDown className="h-5 w-5 text-slate-400" />
-                  <span className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-[var(--accent)] text-white text-[10px] font-bold shadow-sm border-1 border-slate-200">
+                  <span className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-(--accent) text-white text-[10px] font-bold shadow-sm border border-slate-200">
                     = {filteredPoliticians.length}
                   </span>
                 </button>
@@ -842,11 +835,11 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
             <div className="fixed bottom-28 right-8 z-50 flex flex-col gap-2">
               <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95" title="Scroll to top">
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-(--accent) hover:border-(--accent) transition-all active:scale-95" title="Scroll to top">
                 <ChevronsUp className="h-5 w-5" />
               </button>
               <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all active:scale-95" title="Scroll to bottom">
+                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-(--accent) hover:border-(--accent) transition-all active:scale-95" title="Scroll to bottom">
                 <ChevronsDown className="h-5 w-5" />
               </button>
             </div>
