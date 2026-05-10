@@ -413,7 +413,7 @@ function RepCardItem({ card }: { card: RepCard }) {
   );
 }
 
-//  Civic Events - leaflet map
+//  Civic Events/Hub - leaflet map
 function CivicEventsMap() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -603,7 +603,7 @@ function CivicEventsMap() {
 
           {/* boundary toggles */}
           <div className="bg-white rounded-4xl border border-slate-200 p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Boundary Lines</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Boundary Lines - City, State, Federal</p>
             <div className="space-y-1.5">
               {boundaryLayers.map((bl) => (
                 <button key={bl.id} onClick={() => toggleBoundary(bl.id)}
@@ -792,7 +792,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "nys",       label: "NYS Explorer", icon: <Layers className="h-3.5 w-3.5" /> },
     { id: "nyc",       label: "NYC Explorer", icon: <MapIcon className="h-3.5 w-3.5" /> },
-    { id: "events",    label: "Civic Events", icon: <Calendar className="h-3.5 w-3.5" /> },
+    { id: "events",    label: "Civic Hub", icon: <Calendar className="h-3.5 w-3.5" /> },
     { id: "resources", label: "Resources",    icon: <Info className="h-3.5 w-3.5" /> },
   ];
 
