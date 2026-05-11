@@ -49,7 +49,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
       </MotionReveal>
 
       <MotionReveal className="mt-10">
-        <div className="glass-card overflow-hidden rounded-2xl md:rounded-3xl">
+        <div className="glass-card feature-border-glow feature-border-glow-updates overflow-hidden rounded-2xl md:rounded-3xl">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div

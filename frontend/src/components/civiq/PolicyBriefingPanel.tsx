@@ -99,7 +99,7 @@ export function PolicyBriefingPanel({
       </MotionReveal>
 
       <MotionReveal className="mt-10">
-        <div className="lift-card overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl transition-[border-color,box-shadow] duration-300 sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)]">
+        <div className="lift-card feature-border-glow feature-border-glow-briefing overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl transition-[border-color,box-shadow] duration-300 sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)]">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div

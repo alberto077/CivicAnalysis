@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -192,83 +191,101 @@ body {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Themed scrollbar — used by dropdown panels and any opt-in scroll containers */
+/* Native form controls follow OS light/dark when appropriate */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/*
+ * Site-wide scrollbars (viewport + all overflow containers):
+ * Light = deeper slate thumb; Dark = bright thumb + soft glow.
+ * Firefox: thin scrollbars + thumb/track on all elements.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 54, 93, 0.42) transparent;
+}
+
+html.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.48) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  background: linear-gradient(
+    180deg,
+    rgba(45, 74, 108, 0.5) 0%,
+    rgba(26, 54, 93, 0.32) 100%
+  );
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(45, 74, 108, 0.62) 0%,
+    rgba(26, 54, 93, 0.44) 100%
+  );
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+}
+
+html.dark *::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.58) 0%,
+    rgba(255, 255, 255, 0.24) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 8px rgba(215, 230, 252, 0.42),
+    0 0 20px rgba(170, 200, 240, 0.22);
+}
+
+html.dark *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.34) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 14px rgba(225, 238, 255, 0.55),
+    0 0 28px rgba(185, 210, 245, 0.32);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Opt-in: same as global (for class hooks / future overrides) */
 .themed-scrollbar,
 .filter-dd-panel {
   scrollbar-width: thin;
-  scrollbar-color: rgba(26, 54, 93, 0.28) transparent;
+  scrollbar-color: rgba(26, 54, 93, 0.42) transparent;
 }
 
-.themed-scrollbar::-webkit-scrollbar,
-.filter-dd-panel::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.themed-scrollbar::-webkit-scrollbar-track,
-.filter-dd-panel::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 999px;
-}
-
-.themed-scrollbar::-webkit-scrollbar-thumb,
-.filter-dd-panel::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(91, 127, 163, 0.45) 0%,
-    rgba(26, 54, 93, 0.28) 100%
-  );
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  border-radius: 999px;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
-}
-
-.themed-scrollbar::-webkit-scrollbar-thumb:hover,
-.filter-dd-panel::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(91, 127, 163, 0.65) 0%,
-    rgba(26, 54, 93, 0.45) 100%
-  );
-  background-clip: padding-box;
-}
-
-.themed-scrollbar::-webkit-scrollbar-corner,
-.filter-dd-panel::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Dark mode: faint, glowing white thumb on a transparent track */
 .dark .themed-scrollbar,
 .dark .filter-dd-panel {
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
-}
-
-.dark .themed-scrollbar::-webkit-scrollbar-thumb,
-.dark .filter-dd-panel::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
-  background-clip: padding-box;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 6px rgba(200, 215, 235, 0.18);
-}
-
-.dark .themed-scrollbar::-webkit-scrollbar-thumb:hover,
-.dark .filter-dd-panel::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.42) 0%,
-    rgba(255, 255, 255, 0.18) 100%
-  );
-  background-clip: padding-box;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 0 12px rgba(200, 220, 245, 0.32);
+  scrollbar-color: rgba(255, 255, 255, 0.48) transparent;
 }
 
 /* Local representatives native select menus */
@@ -278,13 +295,13 @@ body {
 }
 
 .rep-select option {
-  background: #f5f8fc;
-  color: #1f2d3d;
+  background-color: var(--surface-elevated);
+  color: var(--foreground);
 }
 
 .dark .rep-select option {
-  background: #1a222c;
-  color: #e8edf3;
+  background-color: var(--surface-card);
+  color: var(--foreground);
 }
 
 h1,
@@ -445,6 +462,39 @@ h3.section-title,
     rgba(255, 255, 255, 0.06) 48%,
     transparent 56%
   );
+}
+
+.feature-border-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.dark .feature-border-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--feature-border-color, rgba(210, 225, 242, 0.12)) 72%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--feature-border-color, rgba(210, 225, 242, 0.08)) 62%, transparent) inset,
+    0 0 26px -15px var(--feature-border-glow, rgba(126, 168, 210, 0.32));
+  opacity: 0.82;
+}
+
+.feature-border-glow-chat {
+  --feature-border-color: rgba(146, 174, 203, 0.2);
+  --feature-border-glow: rgba(124, 170, 214, 0.28);
+}
+
+.feature-border-glow-briefing {
+  --feature-border-color: rgba(180, 141, 174, 0.2);
+  --feature-border-glow: rgba(173, 121, 154, 0.28);
+}
+
+.feature-border-glow-updates {
+  --feature-border-color: rgba(150, 188, 168, 0.2);
+  --feature-border-glow: rgba(126, 175, 148, 0.26);
 }
 
 .search-shell.glass-card {
@@ -783,25 +833,4 @@ html.access-focus-mode *:focus-visible {
   display: none;
 }
 
- /* scrollbar for rep card sections */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-}
+/* In-card scroll areas use the same site-wide scrollbar (* rules above). */

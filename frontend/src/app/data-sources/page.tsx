@@ -1,11 +1,13 @@
 import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
+import { DataUsageKpis } from "@/components/civiq/DataUsageKpis";
 import {
   Database, Globe, Link2, Cpu, Zap, Layers, ShieldCheck,
   ExternalLink, Info, GitBranch, Map, FileText, BarChart2,
   ArrowRight, Code2, RefreshCw, Search
 } from "lucide-react";
+
 
 
 // DATA SOURCES ====================================================================
@@ -409,6 +411,7 @@ export default function DataSourcesPage() {
             </MotionReveal>
           </div>
         </div>
+        <DataUsageKpis />
 
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">

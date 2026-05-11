@@ -11,7 +11,7 @@ export default function RepresentativesPage() {
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
       <div
-        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)]"
+        className="ambient-orb -left-20 -top-24 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(60,80,108,0.22)]"
         aria-hidden
       />
       <Header />

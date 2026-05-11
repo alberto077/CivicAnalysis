@@ -6,6 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Tuple
 import logging
+from datetime import datetime, timezone
 
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
@@ -465,6 +466,59 @@ async def health_check():
         return {"status": "ok", "db_connected": True, "has_data": count > 0}
     except Exception as e:
         return {"status": "degraded", "db_connected": False, "error": str(e)}
+
+
+@app.get("/api/metrics/records")
+async def get_records_metrics():
+    """Global data indexing metrics for KPI cards."""
+    try:
+        with Session(engine) as session:
+            indexed_records_total = session.exec(
+                select(func.count(DocumentChunk.id)).where(DocumentChunk.embedding.is_not(None))
+            ).one()
+            documents_total = session.exec(select(func.count(PolicyDocument.id))).one()
+            source_types_indexed = session.exec(
+                select(func.count(func.distinct(PolicyDocument.source_type)))
+                .where(PolicyDocument.source_type.is_not(None))
+            ).one()
+            unique_sources_indexed = session.exec(
+                select(func.count(func.distinct(PolicyDocument.source_url)))
+                .where(PolicyDocument.source_url.is_not(None))
+            ).one()
+
+            now_utc = datetime.now(timezone.utc)
+            month_start = datetime(now_utc.year, now_utc.month, 1, tzinfo=timezone.utc)
+            if now_utc.month == 12:
+                next_month_start = datetime(now_utc.year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                next_month_start = datetime(now_utc.year, now_utc.month + 1, 1, tzinfo=timezone.utc)
+            new_records_this_month = session.exec(
+                select(func.count(PolicyDocument.id))
+                .where(
+                    or_(
+                        (
+                            (PolicyDocument.scraped_at >= month_start)
+                            & (PolicyDocument.scraped_at < next_month_start)
+                        ),
+                        (
+                            (PolicyDocument.published_date.is_not(None))
+                            & (PolicyDocument.published_date >= month_start)
+                            & (PolicyDocument.published_date < next_month_start)
+                        ),
+                    )
+                )
+            ).one()
+
+        return {
+            "indexed_records_total": int(indexed_records_total or 0),
+            "documents_total": int(documents_total or 0),
+            "source_types_indexed": int(source_types_indexed or 0),
+            "unique_sources_indexed": int(unique_sources_indexed or 0),
+            "new_records_this_month": int(new_records_this_month or 0),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Unable to load record metrics: {e}")
 
 
 @app.get("/api/politicians")
