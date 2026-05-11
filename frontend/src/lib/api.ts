@@ -3,8 +3,10 @@ import {
   type PolicyResponse,
   type RetrievalTier,
 } from "@/lib/policy-reply";
+import type { Politician } from "@/lib/politicians";
 
 export type { PolicyResponse, RetrievalTier } from "@/lib/policy-reply";
+export type { Politician };
 
 export type PolicyBriefing = {
   id: string;
@@ -35,7 +37,9 @@ export async function getDistricts(): Promise<District[]> {
 }
 
 export async function getDistrictsMap(): Promise<unknown> {
-  const res = await fetch("/districts.geojson", { cache: "force-cache" });
+  const res = await fetch("/boundaries-districts.geojson", {
+  cache: "force-cache",
+});
   if (!res.ok) throw new Error("Failed to load districts.geojson");
   return await res.json();
 }
@@ -88,24 +92,12 @@ export type HealthResponse = {
   error?: string;
 };
 
-export type Politician = {
-  id?: number | null | string;
-  name: string;
-  role?: string;
-  office: string;
-  borough: string;
-  district?: string | null;
-  party?: string | null;
-  political_stance: string;
-  bio_url?: string | null;
-  data_source?: string;
-  zip_codes?: string[];
-  neighborhoods?: string[];
-};
-
 export type PoliticianFilterOptions = {
   boroughs: string[];
   stances: string[];
+  parties: string[];
+  districts: string[];
+  committees: string[];
 };
 
 export type OpenAiChatRole = "system" | "user" | "assistant";
@@ -196,8 +188,8 @@ export async function sendChat(
 
   const payload: unknown =
     typeof data === "object" &&
-    data !== null &&
-    "reply" in (data as Record<string, unknown>)
+      data !== null &&
+      "reply" in (data as Record<string, unknown>)
       ? (data as { reply: unknown }).reply
       : data;
 
@@ -302,9 +294,9 @@ export async function postFloatingChatOrchestrated(params: {
   const retrieval_sources = parseFloatingRetrievalSources(dataObj);
   const tier =
     retrieval_tier === "vector" ||
-    retrieval_tier === "lexical" ||
-    retrieval_tier === "recent" ||
-    retrieval_tier === "none"
+      retrieval_tier === "lexical" ||
+      retrieval_tier === "recent" ||
+      retrieval_tier === "none"
       ? retrieval_tier
       : "none";
 
@@ -339,156 +331,31 @@ export async function postFloatingChatOrchestrated(params: {
   throw new Error("Invalid floating chat response mode.");
 }
 
+// TODO: connect to database? (scraper not finished yet)
 export async function getPoliticians(filters?: {
   borough?: string;
   stance?: string;
 }): Promise<Politician[]> {
   const params = new URLSearchParams();
-  const borough = filters?.borough?.trim();
-  if (borough && borough.toLowerCase() !== "all") {
-    params.set("borough", borough);
-  }
-  const stance = filters?.stance?.trim();
-  if (stance && stance.toLowerCase() !== "all") {
-    params.set("stance", stance);
-  }
-
-  const url = `${CIVIC_API}/politicians${params.toString() ? `?${params.toString()}` : ""}`;
-  const res = await fetch(url, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  const data = (await res.json()) as {
-    politicians?: unknown;
-    detail?: string;
-    error?: string;
-  };
-
-  if (!res.ok) {
-    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
-  }
-
-  if (!Array.isArray(data.politicians)) {
-    return [];
-  }
-
-  const livePoliticians = data.politicians.filter(
-    (item): item is Politician =>
-      typeof item === "object" &&
-      item !== null &&
-      typeof (item as Record<string, unknown>).name === "string" &&
-      typeof (item as Record<string, unknown>).office === "string" &&
-      typeof (item as Record<string, unknown>).borough === "string"
-  );
-  
-  // Enrich the live data because the scraper was basic
-  const enriched = livePoliticians.map((p, index) => {
-      const stances = ["Progressive", "Moderate Democrat", "Liberal", "Moderate", "Conservative"];
-      const parties = ["Democrat", "Democrat", "Republican", "Working Families", "Democrat"];
-
-      const stance = p.political_stance && p.political_stance !== "Moderate"
-         ? p.political_stance
-         : stances[index % stances.length];
-
-      const party = p.party && p.party.trim() !== "Unknown" && p.party.trim() !== ""
-         ? p.party
-         : parties[index % parties.length];
-
-      return {
-          ...p,
-          political_stance: stance,
-          party: party,
-      };
-  });
-
-  // Inject a few State and Federal reps for a more complete UI feel
-  const stateReps: Politician[] = [
-    {
-      id: "sen-1",
-      name: "Andrew Gounardes",
-      role: "State Senator",
-      office: "State Senate",
-      district: "26",
-      borough: "Brooklyn",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://www.nysenate.gov/senators/andrew-gounardes",
-      zip_codes: ["11209", "11228"],
-      neighborhoods: ["Bay Ridge", "Dyker Heights", "Bath Beach"]
-    },
-    {
-      id: "sen-2",
-      name: "Jessica Ramos",
-      role: "State Senator",
-      office: "State Senate",
-      district: "13",
-      borough: "Queens",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://www.nysenate.gov/senators/jessica-ramos",
-      zip_codes: ["11368", "11369"],
-      neighborhoods: ["Corona", "East Elmhurst", "Jackson Heights"]
-    }
-  ];
-
-  const federalReps: Politician[] = [
-    {
-      id: "fed-1",
-      name: "Nicole Malliotakis",
-      role: "Congresswoman",
-      office: "U.S. House",
-      district: "11",
-      borough: "Staten Island",
-      political_stance: "Conservative",
-      party: "Republican",
-      bio_url: "https://malliotakis.house.gov/",
-      zip_codes: ["10301", "11209"],
-      neighborhoods: ["Staten Island", "Bay Ridge"]
-    },
-    {
-      id: "fed-2",
-      name: "Alexandria Ocasio-Cortez",
-      role: "Congresswoman",
-      office: "U.S. House",
-      district: "14",
-      borough: "Bronx",
-      political_stance: "Progressive",
-      party: "Democrat",
-      bio_url: "https://ocasio-cortez.house.gov/",
-      zip_codes: ["10461", "11372"],
-      neighborhoods: ["Bronx", "Queens", "Jackson Heights"]
-    }
-  ];
-
-  return [...federalReps, ...stateReps, ...enriched];
+  if (filters?.borough) params.set("borough", filters.borough);
+  if (filters?.stance) params.set("stance", filters.stance);
+  const res = await fetch(`${CIVIC_API}/politicians${params.size ? `?${params}` : ""}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from /api/civic/politicians`);
+  const data = (await res.json()) as { politicians: Politician[] };
+  return data.politicians ?? [];
 }
 
 export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
-  const res = await fetch(`${CIVIC_API}/politicians/filters`, {
-    method: "GET",
-    cache: "no-store",
+  const all = await getPoliticians();
+  const boroughs = [...new Set(all.flatMap(p => p.borough.split(/[/,]/).map(b => b.trim()).filter(Boolean)))].sort();
+  const parties  = [...new Set(all.flatMap(p => p.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : [])))].sort();
+  const stances  = [...new Set(all.map(p => p.political_stance).filter(Boolean))].sort();
+  const districts = [...new Set(all.map(p => p.district ?? "").filter(Boolean))].sort((a, b) => {
+    const na = Number(a), nb = Number(b);
+    return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b);
   });
-
-  const data = (await res.json()) as {
-    boroughs?: unknown;
-    stances?: unknown;
-    detail?: string;
-    error?: string;
-  };
-
-  if (!res.ok) {
-    throw new Error(data.detail || data.error || `HTTP ${res.status}`);
-  }
-
-  const boroughs = Array.isArray(data.boroughs)
-    ? data.boroughs.filter((v): v is string => typeof v === "string")
-    : [];
-  const stances = Array.isArray(data.stances)
-    ? data.stances.filter((v): v is string => typeof v === "string")
-    : [];
-
-  return { boroughs, stances };
+  const committees = [...new Set(all.flatMap(p => p.committees ?? []))].sort();
+  return { boroughs, parties, stances, districts, committees };
 }
 
 export async function sendOpenAiChat(
