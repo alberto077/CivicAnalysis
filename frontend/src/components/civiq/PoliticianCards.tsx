@@ -54,6 +54,15 @@ function getLevelAccent(level: string): string {
   return "bg-slate-400";
 }
 
+function getLevelHoverAccent(level: string): string {
+  if (level === "City Council") return "hover:bg-blue-500";
+  if (level === "State Assembly") return "hover:bg-emerald-500";
+  if (level === "State Senate") return "hover:bg-amber-600";
+  if (level === "U.S. House") return "hover:bg-purple-500";
+  if (level === "U.S. Senate") return "hover:bg-violet-500";
+  return "hover:bg-slate-500 dark:hover:text-white";
+}
+
 function getPartyStyles(party: string) {
   const p = (party || "").toLowerCase();
   if (p === "democrat")
@@ -181,7 +190,7 @@ function PoliticianCard({ p }: { p: Politician }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleLinkClick}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-foreground dark:text-background dark:hover:bg-blue-500 dark:hover:text-white"
+                className={`flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition ${getLevelHoverAccent(level)} dark:bg-foreground dark:text-background dark:hover:text-white`}
               >
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
               </a>
@@ -287,7 +296,7 @@ function PoliticianCard({ p }: { p: Politician }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleLinkClick}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-foreground dark:text-background dark:hover:bg-blue-500 dark:hover:text-white"
+                className={`flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition ${getLevelHoverAccent(level)} dark:bg-foreground dark:text-background dark:hover:text-white`}
               >
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
               </a>
@@ -576,6 +585,21 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   }, [politicians, searchTerm, selectedBoroughs, selectedLevel, selectedParties, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
 
 
+  // move scroll top/bot upwards when at bottom of page
+  const [atBottom, setAtBottom] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const pageHeight = document.documentElement.scrollHeight;
+      setAtBottom(scrollPosition >= pageHeight - 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <section className="mx-auto mt-10 max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <MotionReveal>
@@ -805,7 +829,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               <button
                 onClick={clearAllFilters}
                 disabled={!isAnyFilterActive}
-                className={`flex h-10.5 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "cursor-not-allowed bg-slate-100 text-slate-400 opacity-50 dark:bg-(--surface-card) dark:text-(--muted)"}`}
+                className={`flex h-10.5 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${isAnyFilterActive ? "bg-red-500 dark:bg-red-900 text-white shadow-md hover:bg-red-600" : "cursor-not-allowed bg-slate-100 text-slate-400 opacity-50 dark:bg-(--surface-card) dark:text-(--muted)"}`}
               >
                 <RotateCcw className="h-4 w-4" />
                 Reset
@@ -970,10 +994,10 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 </button>
                 <button
                   onClick={() => setVisibleCount(filteredPoliticians.length)}
-                  className="relative flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 dark:bg-foreground dark:text-background dark:hover:opacity-90"
+                  className={`relative flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 text-sm font-bold text-white transition-all ${getLevelHoverAccent("")} hover:shadow-lg active:scale-95 dark:bg-foreground dark:text-background`}
                 >
                   <span>Show All</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400 dark:text-(--background)/70" />
+                  <ChevronDown className="h-5 w-5 text-slate-400 dark:text-(--background)/70 dark:hover:text-white" />
                   <span className="absolute -right-3 -top-3 rounded-md border border-slate-200 bg-(--accent) px-2 py-1 text-[10px] font-bold text-white shadow-sm dark:border-(--border)">
                     = {filteredPoliticians.length}
                   </span>
@@ -981,17 +1005,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
               </div>
             )}
 
-            <div className="fixed bottom-28 right-8 z-50 flex flex-col gap-2">
+            {/* scroll top/bot */}
+            <div className={`fixed right-8 z-50 flex flex-col gap-2 transition-all duration-300 ${ atBottom ? "bottom-58" : "bottom-28" }`}>
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated)/95 dark:text-(--foreground-secondary) dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-(--accent) dark:hover:text-(--accent)"
+                className="rounded-xl border-2 border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated)/95 dark:text-(--foreground-secondary) dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-(--accent) dark:hover:text-(--accent)"
                 title="Scroll to top"
               >
                 <ChevronsUp className="h-5 w-5" />
               </button>
               <button
                 onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
-                className="rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated)/95 dark:text-(--foreground-secondary) dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-(--accent) dark:hover:text-(--accent)"
+                className="rounded-xl border-2 border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated)/95 dark:text-(--foreground-secondary) dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-(--accent) dark:hover:text-(--accent)"
                 title="Scroll to bottom"
               >
                 <ChevronsDown className="h-5 w-5" />
