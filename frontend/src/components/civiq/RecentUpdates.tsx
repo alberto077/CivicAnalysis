@@ -33,7 +33,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
   }, [selectedArea, selectedLocation]);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="w-full py-16 sm:py-24">
       <MotionReveal>
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 transition-colors dark:bg-[var(--surface-elevated)] dark:ring-[var(--border)]">

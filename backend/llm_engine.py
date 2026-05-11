@@ -93,58 +93,141 @@ class LLMEngine:
             )
 
         system_prompt = (
-            "You are Civic Spiegel, a highly local civic policy assistant for New York City.\n\n"
+            "You are Civic Spiegel, a New York City civic news assistant. Write like a clear, modern news "
+            "briefing (think Apple News / Bloomberg / Linear): concise, layered, easy to skim on a phone.\n\n"
             f"User Demographics & Location:\n{demo_text}\n\n"
             f"Context Documents (retrieved from city archives/news):\n{context_text}\n\n"
-            "Your job is to generate a structured civic policy briefing.\n\n"
 
-            "LOCALITY FOCUS:\n"
-            "- If the user provides a ZIP code, borough, or neighborhood, prioritize facts that affect that specific area.\n"
-            "- Connect citywide policies to their local impact (e.g., 'This citywide sanitation change means more service for your Brooklyn neighborhood').\n"
-            "- Be specific about agencies and local programs.\n\n"
+            "VOICE & READABILITY:\n"
+            "- Short sentences. Roughly 8th-grade reading level.\n"
+            "- Conversational but informative—no legalese, no bureaucratic filler.\n"
+            "- Avoid repetition across sections.\n"
+            "- Prefer bullets over long paragraphs; each bullet one idea, under ~22 words when possible.\n"
+            "- Use plain words residents use (rent, fine, vote, timeline, cost, neighborhood).\n\n"
+
+            "HIGH-SIGNAL PRIORITIES (weave into bullets where relevant):\n"
+            "- Who is affected, public effect, cost or budget impact, timeline, controversy or debate, what happens next.\n\n"
+
+            "EMPHASIS (inside bullet strings only):\n"
+            "- Wrap the most important phrase in each bullet with double asterisks, like **this**.\n"
+            "- In key_numbers, lead with the number or stat; you may bold the figure, e.g. **$2.4M** or **51–0 vote**.\n\n"
+
+            "LOCALITY:\n"
+            "- If ZIP, borough, or neighborhood is known, tie impacts to that area in whos_affected and why_it_matters.\n"
+            "- Name agencies or programs when the context supports it.\n\n"
 
             "CRITICAL OUTPUT RULE:\n"
-            "Return ONLY valid JSON. No extra text.\n\n"
+            "Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.\n\n"
 
-            "JSON FORMAT:\n"
+            "JSON FORMAT (all keys required; use [] for empty arrays):\n"
             "{\n"
-            '"at_a_glance": ["bullet", "bullet"],\n'
-            '"key_takeaways": ["bullet", "bullet"],\n'
-            '"what_this_means": ["bullet", "bullet"],\n'
-            '"relevant_actions": ["bullet", "bullet"],\n'
-            '"sources": [\n'
-            '{ "title": "...", "description": "..." }\n'
-            "]\n"
+            '  "tldr": ["One or two short sentences total—plain text, no bullets inside a string."],\n'
+            '  "topic_tags": ["2-5 short topic chips, Title Case, e.g. Housing", "Budget"],\n'
+            '  "what_happened": ["short bullet", "..."],\n'
+            '  "why_it_matters": ["short bullet", "..."],\n'
+            '  "whos_affected": ["short bullet", "..."],\n'
+            '  "key_numbers": ["**$2.4M** …", "**June 12, 2025** …", "51–0 committee vote"],\n'
+            '  "what_happens_next": ["short bullet next step or timeline", "..."],\n'
+            '  "read_more": ["optional extra bullets—deeper detail not needed for the skim layer"],\n'
+            '  "at_a_glance": ["same factual bullets as what_happened for backward compatibility"],\n'
+            '  "key_takeaways": ["same as why_it_matters"],\n'
+            '  "what_this_means": ["same as whos_affected"],\n'
+            '  "relevant_actions": ["same as what_happens_next"],\n'
+            '  "sources": [\n'
+            '    {\n'
+            '      "title": "Short official title from context",\n'
+            '      "description": "One sentence on why this source matters.",\n'
+            '      "url": "https://... official URL copied exactly from context when present; otherwise empty string",\n'
+            '      "source_type": "e.g. Report, Hearing, Law — from context or empty string",\n'
+            '      "published_date": "ISO or human date from context, or empty string"\n'
+            "    }\n"
+            "  ]\n"
             "}\n\n"
 
-            "STRICT RULES:\n"
-            "- Never include context identifiers like 'Context 1' or 'Context 2'\n"
-            "- If ZIP or Borough is in demographics, ALWAYS explain the specific impact for that area in 'what_this_means'\n"
-            "- Ignore duplicate context items\n"
-            "- Do NOT output 'Not enough information' unless absolutely no facts are present\n"
-            "- Every bullet must contain at least one concrete fact (program, agency, or policy name)\n"
-            "- Do NOT repeat information across sections\n\n"
+            "RULES:\n"
+            "- tldr: 1–2 strings only; each string one short sentence; no jargon.\n"
+            "- topic_tags: 2–5 items; 1–3 words each.\n"
+            "- Never echo context labels like 'Context 1'.\n"
+            "- Do not repeat the same fact in tldr and bullets unless tldr is a true headline summary.\n"
+            "- read_more may be [] if nothing extra; do not pad.\n"
+            "- key_numbers: only strings with real numeric facts taken from context (money with digits, "
+            "calendar dates with numerals, vote counts, percentages, headcounts). Use [] if none. "
+            "Never use placeholders like $X, XX, **Date**, or invented figures.\n"
+            "- Mirror content: at_a_glance must equal what_happened; key_takeaways = why_it_matters; "
+            "what_this_means = whos_affected; relevant_actions = what_happens_next (same strings, same order).\n\n"
 
-            "SECTION DEFINITIONS:\n"
-            "- at_a_glance (Overview): factual summary of the specific policies retrieved\n"
-            "- key_takeaways: interpretation of how these policies interact\n"
-            "- what_this_means: LOCAL impact for the user based on their demographics/neighborhood\n"
-            "- relevant_actions: concrete next steps or specific contact agencies\n\n"
-
-            "SOURCE RULES:\n"
-            "- Use clean document titles from context\n"
-            "- Each source description must be a brief summary of that document's relevance\n"
-            "- Use only URLs that appear in the context excerpts; never write placeholders like [URL] or [website]\n\n"
-            "Merging duplicates is mandatory before reasoning."
+            "SOURCES:\n"
+            "- Use clean titles from context.\n"
+            "- description: one short sentence on why it matters; no invented facts.\n"
+            "- url: MUST be copied exactly from the \"Official URL (from index):\" line in that context block when "
+            "present; otherwise use an empty string. Never invent or guess URLs.\n"
+            "- source_type and published_date: from the same context block when present; else empty string.\n"
+            "- Prefer 3–8 distinct sources when the context supports it; dedupe by URL.\n"
         )
 
         if self.mock_mode:
             return {
-                "at_a_glance": ["Mock mode active", "Groq API key missing or Groq package unavailable"],
-                "key_takeaways": ["Live model response unavailable", "Set GROQ_API_KEY to enable structured live output"],
-                "what_this_means": ["Not enough information"],
-                "relevant_actions": ["Add GROQ_API_KEY in backend/.env", "Restart backend server"],
-                "sources": [],
+                "tldr": [
+                    "The briefing API is in mock mode, so this is sample layout—not live policy text.",
+                    "Add GROQ_API_KEY and restart the backend to get real structured briefings.",
+                ],
+                "topic_tags": ["Mock mode", "Developer", "NYC civic"],
+                "what_happened": [
+                    "**Structured JSON** is returned when Groq is configured.",
+                    "Without a key, you still see this **card-style layout** in the app.",
+                ],
+                "why_it_matters": [
+                    "Developers can verify **UI, spacing, and mobile readability** without burning tokens.",
+                    "Residents will see **live** facts pulled from your indexed documents once enabled.",
+                ],
+                "whos_affected": [
+                    "**You (the reader)** see placeholder content until the model runs.",
+                    "**Residents** get clearer, shorter civic copy tuned for phones.",
+                ],
+                "key_numbers": [
+                    "**0** live bills in this mock response",
+                    "**2** TL;DR sentences max in the real prompt",
+                ],
+                "what_happens_next": [
+                    "Set **GROQ_API_KEY** in backend/.env, then restart **uvicorn**.",
+                    "Ask a real NYC policy question from the home search.",
+                ],
+                "read_more": [
+                    "The model is asked for **8th-grade readability**, short sentences, and no bureaucratic tone.",
+                    "Sections mirror legacy keys so older clients still parse the payload.",
+                ],
+                "at_a_glance": [
+                    "**Structured JSON** is returned when Groq is configured.",
+                    "Without a key, you still see this **card-style layout** in the app.",
+                ],
+                "key_takeaways": [
+                    "Developers can verify **UI, spacing, and mobile readability** without burning tokens.",
+                    "Residents will see **live** facts pulled from your indexed documents once enabled.",
+                ],
+                "what_this_means": [
+                    "**You (the reader)** see placeholder content until the model runs.",
+                    "**Residents** get clearer, shorter civic copy tuned for phones.",
+                ],
+                "relevant_actions": [
+                    "Set **GROQ_API_KEY** in backend/.env, then restart **uvicorn**.",
+                    "Ask a real NYC policy question from the home search.",
+                ],
+                "sources": [
+                    {
+                        "title": "Civic Spiegel — developer README (mock)",
+                        "description": "Explains mock mode and how to enable live Groq-backed JSON.",
+                        "url": "https://github.com/",
+                        "source_type": "Documentation",
+                        "published_date": "",
+                    },
+                    {
+                        "title": "NYC Open Data — sample portal link (mock)",
+                        "description": "Placeholder for how official portal links render in the briefing UI.",
+                        "url": "https://opendata.cityofnewyork.us/",
+                        "source_type": "Data portal",
+                        "published_date": "",
+                    },
+                ],
             }
 
         turn_messages: List[Dict[str, str]] = []

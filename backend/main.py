@@ -387,13 +387,15 @@ def build_retrieval_sources_payload(
         if not url or url in seen:
             continue
         seen.add(url)
-        out.append(
-            {
-                "title": (ch.get("title") or "Source").strip(),
-                "source_url": url,
-                "source_type": (ch.get("source_type") or "").strip(),
-            }
-        )
+        entry = {
+            "title": (ch.get("title") or "Source").strip(),
+            "source_url": url,
+            "source_type": (ch.get("source_type") or "").strip(),
+        }
+        pd = str(ch.get("published_date") or "").strip()
+        if pd:
+            entry["published_date"] = pd
+        out.append(entry)
         if len(out) >= max_items:
             break
     return out
