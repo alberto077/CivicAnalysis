@@ -693,8 +693,8 @@ h3.section-title,
 /* Logo Clip from image2.png */
 .logo-clip {
   background-image: url('/image2.png');
-  background-size: 600px;
-  background-position: center 52%;
+  background-size: 110px;
+  background-position: 54%;
   background-repeat: no-repeat;
   width: 38px;
   height: 38px;
