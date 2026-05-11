@@ -5,17 +5,17 @@ import { Shield, Target, Users, Zap } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <div className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-white dark:bg-[var(--background)]">
+    <div className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-white dark:bg-background">
       <Header />
       <main className="relative z-10 flex-1">
         {/* Hero Section */}
-        <section className="relative bg-slate-50 px-4 py-24 dark:bg-[var(--surface-card)] sm:px-6 lg:px-8">
+        <section className="relative bg-slate-50 px-4 py-24 dark:bg-(--surface-card) sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl text-center">
             <MotionReveal>
-              <h1 className="font-limelight text-5xl font-medium tracking-tight text-[rgba(20,31,45,0.94)] dark:text-[var(--foreground)] sm:text-7xl">
-                Illuminating City <span className="text-[var(--accent)]">Policy</span>
+              <h1 className="font-limelight text-5xl font-medium tracking-tight text-[rgba(20,31,45,0.94)] dark:text-foreground sm:text-7xl">
+                Illuminating City <span className="text-(--accent)">Policy</span>
               </h1>
-              <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-600 dark:text-[var(--foreground-secondary)]">
+              <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-600 dark:text-(--foreground-secondary)">
                 Civic Spiegel is a next-generation civic intelligence platform designed to bridge the gap between complex legislation and community impact. 
                 Our mission is to provide every resident with clear, actionable insights into how their government works.
               </p>
@@ -33,11 +33,11 @@ export default function AboutPage() {
               { icon: Users, title: "Accessible", text: "Converting dense legal jargon into plain English for every citizen's benefit." }
             ].map((v, i) => (
               <MotionReveal key={i} className="flex flex-col items-center text-center">
-                <div className="h-14 w-14 rounded-2xl bg-[var(--accent-soft)]/10 flex items-center justify-center text-[var(--accent)] mb-6">
+                <div className="h-14 w-14 rounded-2xl bg-(--accent-soft)/10 flex items-center justify-center text-(--accent) mb-6">
                   <v.icon className="h-7 w-7" />
                 </div>
-                <h3 className="mb-3 font-limelight text-xl font-medium text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">{v.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">{v.text}</p>
+                <h3 className="mb-3 font-limelight text-xl font-medium text-[rgba(20,31,45,0.92)] dark:text-foreground">{v.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-(--foreground-secondary)">{v.text}</p>
               </MotionReveal>
             ))}
           </div>
@@ -49,11 +49,11 @@ export default function AboutPage() {
             <h2 className="font-limelight text-3xl font-medium mb-8 text-slate-100">Why Civic Spiegel?</h2>
             <div className="grid gap-8 text-left">
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                <h4 className="font-work-sans text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">The Challenge</h4>
+                <h4 className="font-work-sans text-(--accent-soft) font-bold uppercase tracking-widest text-xs mb-2">The Challenge</h4>
                 <p className="text-slate-300">NYC produces thousands of pages of legislative transcripts and filings every month. For the average resident, staying informed on local changes is a full-time job.</p>
               </div>
               <div className="p-8 rounded-3xl bg-white/5 border border-white/10">
-                <h4 className="font-work-sans text-[var(--accent-soft)] font-bold uppercase tracking-widest text-xs mb-2">Our Solution</h4>
+                <h4 className="font-work-sans text-(--accent-soft) font-bold uppercase tracking-widest text-xs mb-2">Our Solution</h4>
                 <p className="text-slate-300">We use advanced RAG (Retrieval-Augmented Generation) to scan these archives instantly, pulling out the facts that matter most to your specific life and location.</p>
               </div>
             </div>
