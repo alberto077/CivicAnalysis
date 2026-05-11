@@ -8,6 +8,9 @@ import type { Politician } from "@/lib/politicians";
 export type { PolicyResponse, RetrievalTier } from "@/lib/policy-reply";
 export type { Politician };
 
+const CIVIC_API = "/api/civic";
+const LLM_API = "/api/llm";
+
 export type PolicyBriefing = {
   id: string;
   title: string;
@@ -24,54 +27,101 @@ export type District = {
   zip_codes?: string[];
 };
 
+function getFallbackPolicies(): { policies: PolicyBriefing[] } {
+  return {
+    policies: [
+      {
+        id: "mock-1",
+        title: "Intro 123: Local Law to amend the administrative code...",
+        source_url: "#",
+        source_type: "Legislation",
+        published_date: new Date().toISOString(),
+      },
+      {
+        id: "mock-2",
+        title: "Committee on Housing and Buildings Transcript",
+        source_url: "#",
+        source_type: "Transcript",
+        published_date: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
 export async function getDistricts(): Promise<District[]> {
-  try {
-    const res = await fetch("/districts-data.json", { cache: "force-cache" });
-    if (!res.ok) throw new Error("Failed to load districts-data.json");
-    const data = await res.json();
-    return data.districts || [];
-  } catch (e) {
-    console.warn("Failed to fetch districts", e);
-    return [];
-  }
+  // Safe fallback:
+  // districts-data.json does not currently exist in /public, so do not fetch it.
+  // Returning an empty list prevents mobile/calendar/briefings pages from crashing.
+  return [];
 }
 
 export async function getDistrictsMap(): Promise<unknown> {
-  const res = await fetch("/boundaries-districts.geojson", {
-  cache: "force-cache",
-});
-  if (!res.ok) throw new Error("Failed to load districts.geojson");
-  return await res.json();
-}
-
-export async function getRecentPolicies(borough?: string, area?: string): Promise<{ policies: PolicyBriefing[] }> {
   try {
-    const params = new URLSearchParams();
-    if (borough) params.append("borough", borough);
-    if (area) params.append("area", area);
-    const res = await fetch(`${CIVIC_API}/policies/recent?${params.toString()}`);
-    if (!res.ok) throw new Error("Failed to fetch policies");
+    const res = await fetch("/boundaries-districts.geojson", {
+      cache: "force-cache",
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to load boundaries-districts.geojson");
+    }
+
     return await res.json();
   } catch (e) {
+    console.warn("Failed to fetch district boundary map", e);
+    return null;
+  }
+}
+
+export async function getRecentPolicies(
+  borough?: string,
+  area?: string,
+): Promise<{ policies: PolicyBriefing[] }> {
+  try {
+    const params = new URLSearchParams();
+
+    if (borough) params.append("borough", borough);
+    if (area) params.append("area", area);
+
+    const query = params.toString();
+    const url = `${CIVIC_API}/policies${query ? `?${query}` : ""}`;
+
+    const res = await fetch(url, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.warn("Recent policies endpoint unavailable, using fallback data");
+      return getFallbackPolicies();
+    }
+
+    const data = (await res.json()) as unknown;
+
+    if (Array.isArray(data)) {
+      return {
+        policies: data as PolicyBriefing[],
+      };
+    }
+
+    if (typeof data === "object" && data !== null) {
+      const record = data as Record<string, unknown>;
+
+      if (Array.isArray(record.policies)) {
+        return {
+          policies: record.policies as PolicyBriefing[],
+        };
+      }
+
+      if (Array.isArray(record.items)) {
+        return {
+          policies: record.items as PolicyBriefing[],
+        };
+      }
+    }
+
+    return getFallbackPolicies();
+  } catch (e) {
     console.warn("Fallback mock policies", e);
-    return {
-      policies: [
-        {
-          id: "mock-1",
-          title: "Intro 123: Local Law to amend the administrative code...",
-          source_url: "#",
-          source_type: "Legislation",
-          published_date: new Date().toISOString()
-        },
-        {
-          id: "mock-2",
-          title: "Committee on Housing and Buildings Transcript",
-          source_url: "#",
-          source_type: "Transcript",
-          published_date: new Date().toISOString()
-        }
-      ]
-    };
+    return getFallbackPolicies();
   }
 }
 
@@ -107,13 +157,11 @@ export type OpenAiChatMessage = {
   content: string;
 };
 
-
-const CIVIC_API = "/api/civic";
-const LLM_API = "/api/llm";
-
 function buildDemographics(extra?: ChatExtra): Record<string, string> {
   if (!extra) return {};
+
   const d: Record<string, string> = {};
+
   if (extra.zip?.trim()) d.zip = extra.zip.trim();
   if (extra.borough?.trim()) d.borough = extra.borough.trim();
   if (extra.community_board?.trim()) d.community_board = extra.community_board.trim();
@@ -121,6 +169,7 @@ function buildDemographics(extra?: ChatExtra): Record<string, string> {
   if (extra.timeframe?.trim()) d.timeframe = extra.timeframe.trim();
   if (extra.location_scope?.trim()) d.location_scope = extra.location_scope.trim();
   if (extra.profile_active?.trim()) d.profile_active = extra.profile_active.trim();
+
   return d;
 }
 
@@ -141,8 +190,10 @@ export async function checkHealth(): Promise<HealthResponse> {
 
 function friendlyChatError(status: number, data: unknown): string {
   let serverMessage: string | undefined;
+
   if (typeof data === "object" && data !== null) {
     const d = data as Record<string, unknown>;
+
     if (typeof d.detail === "string" && d.detail.trim()) {
       serverMessage = d.detail.trim();
     } else if (typeof d.error === "string" && d.error.trim()) {
@@ -168,7 +219,10 @@ export async function sendChat(
 ): Promise<PolicyResponse> {
   const demographics = buildDemographics(extra);
 
-  const body: { query: string; demographics?: Record<string, string> } = { query };
+  const body: { query: string; demographics?: Record<string, string> } = {
+    query,
+  };
+
   if (Object.keys(demographics).length > 0) {
     body.demographics = demographics;
   }
@@ -188,8 +242,8 @@ export async function sendChat(
 
   const payload: unknown =
     typeof data === "object" &&
-      data !== null &&
-      "reply" in (data as Record<string, unknown>)
+    data !== null &&
+    "reply" in (data as Record<string, unknown>)
       ? (data as { reply: unknown }).reply
       : data;
 
@@ -206,21 +260,28 @@ function parseFloatingRetrievalSources(
   data: Record<string, unknown>,
 ): FloatingRetrievalSource[] {
   const raw = data.retrieval_sources;
+
   if (!Array.isArray(raw)) return [];
+
   const out: FloatingRetrievalSource[] = [];
+
   for (const item of raw) {
     if (typeof item !== "object" || item === null) continue;
+
     const r = item as Record<string, unknown>;
     const title = typeof r.title === "string" ? r.title.trim() : "";
     const source_url = typeof r.source_url === "string" ? r.source_url.trim() : "";
     const source_type = typeof r.source_type === "string" ? r.source_type.trim() : "";
+
     if (!source_url) continue;
+
     out.push({
       title: title || "Source",
       source_url,
       source_type,
     });
   }
+
   return out.slice(0, 8);
 }
 
@@ -240,7 +301,9 @@ export type FloatingChatOpenAiResult = {
   retrieval_sources: FloatingRetrievalSource[];
 };
 
-export type FloatingChatResult = FloatingChatRagResult | FloatingChatOpenAiResult;
+export type FloatingChatResult =
+  | FloatingChatRagResult
+  | FloatingChatOpenAiResult;
 
 export type FloatingChatTurn = {
   role: "user" | "assistant";
@@ -260,7 +323,9 @@ export async function postFloatingChatOrchestrated(params: {
     messages: params.messages,
     currentPath: params.currentPath?.trim() || "/",
   };
+
   const demo = params.demographics;
+
   if (demo && Object.keys(demo).length > 0) {
     payload.demographics = demo;
   }
@@ -286,25 +351,27 @@ export async function postFloatingChatOrchestrated(params: {
     throw new Error("Invalid floating chat response.");
   }
 
-  const mode = (data as Record<string, unknown>).mode;
-  const sources_used = Number((data as Record<string, unknown>).sources_used);
-  const retrieval_tier = (data as Record<string, unknown>).retrieval_tier;
-
   const dataObj = data as Record<string, unknown>;
+  const mode = dataObj.mode;
+  const sources_used = Number(dataObj.sources_used);
+  const retrieval_tier = dataObj.retrieval_tier;
   const retrieval_sources = parseFloatingRetrievalSources(dataObj);
+
   const tier =
     retrieval_tier === "vector" ||
-      retrieval_tier === "lexical" ||
-      retrieval_tier === "recent" ||
-      retrieval_tier === "none"
+    retrieval_tier === "lexical" ||
+    retrieval_tier === "recent" ||
+    retrieval_tier === "none"
       ? retrieval_tier
       : "none";
 
   if (mode === "rag") {
     const md = dataObj.markdown;
+
     if (typeof md !== "string" || !md.trim()) {
       throw new Error("Invalid floating chat response: missing markdown.");
     }
+
     return {
       mode: "rag",
       markdown: md.trim(),
@@ -316,9 +383,11 @@ export async function postFloatingChatOrchestrated(params: {
 
   if (mode === "openai_fallback") {
     const md = dataObj.markdown;
+
     if (typeof md !== "string" || !md.trim()) {
       throw new Error("Invalid floating chat response: missing markdown.");
     }
+
     return {
       mode: "openai_fallback",
       markdown: md.trim(),
@@ -331,39 +400,90 @@ export async function postFloatingChatOrchestrated(params: {
   throw new Error("Invalid floating chat response mode.");
 }
 
-// TODO: connect to database? (scraper not finished yet)
 export async function getPoliticians(filters?: {
   borough?: string;
   stance?: string;
 }): Promise<Politician[]> {
   const params = new URLSearchParams();
+
   if (filters?.borough) params.set("borough", filters.borough);
   if (filters?.stance) params.set("stance", filters.stance);
-  const res = await fetch(`${CIVIC_API}/politicians${params.size ? `?${params}` : ""}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from /api/civic/politicians`);
+
+  const res = await fetch(
+    `${CIVIC_API}/politicians${params.size ? `?${params}` : ""}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} from /api/civic/politicians`);
+  }
+
   const data = (await res.json()) as { politicians: Politician[] };
+
   return data.politicians ?? [];
 }
 
 export async function getPoliticianFilters(): Promise<PoliticianFilterOptions> {
   const all = await getPoliticians();
-  const boroughs = [...new Set(all.flatMap(p => p.borough.split(/[/,]/).map(b => b.trim()).filter(Boolean)))].sort();
-  const parties  = [...new Set(all.flatMap(p => p.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : [])))].sort();
-  const stances  = [...new Set(all.map(p => p.political_stance).filter(Boolean))].sort();
-  const districts = [...new Set(all.map(p => p.district ?? "").filter(Boolean))].sort((a, b) => {
-    const na = Number(a), nb = Number(b);
-    return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b);
+
+  const boroughs = [
+    ...new Set(
+      all.flatMap((p) =>
+        p.borough
+          .split(/[/,]/)
+          .map((b) => b.trim())
+          .filter(Boolean),
+      ),
+    ),
+  ].sort();
+
+  const parties = [
+    ...new Set(
+      all.flatMap((p) =>
+        p.allParties ?? (p.party && p.party !== "N/A" ? [p.party] : []),
+      ),
+    ),
+  ].sort();
+
+  const stances = [
+    ...new Set(all.map((p) => p.political_stance).filter(Boolean)),
+  ].sort();
+
+  const districts = [
+    ...new Set(all.map((p) => p.district ?? "").filter(Boolean)),
+  ].sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+
+    return !Number.isNaN(na) && !Number.isNaN(nb)
+      ? na - nb
+      : a.localeCompare(b);
   });
-  const committees = [...new Set(all.flatMap(p => p.committees ?? []))].sort();
-  return { boroughs, parties, stances, districts, committees };
+
+  const committees = [...new Set(all.flatMap((p) => p.committees ?? []))].sort();
+
+  return {
+    boroughs,
+    parties,
+    stances,
+    districts,
+    committees,
+  };
 }
 
 export async function sendOpenAiChat(
   messages: OpenAiChatMessage[],
 ): Promise<OpenAiChatMessage> {
   const safeMessages = messages
-    .filter((msg) => typeof msg.content === "string" && msg.content.trim().length > 0)
-    .map((msg) => ({ role: msg.role, content: msg.content.trim() }));
+    .filter(
+      (msg) => typeof msg.content === "string" && msg.content.trim().length > 0,
+    )
+    .map((msg) => ({
+      role: msg.role,
+      content: msg.content.trim(),
+    }));
 
   const res = await fetch(`${LLM_API}/chat`, {
     method: "POST",
@@ -376,11 +496,14 @@ export async function sendOpenAiChat(
 
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
+
     if (typeof data === "object" && data !== null && "detail" in data) {
       const d = (data as { detail: unknown }).detail;
+
       if (typeof d === "string") message = d;
       else if (Array.isArray(d)) message = JSON.stringify(d);
     }
+
     throw new Error(message);
   }
 
@@ -390,6 +513,7 @@ export async function sendOpenAiChat(
     "message" in (data as Record<string, unknown>)
   ) {
     const message = (data as { message: unknown }).message;
+
     if (
       typeof message === "object" &&
       message !== null &&
