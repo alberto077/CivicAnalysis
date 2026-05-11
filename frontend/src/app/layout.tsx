@@ -6,6 +6,7 @@ import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
 import { DevConsoleFilter } from "@/components/civiq/DevConsoleFilter";
 import { ThemeProvider } from "@/components/civiq/ThemeProvider";
 
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
