@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, startTransition } from "react";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -309,7 +309,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   const [isReferenceOpen, setIsReferenceOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
 
-  const [selectedBoroughs, setSelectedBoroughs] = useState<string[]>([]);
+  const [selectedBoroughs, setSelectedBoroughs] = useState<string[]>(() =>
+    userBorough ? [userBorough] : []
+  );
   const [dynamicBoroughs, setDynamicBoroughs] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("All");
@@ -375,12 +377,6 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       }
     ];
   }, []);
-
-  useEffect(() => {
-    if (userBorough && selectedBoroughs.length === 0) {
-      setSelectedBoroughs([userBorough]);
-    }
-  }, [selectedBoroughs.length, userBorough]);
 
   const isAnyFilterActive = useMemo(() => {
     return selectedBoroughs.length > 0 ||
@@ -470,7 +466,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   }, []);
 
   useEffect(() => {
-    setVisibleCount(24);
+    startTransition(() => {
+      setVisibleCount(24);
+    });
   }, [searchTerm, selectedBoroughs, selectedLevel, selectedParties, selectedDistrict, selectedCommittee, selectedSubcommittee, selectedCaucus]);
 
   const filteredByLevel = useMemo(() => {
