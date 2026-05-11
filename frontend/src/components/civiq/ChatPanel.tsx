@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { sendChat, type PolicyResponse } from "@/lib/api";
-import { Sparkles, Send, MessageSquare, UserCircle2, Globe2 } from "lucide-react";
+import { buildBriefingSourceCards } from "@/lib/policy-reply";
+import { BriefingInline } from "./BriefingInline";
+import { Sparkles, Send, MessageSquare, UserCircle2, Globe2, ExternalLink } from "lucide-react";
 import { useProfile } from "@/lib/useProfile";
 
 type ChatPanelProps = {
@@ -12,40 +14,6 @@ type ChatPanelProps = {
   selectedTime?: string;
   isStandalone?: boolean;
 };
-
-function normalizeSource(
-  source: unknown,
-): { title: string; description?: string } {
-  if (Array.isArray(source)) {
-    const [title, description] = source;
-    return {
-      title: String(title ?? "Source"),
-      description: description ? String(description) : "",
-    };
-  }
-
-  if (source && typeof source === "object") {
-    const s = source as {
-      title?: unknown;
-      description?: unknown;
-      summary?: unknown;
-    };
-
-    return {
-      title: String(s.title ?? "Source"),
-      description: s.description
-        ? String(s.description)
-        : s.summary
-          ? String(s.summary)
-          : "",
-    };
-  }
-
-  return {
-    title: String(source ?? "Source"),
-    description: "",
-  };
-}
 
 function Section({
   title,
@@ -61,11 +29,13 @@ function Section({
       <h3 className="font-limelight mb-4 text-xs font-bold tracking-[0.2em] text-[var(--accent)] uppercase">
         {title}
       </h3>
-      <ul className="space-y-3 text-[15px] leading-relaxed text-slate-800 dark:text-[var(--foreground-secondary)]">
+      <ul className="space-y-3 text-[15px] leading-relaxed text-slate-800 dark:text-[#d8e6f2]">
         {items.map((item, index) => (
           <li key={`${title}-${index}`} className="flex gap-3">
             <span className="shrink-0 text-[var(--accent)]">•</span>
-            <span>{item}</span>
+            <span>
+              <BriefingInline text={item} />
+            </span>
           </li>
         ))}
       </ul>
@@ -147,15 +117,28 @@ export function ChatPanel({
     }
   };
 
-  const sources = Array.isArray(response?.sources)
-    ? response.sources.map(normalizeSource)
-    : [];
+  const sourceCards = useMemo(
+    () =>
+      response
+        ? buildBriefingSourceCards(response.sources, response.retrieval_sources)
+        : [],
+    [response],
+  );
 
   const hasContent =
+    !!response?.tldr?.length ||
+    !!response?.topic_tags?.length ||
+    !!response?.what_happened?.length ||
+    !!response?.why_it_matters?.length ||
+    !!response?.whos_affected?.length ||
+    !!response?.key_numbers?.length ||
+    !!response?.what_happens_next?.length ||
+    !!response?.read_more?.length ||
     !!response?.at_a_glance?.length ||
     !!response?.key_takeaways?.length ||
     !!response?.what_this_means?.length ||
-    !!response?.relevant_actions?.length;
+    !!response?.relevant_actions?.length ||
+    sourceCards.length > 0;
 
   return (
     <section className={`mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6 lg:px-8 ${isStandalone ? "pt-12" : "mt-8"}`}>
@@ -267,22 +250,96 @@ export function ChatPanel({
               </div>
             ) : (
               <>
-                <Section title="Synthesis" items={response.at_a_glance} />
-                <Section title="Strategic Analysis" items={response.key_takeaways} />
-                <Section title="Your Local Impact" items={response.what_this_means} />
-                <Section title="Recommended Steps" items={response.relevant_actions} />
+                {response.tldr && response.tldr.length > 0 && (
+                  <div className="rounded-3xl border border-white/60 bg-gradient-to-br from-white to-slate-50/90 p-6 shadow-sm dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)]">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-[var(--foreground-secondary)]">
+                      TL;DR
+                    </p>
+                    <div className="space-y-1.5 text-[15px] font-medium leading-snug text-slate-900 dark:text-white">
+                      {response.tldr.map((line, i) => (
+                        <p key={`chat-tldr-${i}`}>
+                          <BriefingInline text={line} />
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                {sources.length > 0 && (
+                {response.topic_tags && response.topic_tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {response.topic_tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-slate-200/80 bg-white/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[#b8c8dc]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <Section title="What happened" items={response.what_happened} />
+                <Section title="Why it matters" items={response.why_it_matters} />
+                <Section title="Who's affected" items={response.whos_affected} />
+                <Section title="Key numbers" items={response.key_numbers} />
+                <Section title="What happens next" items={response.what_happens_next} />
+
+                {response.read_more && response.read_more.length > 0 && (
+                  <details className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/80">
+                    <summary className="cursor-pointer font-work-sans text-sm font-semibold text-slate-800 outline-none dark:text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
+                      Read more
+                    </summary>
+                    <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-[14px] leading-relaxed text-slate-700 dark:border-[var(--border)] dark:text-[#c8d4e0]">
+                      {response.read_more.map((item, i) => (
+                        <li key={`chat-rm-${i}`}>
+                          <BriefingInline text={item} />
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+
+                {sourceCards.length > 0 && (
                   <div className="rounded-[32px] border border-white/60 bg-white/80 p-8 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
-                    <h3 className="font-limelight mb-4 text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-[var(--muted)]">
-                      Evidence Library
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {sources.map((source, index) => (
-                        <div key={index} className="rounded-2xl border border-slate-100 bg-white p-5 transition hover:border-[var(--accent-soft)] dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
-                          <div className="mb-1 text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">{source.title}</div>
-                          {source.description && (
-                            <div className="text-[13px] leading-relaxed italic text-slate-600 dark:text-[var(--foreground-secondary)]">{source.description}</div>
+                    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                      <h3 className="font-limelight text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-[var(--muted)]">
+                        Evidence library
+                      </h3>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[var(--foreground-secondary)]">
+                        {sourceCards.length} {sourceCards.length === 1 ? "source" : "sources"}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {sourceCards.map((card, index) => (
+                        <div
+                          key={`${card.url ?? "nourl"}-${card.title}-${index}`}
+                          className="rounded-2xl border border-slate-100 bg-white p-5 transition hover:border-[var(--accent-soft)] dark:border-[var(--border)] dark:bg-[var(--surface-card)]"
+                        >
+                          <div className="mb-1 text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">
+                            {card.title}
+                          </div>
+                          {card.source_type ? (
+                            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[var(--muted)]">
+                              {card.source_type}
+                            </p>
+                          ) : null}
+                          <div className="text-[13px] leading-relaxed text-slate-600 dark:text-[#dce8f4]">
+                            <BriefingInline text={card.description} />
+                          </div>
+                          {card.url ? (
+                            <a
+                              href={card.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[var(--accent)] hover:underline"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                              Open official record
+                            </a>
+                          ) : (
+                            <p className="mt-3 text-[11px] text-slate-400 dark:text-[var(--foreground-secondary)]">
+                              No indexed URL for this item.
+                            </p>
                           )}
                         </div>
                       ))}

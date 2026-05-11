@@ -13,14 +13,14 @@ import {
 } from "lucide-react";
 
 const POLICY_AREAS = ["All", "Housing", "Education", "Policing", "Transit", "Environment", "Health", "Immigration"];
-const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "Current Session", "All Time"];
+const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "All Time"];
 const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
 const FILTER_DROPDOWN_TRIGGER =
   "filter-dd-trigger font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] focus-visible:outline-none dark:hover:brightness-100";
 
 const FILTER_DROPDOWN_PANEL =
-  "filter-dd-panel absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.3)_100%)] py-1 shadow-[0_14px_40px_-18px_rgba(26,54,93,0.24),0_4px_18px_-6px_rgba(15,23,42,0.1)] backdrop-blur-[30px] dark:bg-[linear-gradient(135deg,rgba(23,29,36,0.94)_0%,rgba(14,19,24,0.9)_100%)]";
+  "filter-dd-panel absolute left-0 right-0 z-[70] mt-1 max-h-60 overflow-auto rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(248,251,255,0.94)_100%)] py-1 shadow-[0_16px_44px_-16px_rgba(26,54,93,0.3),0_4px_18px_-6px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(18,22,28,0.98)_100%)]";
 
 const AREA_ICONS = {
   All: Building2,
@@ -135,7 +135,7 @@ export function DashboardFilters({
   const timeDdId = `dd-time-${useId().replace(/:/g, "")}`;
 
   return (
-    <div className="w-full mb-2 sm:mb-4">
+    <div className="relative z-40 w-full mb-2 sm:mb-4">
       <div className="glass-card surface-float soft-inset rounded-3xl p-6 flex flex-col gap-8 border-[var(--border)]">
         {/* Policy area heading + chips */}
         <div className="space-y-3">

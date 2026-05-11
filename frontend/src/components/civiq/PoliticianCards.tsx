@@ -13,6 +13,7 @@ import {
   getPoliticianFilters,
   type Politician,
 } from "@/lib/api";
+import { ThemedSelect } from "./ThemedSelect";
 
 
 // Levels of Government
@@ -31,12 +32,17 @@ function getLevelKey(p: Politician): string {
 // colors --- diff govt/office levels
 function getOfficeStyles(office: string) {
   const o = office.toLowerCase();
-  if (o.includes("council")) return "bg-blue-100 text-blue-700 border-blue-200";
-  if (o.includes("assembly")) return "bg-emerald-100 text-emerald-700 border-emerald-200";
-  if (o.includes("state senator") || (o.includes("senate") && !o.includes("u.s"))) return "bg-amber-100 text-amber-700 border-amber-200";
-  if (o.includes("representative") || o.includes("house")) return "bg-purple-100 text-purple-700 border-purple-200";
-  if (o.includes("u.s. senator") || (o.includes("senate") && (o.includes("u.s") || o.includes("federal")))) return "bg-violet-100 text-violet-700 border-violet-200";
-  return "bg-slate-100 text-slate-700 border-slate-200";
+  if (o.includes("council"))
+    return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-400/35";
+  if (o.includes("assembly"))
+    return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-400/35";
+  if (o.includes("state senator") || (o.includes("senate") && !o.includes("u.s")))
+    return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-400/35";
+  if (o.includes("representative") || o.includes("house"))
+    return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-400/35";
+  if (o.includes("u.s. senator") || (o.includes("senate") && (o.includes("u.s") || o.includes("federal"))))
+    return "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-400/35";
+  return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-[var(--surface-card)] dark:text-[var(--foreground-secondary)] dark:border-[var(--border)]";
 }
 
 function getLevelAccent(level: string): string {
@@ -50,13 +56,19 @@ function getLevelAccent(level: string): string {
 
 function getPartyStyles(party: string) {
   const p = (party || "").toLowerCase();
-  if (p === "democrat") return "border-blue-300 bg-blue-50 text-blue-700";
-  if (p === "republican") return "border-red-300 bg-red-50 text-red-700";
-  if (p === "conservative") return "border-orange-300 bg-orange-50 text-orange-700";
-  if (p === "working families") return "border-teal-300 bg-teal-50 text-teal-700";
-  if (p === "green") return "border-green-300 bg-green-50 text-green-700";
-  if (p === "independent") return "border-purple-300 bg-purple-50 text-purple-700";
-  return "border-slate-200 bg-slate-50 text-slate-500";
+  if (p === "democrat")
+    return "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/12 dark:text-blue-300";
+  if (p === "republican")
+    return "border-red-300 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/12 dark:text-red-300";
+  if (p === "conservative")
+    return "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-500/40 dark:bg-orange-500/12 dark:text-orange-300";
+  if (p === "working families")
+    return "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-500/40 dark:bg-teal-500/12 dark:text-teal-300";
+  if (p === "green")
+    return "border-green-300 bg-green-50 text-green-700 dark:border-green-500/40 dark:bg-green-500/12 dark:text-green-300";
+  if (p === "independent")
+    return "border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/12 dark:text-purple-300";
+  return "border-slate-200 bg-slate-50 text-slate-500 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--muted)]";
 }
 
 function cleanPoliticianData(name: string) {
@@ -108,23 +120,31 @@ function PoliticianCard({ p }: { p: Politician }) {
       >
 
         {/* Card Front */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-(--border) bg-white backface-hidden shadow-sm group-hover:shadow-xl transition-shadow flex flex-col overflow-hidden min-h-0">
+        <div className="absolute inset-0 flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-(--border) bg-white shadow-sm backface-hidden transition-shadow group-hover:shadow-xl dark:bg-[var(--surface-elevated)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_28px_-12px_rgba(0,0,0,0.4)]">
           <div className={`h-1 w-full shrink-0 ${getLevelAccent(level)}`} />
-          <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-8">
             {/* Header */}
-            <div className="mb-5 flex items-start justify-between shrink-0">
+            <div className="mb-5 flex shrink-0 items-start justify-between">
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-2xl font-bold leading-tight text-foreground">{cleanedName}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className={`rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${getOfficeStyles(p.office)}`}>{p.office}</span>
-                  {title && <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">{title}</span>}
-                  {p.district && <span className="rounded-md bg-slate-50 border border-slate-200 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">District {p.district}</span>}
+                  {title && (
+                    <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:border-amber-500/35 dark:bg-amber-500/12 dark:text-amber-300">
+                      {title}
+                    </span>
+                  )}
+                  {p.district && (
+                    <span className="whitespace-nowrap rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground-secondary)]">
+                      District {p.district}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar space-y-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-(--muted) font-medium">Borough/County</span>
                 <span className="font-bold text-foreground">{p.borough || "N/A"}</span>
@@ -145,17 +165,24 @@ function PoliticianCard({ p }: { p: Politician }) {
               </div>
 
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Areas Represented</span>
-                <span className="text-[11px] text-slate-800">
+                <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                  Areas Represented
+                </span>
+                <span className="text-[11px] text-slate-800 dark:text-[var(--foreground)]">
                   {level === "U.S. Senate" ? "All of New York State" : level === "City Council" ? `NYC District ${p.district ?? "—"} (${p.borough})` : `NY District ${p.district ?? "—"} (${p.borough})`}
                 </span>
               </div>
 
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100 shrink-0">
-              <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
+            <div className="mt-5 shrink-0 border-t border-slate-100 pt-4 dark:border-[var(--border)]">
+              <a
+                href={getLearnMoreUrl(p)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleLinkClick}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-[var(--foreground)] dark:text-[var(--background)] dark:hover:opacity-90"
+              >
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -163,18 +190,22 @@ function PoliticianCard({ p }: { p: Politician }) {
         </div>
 
         {/* Card Back */}
-        <div className="absolute inset-0 h-full w-full rounded-3xl border border-(--accent-soft) bg-slate-50 backface-hidden transform-[rotateY(180deg)] shadow-inner flex flex-col overflow-hidden min-h-0">
+        <div className="absolute inset-0 flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-(--accent-soft) bg-slate-50 shadow-inner backface-hidden transform-[rotateY(180deg)] dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
           <div className={`h-1 w-full shrink-0 ${getLevelAccent(level)}`} />
-          <div className="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
-            <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-4">
-
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-8">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
               {level === "City Council" && (p.neighborhoods ?? []).length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Neighborhoods Served</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                    Neighborhoods Served
+                  </span>
                   <div className="max-h-full pr-1">
                     <div className="flex flex-wrap gap-1.5">
                       {p.neighborhoods!.map((n, i) => (
-                        <span key={`${n}-${i}`} className="text-[11px] font-medium text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg whitespace-nowrap">
+                        <span
+                          key={`${n}-${i}`}
+                          className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)]"
+                        >
                           {n}
                         </span>
                       ))}
@@ -185,7 +216,9 @@ function PoliticianCard({ p }: { p: Politician }) {
 
               {(p.zip_codes ?? []).length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">ZIP Codes Served</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                    ZIP Codes Served
+                  </span>
                   <div className="flex flex-wrap gap-1.5">
                     {p.zip_codes!.map((z, i) => <span key={`${z}-${i}`} className="text-[11px] font-bold text-(--accent)">{z}</span>)}
                   </div>
@@ -194,10 +227,15 @@ function PoliticianCard({ p }: { p: Politician }) {
 
               {p.committees && p.committees.length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Committees</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                    Committees
+                  </span>
                   <div className="flex flex-wrap gap-1.5">
                     {(p.committees || []).map((c: string, i: number) => (
-                      <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                      <span
+                        key={`${c}-${i}`}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)]"
+                      >
                         {c}
                       </span>
                     ))}
@@ -207,10 +245,15 @@ function PoliticianCard({ p }: { p: Politician }) {
 
               {p.subcommittees && p.subcommittees.length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Subcommittees</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                    Subcommittees
+                  </span>
                   <div className="flex flex-wrap gap-1.5">
                     {(p.subcommittees || []).map((sc: string, i: number) => (
-                      <span key={`${sc}-${i}`} className="px-2 py-1 rounded-md bg-white border border-dashed border-slate-200 text-[10px] font-medium text-slate-500">
+                      <span
+                        key={`${sc}-${i}`}
+                        className="rounded-md border border-dashed border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-500 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--muted)]"
+                      >
                         {sc}
                       </span>
                     ))}
@@ -220,10 +263,15 @@ function PoliticianCard({ p }: { p: Politician }) {
 
               {p.caucuses && p.caucuses.length > 0 && (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 block mb-2">Caucuses</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-[var(--muted)]">
+                    Caucuses
+                  </span>
                   <div className="flex flex-wrap gap-1.5">
                     {(p.caucuses || []).map((c: string, i: number) => (
-                      <span key={`${c}-${i}`} className="px-2 py-1 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                      <span
+                        key={`${c}-${i}`}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground-secondary)]"
+                      >
                         {c}
                       </span>
                     ))}
@@ -233,9 +281,14 @@ function PoliticianCard({ p }: { p: Politician }) {
 
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-200 shrink-0">
-              <a href={getLearnMoreUrl(p)} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
+            <div className="mt-4 shrink-0 border-t border-slate-200 pt-4 dark:border-[var(--border)]">
+              <a
+                href={getLearnMoreUrl(p)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleLinkClick}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-[var(--foreground)] dark:text-[var(--background)] dark:hover:opacity-90"
+              >
                 View Official Profile <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -295,27 +348,32 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       {
         office: "City Council", members: 51, term: "4 Years", limit: "2 Terms", next: nextMunicipal,
         power: "Local laws, city budget, zoning & land use, sanitation, parks.",
-        color: "text-blue-700 bg-blue-50 border-blue-200"
+        color:
+          "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-500/12 dark:text-blue-300 dark:border-blue-400/30",
       },
       {
         office: "State Assembly", members: 150, term: "2 Years", limit: "None", next: nextEven,
         power: "State legislation (lower chamber), education, labor, state budget approval.",
-        color: "text-emerald-700 bg-emerald-50 border-emerald-200"
+        color:
+          "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-400/30",
       },
       {
         office: "State Senate", members: 63, term: "2 Years", limit: "None", next: nextEven,
         power: "State legislation (upper chamber), judicial confirmations, state budget oversight.",
-        color: "text-amber-700 bg-amber-50 border-amber-200"
+        color:
+          "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-500/12 dark:text-amber-300 dark:border-amber-400/30",
       },
       {
         office: "U.S. House", members: 26, term: "2 Years", limit: "None", next: nextEven,
         power: "Federal laws & appropriations, constituent services, committee oversight.",
-        color: "text-purple-700 bg-purple-50 border-purple-200"
+        color:
+          "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-500/12 dark:text-purple-300 dark:border-purple-400/30",
       },
       {
         office: "U.S. Senate", members: 2, term: "6 Years", limit: "None", next: nextSenate,
         power: "Federal legislation, treaty ratification, confirms federal judges & cabinet.",
-        color: "text-violet-700 bg-violet-50 border-violet-200"
+        color:
+          "text-violet-700 bg-violet-50 border-violet-200 dark:bg-violet-500/12 dark:text-violet-300 dark:border-violet-400/30",
       }
     ];
   }, []);
@@ -452,6 +510,23 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
     return ["All", ...Array.from(cs).sort()];
   }, [filteredByLevel]);
 
+  const districtSelectOptions = useMemo(
+    () => availableDistricts.map((d) => ({ value: d, label: d })),
+    [availableDistricts],
+  );
+  const committeeSelectOptions = useMemo(
+    () => availableCommittees.map((c) => ({ value: c, label: c })),
+    [availableCommittees],
+  );
+  const subcommitteeSelectOptions = useMemo(
+    () => availableSubcommittees.map((s) => ({ value: s, label: s })),
+    [availableSubcommittees],
+  );
+  const caucusSelectOptions = useMemo(
+    () => availableCaucuses.map((c) => ({ value: c, label: c })),
+    [availableCaucuses],
+  );
+
   const filteredPoliticians = useMemo(() => {
     return politicians.filter(p => {
       const searchLower = searchTerm.toLowerCase();
@@ -511,25 +586,33 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
         </div>
 
         {/* Understanding Your Representation Section */}
-        <div className="mt-10 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300">
+        <div className="mt-10 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.45)]">
           <button
             onClick={() => setIsReferenceOpen(!isReferenceOpen)}
-            className={`w-full bg-slate-50 px-8 flex items-center justify-between hover:bg-slate-100/50 transition-all ${isReferenceOpen ? 'py-6 border-b border-slate-100' : 'py-4'}`}
+            className={`w-full bg-slate-50 px-8 flex items-center justify-between hover:bg-slate-100/50 transition-all dark:bg-[var(--surface-card)] dark:hover:bg-[var(--surface-glass)]/80 ${isReferenceOpen ? "py-6 border-b border-slate-100 dark:border-[var(--border)]" : "py-4"}`}
           >
             <div className="text-left">
-              <h2 className={`${isReferenceOpen ? 'text-xl' : 'text-base'} font-bold text-slate-900 transition-all`}>
+              <h2
+                className={`${isReferenceOpen ? "text-xl" : "text-base"} font-bold text-slate-900 transition-all dark:text-[var(--foreground)]`}
+              >
                 Understanding Your Representation
               </h2>
               {isReferenceOpen && (
-                <p className="text-sm text-slate-500 mt-1">New York residents are represented across three main levels of government.</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-[var(--foreground-secondary)]">
+                  New York residents are represented across three main levels of government.
+                </p>
               )}
             </div>
             <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest">
+              <div className="hidden items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-600 md:flex dark:bg-blue-500/15 dark:text-blue-300">
                 <span className="animate-pulse">●</span>
                 New York
               </div>
-              {isReferenceOpen ? <ChevronUp className="h-5 w-5 text-slate-400" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
+              {isReferenceOpen ? (
+                <ChevronUp className="h-5 w-5 text-slate-400 dark:text-[var(--muted)]" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-slate-400 dark:text-[var(--muted)]" />
+              )}
             </div>
           </button>
 
@@ -545,72 +628,102 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="px-8 py-4 font-bold text-slate-700">Office</th>
-                        <th className="px-4 py-4 font-bold text-slate-700">Members</th>
-                        <th className="px-4 py-4 font-bold text-slate-700">Term</th>
-                        <th className="px-4 py-4 font-bold text-slate-700">Limit</th>
-                        <th className="px-4 py-4 font-bold text-slate-700">Next Election</th>
-                        <th className="px-8 py-4 font-bold text-slate-700">Responsibility</th>
+                      <tr className="border-b border-slate-100 bg-slate-50/50 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+                        <th className="px-8 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Office</th>
+                        <th className="px-4 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Members</th>
+                        <th className="px-4 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Term</th>
+                        <th className="px-4 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Limit</th>
+                        <th className="px-4 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Next Election</th>
+                        <th className="px-8 py-4 font-bold text-slate-700 dark:text-[var(--foreground-secondary)]">Responsibility</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-50 dark:divide-[var(--border)]">
                       {officeInfo.map((info) => (
-                        <tr key={info.office} className="hover:bg-slate-50/50 transition-colors">
+                        <tr
+                          key={info.office}
+                          className="transition-colors hover:bg-slate-50/50 dark:hover:bg-[var(--surface-card)]/60"
+                        >
                           <td className="px-8 py-4">
-                            <span className={`px-2.5 py-1 rounded-md font-bold text-[11px] border ${info.color}`}>{info.office}</span>
+                            <span className={`rounded-md border px-2.5 py-1 text-[11px] font-bold ${info.color}`}>{info.office}</span>
                           </td>
-                          <td className="px-4 py-4 font-medium text-slate-600">{info.members}</td>
-                          <td className="px-4 py-4 font-medium text-slate-600">{info.term}</td>
-                          <td className="px-4 py-4 font-medium text-slate-600">{info.limit}</td>
+                          <td className="px-4 py-4 font-medium text-slate-600 dark:text-[var(--foreground-secondary)]">{info.members}</td>
+                          <td className="px-4 py-4 font-medium text-slate-600 dark:text-[var(--foreground-secondary)]">{info.term}</td>
+                          <td className="px-4 py-4 font-medium text-slate-600 dark:text-[var(--foreground-secondary)]">{info.limit}</td>
                           <td className="px-4 py-4">
-                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold">{info.next}</span>
+                            <span className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:border-[var(--border)] dark:bg-[var(--surface-glass)] dark:text-[var(--muted)]">
+                              {info.next}
+                            </span>
                           </td>
-                          <td className="px-8 py-4 text-slate-500 text-xs leading-relaxed">{info.power}</td>
+                          <td className="px-8 py-4 text-xs leading-relaxed text-slate-500 dark:text-[var(--muted)]">{info.power}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-8 bg-slate-50/30 border-t border-slate-100">
-                  <a href="https://www.nysenate.gov/legislation/laws/CONSOLIDATED" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
+                <div className="grid grid-cols-1 gap-4 border-t border-slate-100 bg-slate-50/30 p-8 md:grid-cols-2 lg:grid-cols-3 dark:border-[var(--border)] dark:bg-[var(--surface-card)]/40">
+                  <a
+                    href="https://www.nysenate.gov/legislation/laws/CONSOLIDATED"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:hover:border-[var(--accent)]"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600"><BookOpen className="h-5 w-5" /></div>
+                      <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                        <BookOpen className="h-5 w-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">Consolidated Laws of NY</p>
-                        <p className="text-[10px] text-slate-500">Official NY State Legislative database</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">Consolidated Laws of NY</p>
+                        <p className="text-[10px] text-slate-500 dark:text-[var(--muted)]">Official NY State Legislative database</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--muted)] dark:group-hover:text-[var(--accent)]" />
                   </a>
-                  <a href="https://www.nysenate.gov/senators-committees" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
+                  <a
+                    href="https://www.nysenate.gov/senators-committees"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:hover:border-[var(--accent)]"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><Users className="h-5 w-5" /></div>
+                      <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                        <Users className="h-5 w-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">Legislative Committees</p>
-                        <p className="text-[10px] text-slate-500">View Senate committee assignments</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">Legislative Committees</p>
+                        <p className="text-[10px] text-slate-500 dark:text-[var(--muted)]">View Senate committee assignments</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--muted)] dark:group-hover:text-[var(--accent)]" />
                   </a>
-                  <a href="https://www.house.gov/representatives#new-york" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-(--accent) transition-all group">
+                  <a
+                    href="https://www.house.gov/representatives#new-york"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:hover:border-[var(--accent)]"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-50 text-purple-600"><Info className="h-5 w-5" /></div>
+                      <div className="rounded-lg bg-purple-50 p-2 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300">
+                        <Info className="h-5 w-5" />
+                      </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">Federal Delegation</p>
-                        <p className="text-[10px] text-slate-500">US House & Senate members</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">Federal Delegation</p>
+                        <p className="text-[10px] text-slate-500 dark:text-[var(--muted)]">US House & Senate members</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--muted)] dark:group-hover:text-[var(--accent)]" />
                   </a>
                 </div>
 
-                <div className="bg-slate-50/50 p-4 px-8 text-[11px] text-slate-400 italic border-t border-slate-100">
-                  *Note: Directory reflects fresh data sourced from live integrations and official government directories. See <a className="text-(--accent) hover:underline" href="/data-sources">data-sources</a> for more info.
+                <div className="border-t border-slate-100 bg-slate-50/50 p-4 px-8 text-[11px] italic text-slate-400 dark:border-[var(--border)] dark:bg-[var(--surface-card)]/50 dark:text-[var(--muted)]">
+                  *Note: Directory reflects fresh data sourced from live integrations and official government directories. See{" "}
+                  <a className="text-(--accent) hover:underline" href="/data-sources">
+                    data-sources
+                  </a>{" "}
+                  for more info.
                 </div>
               </motion.div>
             )}
@@ -619,8 +732,8 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       </MotionReveal>
 
       {/* Tabs: Levels of Government — reset legislature-specific filters on switch */}
-      <MotionReveal className="mt-10 mb-6 border-b border-slate-200">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full">
+      <MotionReveal className="mt-10 mb-6 border-b border-slate-200 dark:border-[var(--border)]">
+        <div className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           {GOV_LEVELS.map(level => (
             <button
               key={level}
@@ -631,9 +744,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 setSelectedSubcommittee("All");
                 setSelectedCaucus("All");
               }}
-              className={`px-2 py-4 font-bold text-sm transition-colors border-b-2 text-center ${selectedLevel === level
-                ? "border-(--accent) text-(--accent) bg-slate-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/30"
+              className={`border-b-2 px-2 py-4 text-center text-sm font-bold transition-colors ${selectedLevel === level
+                ? "border-(--accent) bg-slate-50/50 text-(--accent) dark:bg-[var(--surface-card)]/60"
+                : "border-transparent text-slate-500 hover:bg-slate-50/30 hover:text-slate-800 dark:text-[var(--muted)] dark:hover:bg-[var(--surface-card)]/40 dark:hover:text-[var(--foreground)]"
                 }`}
             >
               {level}
@@ -643,25 +756,30 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       </MotionReveal>
 
       {/* FILTERS */}
-      <MotionReveal className="bg-white p-6 rounded-4xl border border-slate-200 shadow-sm mb-12">
+      <MotionReveal className="mb-12 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_12px_40px_-16px_rgba(0,0,0,0.35)]">
         <div className="space-y-5">
 
           {/* Row 1: Search + District + Reset */}
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap items-end gap-3">
             {/* Search */}
-            <div className="relative flex-1 min-w-50">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1.5 px-1">Search</span>
+            <div className="relative min-w-50 flex-1">
+              <span className="mb-1.5 block px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Search
+              </span>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[var(--muted)]" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Name, committee, district..."
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-(--accent-soft) transition-shadow"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-sm text-slate-900 outline-none transition-shadow focus:ring-2 focus:ring-(--accent-soft) dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--foreground)] dark:placeholder:text-[var(--muted)]"
                 />
                 {searchTerm && (
-                  <button onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-[var(--muted)] dark:hover:text-[var(--foreground)]"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -669,21 +787,26 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             </div>
 
             {/* District */}
-            <label className="flex flex-col gap-1.5 min-w-32.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">District</span>
-              <div className="relative">
-                <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
-                  {availableDistricts.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-            </label>
+            <div className="flex min-w-32.5 flex-col gap-1.5">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                District
+              </span>
+              <ThemedSelect
+                instanceId="rep-filter-district"
+                ariaLabel="District filter"
+                value={selectedDistrict}
+                options={districtSelectOptions}
+                onChange={setSelectedDistrict}
+              />
+            </div>
 
             {/* Reset */}
             <div className="flex items-end">
-              <button onClick={clearAllFilters} disabled={!isAnyFilterActive}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all h-10.5 ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"}`}>
+              <button
+                onClick={clearAllFilters}
+                disabled={!isAnyFilterActive}
+                className={`flex h-10.5 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${isAnyFilterActive ? "bg-red-500 text-white shadow-md hover:bg-red-600" : "cursor-not-allowed bg-slate-100 text-slate-400 opacity-50 dark:bg-[var(--surface-card)] dark:text-[var(--muted)]"}`}
+              >
                 <RotateCcw className="h-4 w-4" />
                 Reset
               </button>
@@ -691,15 +814,20 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
 
           {/* Row 2: Borough chips + Party chips side by side */}
-          <div className="flex flex-col lg:flex-row gap-4 border-t border-slate-100">
+          <div className="flex flex-col gap-4 border-t border-slate-100 dark:border-[var(--border)] lg:flex-row">
             {/* Boroughs */}
-            <div className="flex flex-wrap items-center gap-2 pt-4 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Borough:</span>
+            <div className="flex flex-1 flex-wrap items-center gap-2 pt-4">
+              <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Borough:
+              </span>
               {dynamicBoroughs.map((b) => {
                 const active = selectedBoroughs.includes(b);
                 return (
-                  <button key={b} onClick={() => toggleBorough(b)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-600"}`}>
+                  <button
+                    key={b}
+                    onClick={() => toggleBorough(b)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--muted)] dark:hover:border-[var(--accent)]"}`}
+                  >
                     {active && <Check className="h-3 w-3" />}
                     {b}
                   </button>
@@ -708,16 +836,21 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             </div>
 
             {/* Divider */}
-            <div className="hidden lg:block w-px bg-slate-100 self-stretch" />
+            <div className="hidden w-px self-stretch bg-slate-100 dark:bg-[var(--border)] lg:block" />
 
             {/* Party chips */}
-            <div className="flex flex-wrap items-center gap-2 pt-4 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-1">Party:</span>
+            <div className="flex flex-1 flex-wrap items-center gap-2 pt-4">
+              <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Party:
+              </span>
               {availableParties.map((party) => {
                 const active = selectedParties.includes(party);
                 return (
-                  <button key={party} onClick={() => toggleParty(party)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-600`}`}>
+                  <button
+                    key={party}
+                    onClick={() => toggleParty(party)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-all ${active ? "border-(--accent) bg-(--accent) text-white" : `border-slate-200 bg-white text-slate-500 hover:border-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[var(--muted)] dark:hover:border-[var(--accent)]`}`}
+                  >
                     {active && <Check className="h-3 w-3" />}
                     {party}
                   </button>
@@ -727,39 +860,45 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           </div>
 
           {/* Row 3: Committee / Subcommittee / Caucus dropdowns */}
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Committee</span>
-              <div className="relative">
-                <select value={selectedCommittee} onChange={(e) => setSelectedCommittee(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
-                  {availableCommittees.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-            </label>
+          <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-4 dark:border-[var(--border)]">
+            <div className="flex min-w-50 flex-1 flex-col gap-1.5">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Committee
+              </span>
+              <ThemedSelect
+                instanceId="rep-filter-committee"
+                ariaLabel="Committee filter"
+                value={selectedCommittee}
+                options={committeeSelectOptions}
+                onChange={setSelectedCommittee}
+              />
+            </div>
 
-            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Subcommittee</span>
-              <div className="relative">
-                <select value={selectedSubcommittee} onChange={(e) => setSelectedSubcommittee(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
-                  {availableSubcommittees.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-            </label>
+            <div className="flex min-w-50 flex-1 flex-col gap-1.5">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Subcommittee
+              </span>
+              <ThemedSelect
+                instanceId="rep-filter-subcommittee"
+                ariaLabel="Subcommittee filter"
+                value={selectedSubcommittee}
+                options={subcommitteeSelectOptions}
+                onChange={setSelectedSubcommittee}
+              />
+            </div>
 
-            <label className="flex flex-col gap-1.5 flex-1 min-w-50">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Caucus</span>
-              <div className="relative">
-                <select value={selectedCaucus} onChange={(e) => setSelectedCaucus(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-(--accent-soft) transition-all cursor-pointer">
-                  {availableCaucuses.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-            </label>
+            <div className="flex min-w-50 flex-1 flex-col gap-1.5">
+              <span className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
+                Caucus
+              </span>
+              <ThemedSelect
+                instanceId="rep-filter-caucus"
+                ariaLabel="Caucus filter"
+                value={selectedCaucus}
+                options={caucusSelectOptions}
+                onChange={setSelectedCaucus}
+              />
+            </div>
           </div>
 
         </div>
@@ -768,20 +907,28 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       {/* RESULTS */}
       <div>
         {error && (
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 mb-8">{error}</div>
+          <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-800 dark:border-red-900/45 dark:bg-red-950/35 dark:text-red-100">
+            {error}
+          </div>
         )}
 
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-105 animate-pulse rounded-3xl bg-slate-100" />
+              <div key={i} className="h-105 animate-pulse rounded-3xl bg-slate-100 dark:bg-[var(--surface-card)]" />
             ))}
           </div>
         ) : (
           <div className="relative">
-            <div className="flex items-center justify-between mb-6 px-2">
-              <p className="text-sm text-slate-500 font-medium">
-                Showing <span className="text-slate-900 font-bold">{Math.min(visibleCount, filteredPoliticians.length)}</span> of <span className="text-slate-900 font-bold">{filteredPoliticians.length}</span> representatives
+            <div className="mb-6 flex items-center justify-between px-2">
+              <p className="text-sm font-medium text-slate-500 dark:text-[var(--foreground-secondary)]">
+                Showing{" "}
+                <span className="font-bold text-slate-900 dark:text-[var(--foreground)]">
+                  {Math.min(visibleCount, filteredPoliticians.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-bold text-slate-900 dark:text-[var(--foreground)]">{filteredPoliticians.length}</span>{" "}
+                representatives
               </p>
             </div>
 
@@ -797,13 +944,13 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             </motion.div>
 
             {filteredPoliticians.length === 0 && !loading && (
-              <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border border-dashed border-slate-300">
-                <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
+              <div className="flex flex-col items-center justify-center rounded-[3rem] border border-dashed border-slate-300 bg-white py-24 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]">
+                <div className="mb-4 rounded-full bg-slate-100 p-4 text-slate-400 dark:bg-[var(--surface-card)] dark:text-[var(--muted)]">
                   <Search className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">No representatives found</h3>
-                <p className="text-slate-500 mt-2">Try adjusting your filters or search term</p>
-                <button onClick={clearAllFilters} className="mt-6 text-(--accent) font-bold hover:underline">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-[var(--foreground)]">No representatives found</h3>
+                <p className="mt-2 text-slate-500 dark:text-[var(--foreground-secondary)]">Try adjusting your filters or search term</p>
+                <button onClick={clearAllFilters} className="mt-6 font-bold text-(--accent) hover:underline">
                   Clear all filters
                 </button>
               </div>
@@ -811,19 +958,23 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
 
             {visibleCount < filteredPoliticians.length && (
               <div className="mt-16 flex flex-wrap justify-center gap-4">
-                <button onClick={() => setVisibleCount(prev => prev + 24)}
-                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 font-bold transition-all hover:border-(--accent) hover:shadow-lg active:scale-95">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 24)}
+                  className="group relative flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-10 py-4 font-bold text-slate-900 transition-all hover:border-(--accent) hover:shadow-lg active:scale-95 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)] dark:hover:border-[var(--accent)]"
+                >
                   <span>Show More</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-(--accent) transition-transform group-hover:translate-y-0.5" />
-                  <div className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-(--accent) text-white text-[10px] font-bold shadow-sm">
+                  <ChevronDown className="h-5 w-5 text-slate-400 transition-transform group-hover:translate-y-0.5 group-hover:text-(--accent) dark:text-[var(--muted)]" />
+                  <div className="absolute -right-3 -top-3 rounded-md bg-(--accent) px-2 py-1 text-[10px] font-bold text-white shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
                     +{filteredPoliticians.length - visibleCount}
                   </div>
                 </button>
-                <button onClick={() => setVisibleCount(filteredPoliticians.length)}
-                  className="relative flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-bold transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 text-sm">
+                <button
+                  onClick={() => setVisibleCount(filteredPoliticians.length)}
+                  className="relative flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-slate-700 hover:shadow-lg active:scale-95 dark:bg-[var(--foreground)] dark:text-[var(--background)] dark:hover:opacity-90"
+                >
                   <span>Show All</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400" />
-                  <span className="absolute -top-3 -right-3 px-2 py-1 rounded-md bg-(--accent) text-white text-[10px] font-bold shadow-sm border border-slate-200">
+                  <ChevronDown className="h-5 w-5 text-slate-400 dark:text-[var(--background)]/70" />
+                  <span className="absolute -right-3 -top-3 rounded-md border border-slate-200 bg-(--accent) px-2 py-1 text-[10px] font-bold text-white shadow-sm dark:border-[var(--border)]">
                     = {filteredPoliticians.length}
                   </span>
                 </button>
@@ -831,12 +982,18 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             )}
 
             <div className="fixed bottom-28 right-8 z-50 flex flex-col gap-2">
-              <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-(--accent) hover:border-(--accent) transition-all active:scale-95" title="Scroll to top">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/95 dark:text-[var(--foreground-secondary)] dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)]"
+                title="Scroll to top"
+              >
                 <ChevronsUp className="h-5 w-5" />
               </button>
-              <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-                className="p-3 rounded-xl bg-white/90 border border-slate-200 shadow-lg backdrop-blur-sm text-slate-600 hover:text-(--accent) hover:border-(--accent) transition-all active:scale-95" title="Scroll to bottom">
+              <button
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+                className="rounded-xl border border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/95 dark:text-[var(--foreground-secondary)] dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-[var(--accent)] dark:hover:text-[var(--accent)]"
+                title="Scroll to bottom"
+              >
                 <ChevronsDown className="h-5 w-5" />
               </button>
             </div>

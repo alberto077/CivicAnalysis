@@ -1,19 +1,28 @@
 "use client";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-
+import { useMemo } from "react";
 import {
-  FileText,
+  ArrowRight,
+  ChevronDown,
+  Download,
+  ExternalLink,
   Globe2,
+  Hash,
   Lightbulb,
-  ListChecks,
-  Users,
+  Newspaper,
   Share2,
-  Download
+  Sparkles,
+  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MotionReveal } from "./MotionReveal";
+import { BriefingInline } from "./BriefingInline";
 import type { PolicyResponse } from "@/lib/api";
+import {
+  buildBriefingSourceCards,
+  type BriefingSourceCard,
+} from "@/lib/policy-reply";
 
 type PolicyBriefingPanelProps = {
   loading: boolean;
@@ -21,6 +30,208 @@ type PolicyBriefingPanelProps = {
   response: PolicyResponse | null;
   briefingQuery: string;
 };
+
+/** Remove a stray leading colon (model often emits `**…** : context`). */
+function trimCaptionLead(s: string): string {
+  return s.replace(/^[:：]\s*/, "").trim();
+}
+
+/** Strip wrapping `( … )` from KPI captions (model often adds parenthetical gloss). */
+function stripOuterParentheses(s: string): string {
+  let t = s.trim();
+  while (t.length >= 2 && t.startsWith("(") && t.endsWith(")")) {
+    const inner = t.slice(1, -1).trim();
+    if (!inner) break;
+    t = inner;
+  }
+  return t;
+}
+
+function normalizeKeyNumberCaption(raw: string): string | null {
+  const cap = stripOuterParentheses(trimCaptionLead(raw.trim()));
+  return cap || null;
+}
+
+/** Split model lines like `**$2.4M** late fee cap` into KPI headline + caption. */
+function parseKeyNumberParts(text: string): { headline: string; caption: string | null } {
+  const t = text.trim();
+  const boldLead = t.match(/^\*\*([^*]+)\*\*\s*(.*)$/);
+  if (boldLead) {
+    const cap = normalizeKeyNumberCaption(boldLead[2]);
+    return {
+      headline: boldLead[1].trim(),
+      caption: cap,
+    };
+  }
+  // Leading figure then delimiter (em dash, colon, hyphen, en dash)
+  const statLead = t.match(
+    /^((?:\$|€|£)?[\d,.]+(?:%|[KMB])?|\d+\s*[-–/]\s*\d+)\s*[—:–\-]\s+(.+)$/i,
+  );
+  if (statLead && statLead[1].length <= 28) {
+    const cap = normalizeKeyNumberCaption(statLead[2]);
+    return { headline: statLead[1].trim(), caption: cap };
+  }
+  return { headline: t, caption: null };
+}
+
+function KeyNumberKpiCard({ text }: { text: string }) {
+  const { headline, caption } = parseKeyNumberParts(text);
+  const headlineHasMarkup = /\*\*/.test(headline);
+  const useHeroStat =
+    Boolean(caption) || (headline.length <= 40 && !headlineHasMarkup);
+
+  return (
+    <div className="relative min-w-0 w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_12px_32px_-20px_rgba(15,23,42,0.12)] dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_40px_-24px_rgba(0,0,0,0.45)]">
+      <div
+        className="pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full bg-[var(--accent)]/55 dark:bg-[var(--accent)]/40"
+        aria-hidden
+      />
+      <div className="min-w-0 pl-4">
+        {useHeroStat ? (
+          <>
+            <div className="min-h-[2.5rem] min-w-0">
+              {headlineHasMarkup ? (
+                <p className="min-w-0 break-words font-limelight text-[1.55rem] font-bold leading-tight tracking-tight text-slate-900 sm:text-[1.75rem] dark:text-[var(--foreground)]">
+                  <BriefingInline text={headline} />
+                </p>
+              ) : (
+                <p className="min-w-0 break-words font-limelight text-[1.65rem] font-bold leading-none tracking-tight text-slate-900 tabular-nums sm:text-[1.85rem] dark:text-[var(--foreground)]">
+                  {headline}
+                </p>
+              )}
+            </div>
+            {caption ? (
+              <p className="mt-3 min-w-0 break-words text-[13px] font-medium leading-snug text-slate-600 dark:text-[#b8c8dc]">
+                <BriefingInline text={caption} />
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-[15px] font-semibold leading-snug text-slate-800 dark:text-[#e8f0fa]">
+            <BriefingInline text={text.trim()} />
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const SOURCES_VISIBLE_INITIAL = 3;
+
+function sourceHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function SourceEvidenceCard({ card }: { card: BriefingSourceCard }) {
+  const host = card.url ? sourceHostname(card.url) : "";
+
+  return (
+    <div className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white/70 p-4 shadow-sm transition hover:border-indigo-200/80 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/75 dark:hover:border-[var(--accent)]/35 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1">
+        <p className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-900 dark:text-[var(--foreground)]">
+          {card.title}
+        </p>
+        {card.source_type ? (
+          <span className="shrink-0 rounded-full border border-slate-200/90 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:text-[#b8c8dc]">
+            {card.source_type}
+          </span>
+        ) : null}
+      </div>
+      {card.published_date ? (
+        <p className="mt-1 text-[11px] text-slate-400 dark:text-[var(--foreground-secondary)]">
+          Record date: {card.published_date}
+        </p>
+      ) : null}
+      <p className="mt-2 min-w-0 flex-1 text-[13px] leading-relaxed text-slate-600 dark:text-[#dce8f4]">
+        <BriefingInline text={card.description} />
+      </p>
+      <div className="mt-4 border-t border-slate-100 pt-3 dark:border-[var(--border)]">
+        {card.url ? (
+          <a
+            href={card.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex max-w-full flex-wrap items-center gap-2 break-all text-sm font-semibold text-indigo-700 hover:underline dark:text-[var(--accent-soft)]"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Open official record</span>
+            {host ? (
+              <span className="font-normal text-slate-500 dark:text-[var(--muted)]">({host})</span>
+            ) : null}
+          </a>
+        ) : (
+          <p className="text-[12px] leading-snug text-slate-400 dark:text-[var(--foreground-secondary)]">
+            No indexed URL matched this citation. Confirm on the agency&apos;s official site.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FeedSection({
+  eyebrow,
+  title,
+  items,
+  icon: Icon,
+  variant = "bullets",
+}: {
+  eyebrow: string;
+  title: string;
+  items: string[];
+  icon: typeof Newspaper;
+  variant?: "bullets" | "stats";
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className="scroll-mt-4">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+          <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
+        </span>
+        <div>
+          <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-[var(--foreground-secondary)]">
+            {eyebrow}
+          </p>
+          <h3 className="font-work-sans text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+            {title}
+          </h3>
+        </div>
+      </div>
+      {variant === "stats" ? (
+        <div
+          className="grid min-w-0 gap-4 sm:gap-5"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))",
+          }}
+        >
+          {items.map((item, i) => (
+            <KeyNumberKpiCard key={`stat-${i}`} text={item} />
+          ))}
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {items.map((item, i) => (
+            <li
+              key={`b-${i}`}
+              className="flex gap-3 rounded-2xl border border-slate-100/90 bg-white/60 px-4 py-3.5 text-[15px] leading-[1.58] text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/55 dark:text-[#d8e6f2]"
+            >
+              <span className="mt-0.5 shrink-0 font-bold text-[var(--accent)]">•</span>
+              <span>
+                <BriefingInline text={item} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 export function PolicyBriefingPanel({
   loading,
@@ -31,34 +242,33 @@ export function PolicyBriefingPanel({
   const { resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
   const showBriefing = Boolean(response && !loading);
-  const safe = {
-    at_a_glance: response?.at_a_glance ?? [],
-    key_takeaways: response?.key_takeaways ?? [],
-    what_this_means: response?.what_this_means ?? [],
-    relevant_actions: response?.relevant_actions ?? [],
-    sources: response?.sources ?? [],
-  };
 
-  const structuredSections = [
-    {
-      key: "key_takeaways",
-      title: "Key takeaways",
-      items: safe.key_takeaways,
-      Icon: Lightbulb,
-    },
-    {
-      key: "what_this_means",
-      title: "What this means for you",
-      items: safe.what_this_means,
-      Icon: Users,
-    },
-    {
-      key: "relevant_actions",
-      title: "Relevant actions",
-      items: safe.relevant_actions,
-      Icon: ListChecks,
-    },
-  ] as const;
+  const safe = showBriefing
+    ? response!
+    : ({
+        tldr: [],
+        topic_tags: [],
+        what_happened: [],
+        why_it_matters: [],
+        whos_affected: [],
+        key_numbers: [],
+        what_happens_next: [],
+        read_more: [],
+        at_a_glance: [],
+        key_takeaways: [],
+        what_this_means: [],
+        relevant_actions: [],
+        sources: [],
+        retrieval_sources: [],
+        sources_used: 0,
+      } satisfies PolicyResponse);
+
+  const sourceCards = useMemo(
+    () => buildBriefingSourceCards(safe.sources, safe.retrieval_sources),
+    [safe.sources, safe.retrieval_sources],
+  );
+  const visibleSources = sourceCards.slice(0, SOURCES_VISIBLE_INITIAL);
+  const extraSources = sourceCards.slice(SOURCES_VISIBLE_INITIAL);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -72,25 +282,33 @@ export function PolicyBriefingPanel({
         </div>
       ) : null}
 
-      <MotionReveal className="flex items-center justify-between">
+      <MotionReveal className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-limelight text-4xl font-medium tracking-tight text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
             {showBriefing ? "Live Policy Briefing" : "Neighborhood Intel"}
           </h2>
           {showBriefing && (
-            <p className="mt-3 max-w-2xl text-[15px] text-slate-500 dark:text-[var(--foreground-secondary)]">
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">
               Personalized analysis for:{" "}
-              <span className="font-bold text-slate-900 dark:text-[var(--foreground)]">&quot;{briefingQuery}&quot;</span>
+              <span className="font-semibold text-slate-900 dark:text-[var(--foreground)]">
+                &quot;{briefingQuery}&quot;
+              </span>
             </p>
           )}
         </div>
 
         {showBriefing && (
-          <div className="flex gap-2">
-            <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:hover:text-[var(--foreground)]">
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:hover:text-[var(--foreground)]"
+            >
               <Share2 className="h-4 w-4" />
             </button>
-            <button className="font-work-sans flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-slate-800 dark:bg-[var(--accent-mid)]/90 dark:hover:bg-[var(--accent-mid)]">
+            <button
+              type="button"
+              className="font-work-sans flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-slate-800 dark:bg-[var(--accent-mid)]/90 dark:hover:bg-[var(--accent-mid)]"
+            >
               <Download className="h-4 w-4" />
               <span>Export</span>
             </button>
@@ -99,7 +317,7 @@ export function PolicyBriefingPanel({
       </MotionReveal>
 
       <MotionReveal className="mt-10">
-        <div className="lift-card overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl transition-[border-color,box-shadow] duration-300 sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)]">
+        <div className="lift-card feature-border-glow feature-border-glow-briefing overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white shadow-xl transition-[border-color,box-shadow] duration-300 dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)] sm:rounded-[2.5rem]">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -108,22 +326,22 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex min-h-[520px] flex-col items-center justify-center gap-6 py-12 text-center sm:min-h-[560px]"
+                className="flex min-h-[480px] flex-col items-center justify-center gap-6 px-6 py-12 text-center sm:min-h-[520px]"
               >
                 {isDarkMode ? (
-                  <div className="flex h-64 w-64 items-center justify-center sm:h-72 sm:w-72">
+                  <div className="flex h-56 w-56 items-center justify-center sm:h-64 sm:w-64">
                     <div
-                      className="h-16 w-16 animate-spin rounded-full border-4 border-[var(--accent)]/30 border-t-[var(--accent)] shadow-[0_0_24px_rgba(110,185,255,0.35)]"
+                      className="h-14 w-14 animate-spin rounded-full border-4 border-[var(--accent)]/30 border-t-[var(--accent)] shadow-[0_0_24px_rgba(110,185,255,0.35)]"
                       aria-hidden
                     />
                   </div>
                 ) : (
-                  <div className="relative h-80 w-80 max-w-[min(92vw,20rem)] overflow-hidden rounded-2xl sm:h-96 sm:w-96 sm:max-w-[min(92vw,24rem)] lg:h-[28rem] lg:w-[28rem] lg:max-w-[min(92vw,28rem)]">
+                  <div className="relative h-72 w-72 max-w-[min(92vw,18rem)] overflow-hidden rounded-2xl sm:h-80 sm:w-80 sm:max-w-[min(92vw,20rem)]">
                     <Image
                       src="/maggla.gif"
                       alt="Loading briefing animation"
                       fill
-                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 384px, 448px"
+                      sizes="(max-width: 640px) 92vw, 320px"
                       className="object-contain"
                       priority
                       unoptimized
@@ -132,92 +350,165 @@ export function PolicyBriefingPanel({
                 )}
                 <div>
                   <p className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
-                    Generating Intelligent Briefing...
+                    Generating briefing…
                   </p>
-                  <p className="mt-2 text-slate-500 dark:text-[var(--foreground-secondary)]">
-                    Scanning city records and cross-referencing neighborhood impacts.
+                  <p className="mt-2 max-w-md text-[15px] text-slate-500 dark:text-[var(--foreground-secondary)]">
+                    Short sentences, clear sections, and a quick skim layer—almost there.
                   </p>
                 </div>
               </motion.div>
             ) : showBriefing ? (
               <motion.div
                 key="briefing"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="space-y-12"
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.38 }}
+                className="px-5 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-14"
               >
-                <div className="border-b border-slate-200 pb-10 dark:border-[var(--border)]">
-                  <div className="mb-6 flex items-center gap-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg dark:bg-[var(--accent)]/40 dark:text-[var(--foreground)]">
-                      <FileText className="h-5 w-5" />
-                    </span>
-                    <h3 className="font-limelight text-xl font-medium text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
-                      Policy Synthesis
-                    </h3>
-                  </div>
-                  <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {safe.at_a_glance.map((item, index) => (
-                      <li
-                        key={`glance-${index}`}
-                        className="flex gap-3 rounded-2xl border border-white bg-white/50 p-4 shadow-sm transition hover:shadow-md dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/80"
-                      >
-                        <span className="shrink-0 font-bold text-[var(--accent)]">•</span>
-                        <span className="text-[15px] leading-relaxed text-slate-800 dark:text-[var(--foreground)]">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {structuredSections.map((s) => (
-                    <div key={s.title} className="flex flex-col">
-                      <div className="flex items-center gap-3 mb-6">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
-                          <s.Icon className="h-[1.125rem] w-[1.125rem]" />
+                <div className="mx-auto w-full max-w-3xl space-y-12 lg:max-w-4xl xl:max-w-5xl">
+                  {safe.tldr.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] sm:p-6">
+                      <div className="flex gap-4">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] dark:bg-white/10 dark:text-white">
+                          <Sparkles className="h-5 w-5" />
                         </span>
-                        <h3 className="font-limelight text-sm font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
-                          {s.title}
-                        </h3>
+                        <div className="min-w-0 space-y-2">
+                          <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-[var(--foreground-secondary)]">
+                            TL;DR
+                          </p>
+                          {safe.tldr.map((line, i) => (
+                            <p
+                              key={`tldr-${i}`}
+                              className="text-[17px] font-medium leading-snug tracking-tight text-slate-900 dark:text-white"
+                            >
+                              <BriefingInline text={line} />
+                            </p>
+                          ))}
+                        </div>
                       </div>
-                      <ul className="space-y-4">
-                        {s.items.map((item, itemIndex) => (
-                          <li key={`${s.key}-${itemIndex}`} className="flex gap-3 text-[14px] leading-relaxed text-slate-700 dark:text-[var(--foreground-secondary)]">
-                            <span className="text-[var(--accent)] font-bold">»</span>
-                            <span>{item}</span>
+                    </div>
+                  )}
+
+                  {safe.topic_tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {safe.topic_tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-slate-200/90 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/80 dark:text-[#c8d8ea]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-14">
+                    <FeedSection
+                      eyebrow="Story"
+                      title="What happened"
+                      items={safe.what_happened}
+                      icon={Newspaper}
+                    />
+                    <FeedSection
+                      eyebrow="Impact"
+                      title="Why it matters"
+                      items={safe.why_it_matters}
+                      icon={Lightbulb}
+                    />
+                    <FeedSection
+                      eyebrow="People & place"
+                      title="Who's affected"
+                      items={safe.whos_affected}
+                      icon={Users}
+                    />
+                    <FeedSection
+                      eyebrow="By the numbers"
+                      title="Key numbers"
+                      items={safe.key_numbers}
+                      icon={Hash}
+                      variant="stats"
+                    />
+                    <FeedSection
+                      eyebrow="Forward view"
+                      title="What happens next"
+                      items={safe.what_happens_next}
+                      icon={ArrowRight}
+                    />
+                  </div>
+
+                  {safe.read_more.length > 0 && (
+                    <details className="group rounded-2xl border border-slate-200/90 bg-slate-50/50 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/40">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-work-sans text-sm font-semibold text-slate-800 outline-none transition hover:bg-slate-100/60 dark:text-[var(--foreground)] dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+                        <span>Read more</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--foreground-secondary)]" />
+                      </summary>
+                      <ul className="space-y-2 border-t border-slate-200/80 px-5 pb-5 pt-3 dark:border-[var(--border)]">
+                        {safe.read_more.map((item, i) => (
+                          <li
+                            key={`more-${i}`}
+                            className="text-[14px] leading-relaxed text-slate-700 dark:text-[#c8d4e0]"
+                          >
+                            <BriefingInline text={item} />
                           </li>
                         ))}
                       </ul>
-                    </div>
-                  ))}
-                </div>
+                    </details>
+                  )}
 
-                {safe.sources.length > 0 && (
-                  <div className="border-t border-slate-200 pt-10 dark:border-[var(--border)]">
-                    <div className="mb-6 flex items-center gap-4">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--accent)]">
-                        <Globe2 className="h-5 w-5" />
-                      </span>
-                      <h3 className="font-limelight text-[15px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--muted)]">
-                        Evidence & Sources
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {safe.sources.map((source, i) => (
-                        <div
-                          key={i}
-                          className="rounded-2xl border border-slate-100 bg-white/50 p-4 transition hover:border-indigo-200 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/70 dark:hover:border-[var(--accent)]/30"
-                        >
-                          <p className="text-sm font-bold text-slate-900 dark:text-[var(--foreground)]">{source.title}</p>
-                          <p className="mt-1 text-[13px] italic leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">
-                            {source.description}
+                  {sourceCards.length > 0 && (
+                    <div className="border-t border-slate-200 pt-12 dark:border-[var(--border)]">
+                      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--accent)]">
+                            <Globe2 className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <h3 className="font-work-sans text-lg font-semibold text-slate-900 dark:text-white">
+                              Official sources
+                            </h3>
+                            <p className="mt-1 max-w-xl text-[12px] leading-snug text-slate-500 dark:text-[var(--foreground-secondary)]">
+                              Each card ties the briefing to an indexed document where possible. Links open the
+                              official record in a new tab.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-work-sans text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-[var(--muted)]">
+                            {sourceCards.length} {sourceCards.length === 1 ? "source" : "sources"} found
                           </p>
                         </div>
-                      ))}
+                      </div>
+                      <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 [-webkit-tap-highlight-color:transparent] [&_p::selection]:bg-indigo-100 [&_p::selection]:text-slate-900 dark:[&_p::selection]:bg-white/20 dark:[&_p::selection]:text-[var(--foreground)]">
+                        {visibleSources.map((card, i) => (
+                          <SourceEvidenceCard
+                            key={`src-v-${card.url ?? "nourl"}-${card.title}-${i}`}
+                            card={card}
+                          />
+                        ))}
+                      </div>
+                      {extraSources.length > 0 ? (
+                        <details className="group mt-5 rounded-2xl border border-slate-200/90 bg-slate-50/40 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/30">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 font-work-sans text-sm font-semibold text-slate-800 outline-none transition hover:bg-slate-100/70 dark:text-[var(--foreground)] dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+                            <span>
+                              Show {extraSources.length} more{" "}
+                              {extraSources.length === 1 ? "source" : "sources"}
+                            </span>
+                            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--foreground-secondary)]" />
+                          </summary>
+                          <div className="grid min-w-0 grid-cols-1 gap-3 border-t border-slate-200/80 p-4 pt-4 md:grid-cols-2 dark:border-[var(--border)]">
+                            {extraSources.map((card, i) => (
+                              <SourceEvidenceCard
+                                key={`src-x-${card.url ?? "nourl"}-${card.title}-${i}`}
+                                card={card}
+                              />
+                            ))}
+                          </div>
+                        </details>
+                      ) : null}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -226,7 +517,7 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto min-h-[240px] w-full max-w-[1200px] py-12"
+                className="mx-auto min-h-[200px] w-full max-w-[1200px] py-12"
                 aria-hidden
               />
             )}

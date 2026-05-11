@@ -1,5 +1,6 @@
 import {
   normalizePolicyReply,
+  parseRetrievalSourcesEnvelope,
   type PolicyResponse,
   type RetrievalTier,
 } from "@/lib/policy-reply";
@@ -240,49 +241,38 @@ export async function sendChat(
     throw new Error(friendlyChatError(res.status, data));
   }
 
-  const payload: unknown =
-    typeof data === "object" &&
-    data !== null &&
-    "reply" in (data as Record<string, unknown>)
-      ? (data as { reply: unknown }).reply
-      : data;
+  const envelope =
+    typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
 
-  return normalizePolicyReply(payload);
+  const payload: unknown =
+    "reply" in envelope && envelope.reply !== undefined ? envelope.reply : data;
+
+  const normalized = normalizePolicyReply(payload);
+  const retrieval_sources = parseRetrievalSourcesEnvelope(envelope, 12);
+  const sources_used_raw = envelope.sources_used;
+  const sources_used =
+    typeof sources_used_raw === "number" && Number.isFinite(sources_used_raw)
+      ? sources_used_raw
+      : retrieval_sources.length;
+
+  return {
+    ...normalized,
+    retrieval_sources,
+    sources_used,
+  };
 }
 
 export type FloatingRetrievalSource = {
   title: string;
   source_url: string;
   source_type: string;
+  published_date?: string;
 };
 
 function parseFloatingRetrievalSources(
   data: Record<string, unknown>,
 ): FloatingRetrievalSource[] {
-  const raw = data.retrieval_sources;
-
-  if (!Array.isArray(raw)) return [];
-
-  const out: FloatingRetrievalSource[] = [];
-
-  for (const item of raw) {
-    if (typeof item !== "object" || item === null) continue;
-
-    const r = item as Record<string, unknown>;
-    const title = typeof r.title === "string" ? r.title.trim() : "";
-    const source_url = typeof r.source_url === "string" ? r.source_url.trim() : "";
-    const source_type = typeof r.source_type === "string" ? r.source_type.trim() : "";
-
-    if (!source_url) continue;
-
-    out.push({
-      title: title || "Source",
-      source_url,
-      source_type,
-    });
-  }
-
-  return out.slice(0, 8);
+  return parseRetrievalSourcesEnvelope(data, 8);
 }
 
 export type FloatingChatRagResult = {
