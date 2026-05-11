@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, X } from "lucide-react";
@@ -116,15 +116,61 @@ export function FloatingChatBot() {
 
   /** Avoid FAB SSR/client DOM mismatch (e.g. motion/compiler wrappers vs native button). */
   const [launcherMounted, setLauncherMounted] = useState(false);
-  useEffect(() => {
-    setLauncherMounted(true);
-  }, []);
-
   const [isOpen, setIsOpen] = useState(false);
+  /** Distance from viewport bottom to FAB bottom (px); grows when footer scrolls up so the pill sits above it. */
+  const [launcherBottomPx, setLauncherBottomPx] = useState(24);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLauncherMounted(true);
+  }, []);
+
+  const baseFabBottomPx = 24;
+  const footerGapPx = 14;
+
+  useLayoutEffect(() => {
+    if (!launcherMounted || isOpen) return;
+
+    const tick = () => {
+      const footer = document.getElementById("site-footer");
+      if (!footer) {
+        setLauncherBottomPx(baseFabBottomPx);
+        return;
+      }
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      const ft = footer.getBoundingClientRect().top;
+      const needed = Math.round(vh - ft + footerGapPx);
+      setLauncherBottomPx(Math.max(baseFabBottomPx, needed));
+    };
+
+    tick();
+    window.addEventListener("scroll", tick, { passive: true });
+    window.addEventListener("resize", tick);
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", tick);
+    vv?.addEventListener("scroll", tick);
+
+    const footerEl = document.getElementById("site-footer");
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            requestAnimationFrame(tick);
+          })
+        : null;
+    ro?.observe(document.documentElement);
+    if (footerEl) ro?.observe(footerEl);
+
+    return () => {
+      window.removeEventListener("scroll", tick);
+      window.removeEventListener("resize", tick);
+      vv?.removeEventListener("resize", tick);
+      vv?.removeEventListener("scroll", tick);
+      ro?.disconnect();
+    };
+  }, [launcherMounted, isOpen, pathname]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -421,7 +467,12 @@ export function FloatingChatBot() {
       </AnimatePresence>
 
       {launcherMounted && !isOpen ? (
-        <div className="fixed bottom-6 right-5 z-[120] sm:bottom-8 sm:right-8">
+        <div
+          className="fixed right-5 z-[120] sm:right-8"
+          style={{
+            bottom: `calc(${launcherBottomPx}px + env(safe-area-inset-bottom, 0px))`,
+          }}
+        >
           <button
             type="button"
             onClick={() => setIsOpen(true)}

@@ -76,6 +76,10 @@ export function HomeShell() {
   const [selectedTime, setSelectedTime] = useState("Last 30 Days");
   const [isPersonalized, setIsPersonalized] = useState(true);
 
+  useEffect(() => {
+    if (selectedTime === "Current Session") setSelectedTime("Last 30 Days");
+  }, [selectedTime, setSelectedTime]);
+
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
