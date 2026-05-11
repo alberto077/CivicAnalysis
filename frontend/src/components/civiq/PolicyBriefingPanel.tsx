@@ -198,7 +198,7 @@ function FeedSection({
           <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-[var(--foreground-secondary)]">
             {eyebrow}
           </p>
-          <h3 className="font-work-sans text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h3 className="font-work-sans text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             {title}
           </h3>
         </div>
@@ -284,7 +284,7 @@ export function PolicyBriefingPanel({
 
       <MotionReveal className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-limelight text-4xl font-medium tracking-tight text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
+          <h2 className="font-work-sans text-4xl font-bold tracking-tight text-[rgba(20,31,45,0.92)] sm:text-5xl dark:text-[var(--foreground)]">
             {showBriefing ? "Live Policy Briefing" : "Neighborhood Intel"}
           </h2>
           {showBriefing && (
@@ -348,14 +348,9 @@ export function PolicyBriefingPanel({
                     />
                   </div>
                 )}
-                <div>
-                  <p className="font-limelight text-2xl font-medium text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
-                    Generating briefing…
-                  </p>
-                  <p className="mt-2 max-w-md text-[15px] text-slate-500 dark:text-[var(--foreground-secondary)]">
-                    Short sentences, clear sections, and a quick skim layer—almost there.
-                  </p>
-                </div>
+                <p className="font-work-sans text-2xl font-bold tracking-tight text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)]">
+                  Generating briefing…
+                </p>
               </motion.div>
             ) : showBriefing ? (
               <motion.div
@@ -464,7 +459,7 @@ export function PolicyBriefingPanel({
                             <Globe2 className="h-5 w-5" />
                           </span>
                           <div className="min-w-0">
-                            <h3 className="font-work-sans text-lg font-semibold text-slate-900 dark:text-white">
+                            <h3 className="font-work-sans text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                               Official sources
                             </h3>
                             <p className="mt-1 max-w-xl text-[12px] leading-snug text-slate-500 dark:text-[var(--foreground-secondary)]">

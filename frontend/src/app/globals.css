@@ -829,6 +829,13 @@ html.access-focus-mode *:focus-visible {
   padding: 10px 12px;
 }
 
+.dark .civic-tooltip {
+  background: #151b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  color: #e6edf3;
+}
+
 .civic-tooltip::before {
   display: none;
 }
