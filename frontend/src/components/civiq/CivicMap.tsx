@@ -840,7 +840,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
     <div className="w-full py-16">
       {!hideHeader && (
         <div className="mb-8">
-          <h2 className="font-display text-4xl font-bold text-slate-900 dark:text-foreground">{title}</h2>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4 ml-8">{title}</h1>
           <p className="mt-2 text-lg text-slate-500 dark:text-(--foreground-secondary)">{subtitle}</p>
           <div className="mt-5 bg-blue-50/60 dark:bg-blue-950/25 rounded-2xl border border-blue-100/70 dark:border-blue-800/40 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 max-w-full">
             <div className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">

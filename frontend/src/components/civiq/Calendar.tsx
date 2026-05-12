@@ -157,9 +157,9 @@ export function Calendar() {
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* heading/hero */}
             <MotionReveal>
-                <h2 className="mt-20 font-limelight text-2xl font-medium tracking-tight text-[rgba(20,31,45,0.9)] sm:text-3xl md:text-[2rem] dark:text-foreground">
+                <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
                     Civic Calendar
-                </h2>
+                </h1>
                 <p className="mt-3 max-w-2xl text-(--muted)">
                     All public meeting calendars, hearing schedules, and livestreams across City Council,
                     Community Boards, and New York State — in one place.
