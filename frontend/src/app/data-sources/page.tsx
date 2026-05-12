@@ -386,11 +386,11 @@ export default function DataSourcesPage() {
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Civic Spiegel</span>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl mb-5">
-                Data Sources &amp; Architecture
+              <h1 className="text-4xl font-bold text-white sm:text-5xl mb-5">
+                <span className="text-white">Data Sources &amp; Architecture</span>
               </h1>
               <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
-                Every fact in Civic Spiegel traces back to a primary government source. No third-party analysis,
+                Every fact in <em className="text-slate-300 not-italic font-medium">Civic Spiegel</em> traces back to a primary government source. No third-party analysis,
                 no aggregator bias — raw official records, indexed and made searchable.
               </p>
 
