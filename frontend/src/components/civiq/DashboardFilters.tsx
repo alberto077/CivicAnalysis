@@ -7,6 +7,7 @@ import {
   GraduationCap,
   HeartPulse,
   Home,
+  Info,
   Leaf,
   Scale,
   Shield,
@@ -131,6 +132,7 @@ export function DashboardFilters({
   onEditProfile: () => void;
 }) {
   const personalizeInputId = `personalize-cb-${useId().replace(/:/g, "")}`;
+  const personalizeTooltipId = `personalize-tip-${useId().replace(/:/g, "")}`;
   const locationDdId = `dd-loc-${useId().replace(/:/g, "")}`;
   const timeDdId = `dd-time-${useId().replace(/:/g, "")}`;
 
@@ -189,12 +191,31 @@ export function DashboardFilters({
             />
           </div>
           <div className="flex min-w-0 flex-col gap-2 lg:max-w-none">
-            <label
-              htmlFor={personalizeInputId}
-              className="font-work-sans block min-w-0 cursor-pointer whitespace-nowrap text-xs font-bold uppercase tracking-widest text-[var(--muted)]"
-            >
-              Personalize results
-            </label>
+            <div className="flex min-w-0 items-center gap-1">
+              <label
+                htmlFor={personalizeInputId}
+                className="font-work-sans min-w-0 cursor-pointer truncate text-xs font-bold uppercase tracking-widest text-[var(--muted)]"
+              >
+                Personalize results
+              </label>
+              <span className="group relative inline-flex shrink-0">
+                <button
+                  type="button"
+                  className="rounded-full p-0.5 text-[var(--muted)] transition hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)]"
+                  aria-label="How personalize results works"
+                  aria-describedby={personalizeTooltipId}
+                >
+                  <Info className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                </button>
+                <span
+                  id={personalizeTooltipId}
+                  role="tooltip"
+                  className="pointer-events-none invisible absolute left-1/2 top-full z-[80] mt-1.5 w-[min(15rem,calc(100vw-2.5rem))] -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,251,255,0.96)_100%)] px-3 py-2 font-work-sans text-[11px] font-medium leading-snug tracking-[0.01em] text-[var(--foreground)] shadow-[0_12px_36px_-14px_rgba(26,54,93,0.35)] opacity-0 backdrop-blur-xl transition-[opacity,visibility] duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(22,28,36,0.98)_100%)]"
+                >
+                  When on, we use your saved borough and interests with these filters. When off, only the filters above apply.
+                </span>
+              </span>
+            </div>
             <div className="flex flex-nowrap items-center gap-3">
               <input
                 id={personalizeInputId}
