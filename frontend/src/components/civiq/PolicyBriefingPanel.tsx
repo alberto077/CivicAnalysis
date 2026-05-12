@@ -21,6 +21,7 @@ import { BriefingInline } from "./BriefingInline";
 import type { PolicyResponse } from "@/lib/api";
 import {
   buildBriefingSourceCards,
+  hasPolicyBriefingContent,
   type BriefingSourceCard,
 } from "@/lib/policy-reply";
 
@@ -29,6 +30,10 @@ type PolicyBriefingPanelProps = {
   error: string | null;
   response: PolicyResponse | null;
   briefingQuery: string;
+  snapshotLoading?: boolean;
+  snapshotError?: string | null;
+  generalizedBriefing?: PolicyResponse | null;
+  filterSummary?: string;
 };
 
 /** Remove a stray leading colon (model often emits `**…** : context`). */
@@ -238,30 +243,46 @@ export function PolicyBriefingPanel({
   error,
   response,
   briefingQuery,
+  snapshotLoading = false,
+  snapshotError = null,
+  generalizedBriefing = null,
+  filterSummary = "",
 }: PolicyBriefingPanelProps) {
   const { resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
-  const showBriefing = Boolean(response && !loading);
 
-  const safe = showBriefing
+  const showLive = Boolean(response && !loading);
+  const showGeneralized =
+    !showLive &&
+    generalizedBriefing !== null &&
+    hasPolicyBriefingContent(generalizedBriefing) &&
+    !snapshotLoading &&
+    !snapshotError;
+  const showSnapshotLoading = !showLive && !loading && snapshotLoading;
+  const showSnapshotError = !showLive && !loading && !snapshotLoading && Boolean(snapshotError);
+  const showBriefingBody = showLive || showGeneralized;
+
+  const safe = showLive
     ? response!
-    : ({
-        tldr: [],
-        topic_tags: [],
-        what_happened: [],
-        why_it_matters: [],
-        whos_affected: [],
-        key_numbers: [],
-        what_happens_next: [],
-        read_more: [],
-        at_a_glance: [],
-        key_takeaways: [],
-        what_this_means: [],
-        relevant_actions: [],
-        sources: [],
-        retrieval_sources: [],
-        sources_used: 0,
-      } satisfies PolicyResponse);
+    : showGeneralized && generalizedBriefing
+      ? generalizedBriefing
+      : ({
+          tldr: [],
+          topic_tags: [],
+          what_happened: [],
+          why_it_matters: [],
+          whos_affected: [],
+          key_numbers: [],
+          what_happens_next: [],
+          read_more: [],
+          at_a_glance: [],
+          key_takeaways: [],
+          what_this_means: [],
+          relevant_actions: [],
+          sources: [],
+          retrieval_sources: [],
+          sources_used: 0,
+        } satisfies PolicyResponse);
 
   const sourceCards = useMemo(
     () => buildBriefingSourceCards(safe.sources, safe.retrieval_sources),
@@ -285,9 +306,9 @@ export function PolicyBriefingPanel({
       <MotionReveal className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-work-sans text-4xl font-bold tracking-tight text-[rgba(20,31,45,0.92)] sm:text-5xl dark:text-[var(--foreground)]">
-            {showBriefing ? "Live Policy Briefing" : "Neighborhood Intel"}
+            {showLive ? "Live Policy Briefing" : "Neighborhood Intel"}
           </h2>
-          {showBriefing && (
+          {showLive && (
             <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">
               Personalized analysis for:{" "}
               <span className="font-semibold text-slate-900 dark:text-[var(--foreground)]">
@@ -295,9 +316,17 @@ export function PolicyBriefingPanel({
               </span>
             </p>
           )}
+          {showGeneralized && filterSummary ? (
+            <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-500 dark:text-[var(--foreground-secondary)]">
+              Recent records snapshot for{" "}
+              <span className="font-semibold text-slate-900 dark:text-[var(--foreground)]">
+                {filterSummary}
+              </span>
+            </p>
+          ) : null}
         </div>
 
-        {showBriefing && (
+        {showLive && (
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
@@ -352,9 +381,9 @@ export function PolicyBriefingPanel({
                   Generating briefing…
                 </p>
               </motion.div>
-            ) : showBriefing ? (
+            ) : showBriefingBody ? (
               <motion.div
-                key="briefing"
+                key={showLive ? "briefing-live" : "briefing-generalized"}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
@@ -362,6 +391,21 @@ export function PolicyBriefingPanel({
                 className="px-5 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-14"
               >
                 <div className="mx-auto w-full max-w-3xl space-y-12 lg:max-w-4xl xl:max-w-5xl">
+                  {showGeneralized ? (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="rounded-2xl border border-amber-200/90 bg-amber-50/90 px-4 py-3 text-left shadow-sm dark:border-amber-900/45 dark:bg-amber-950/35"
+                    >
+                      <p className="font-work-sans text-sm font-bold text-amber-950 dark:text-amber-100">
+                        Generalized snapshot
+                      </p>
+                      <p className="mt-1 font-work-sans text-[13px] leading-snug text-amber-900/90 dark:text-amber-50/90">
+                        Built from your dashboard filters and recently indexed civic records—not from a specific
+                        question yet. Use the search box above for a tailored briefing.
+                      </p>
+                    </div>
+                  ) : null}
                   {safe.tldr.length > 0 && (
                     <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] sm:p-6">
                       <div className="flex gap-4">
@@ -505,6 +549,40 @@ export function PolicyBriefingPanel({
                   )}
                 </div>
               </motion.div>
+            ) : showSnapshotLoading ? (
+              <motion.div
+                key="snapshot-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex min-h-[280px] flex-col items-center justify-center gap-4 px-6 py-14 text-center"
+              >
+                <div
+                  className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]"
+                  aria-hidden
+                />
+                <p className="font-work-sans text-sm font-semibold text-slate-600 dark:text-[var(--foreground-secondary)]">
+                  Loading recent records for your filters…
+                </p>
+              </motion.div>
+            ) : showSnapshotError ? (
+              <motion.div
+                key="snapshot-error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="px-6 py-14 sm:px-10"
+                role="alert"
+              >
+                <p className="font-work-sans text-sm font-semibold text-slate-900 dark:text-[var(--foreground)]">
+                  Could not load the snapshot feed
+                </p>
+                <p className="mt-2 font-work-sans text-[13px] leading-relaxed text-slate-600 dark:text-[var(--foreground-secondary)]">
+                  {snapshotError}
+                </p>
+              </motion.div>
             ) : (
               <motion.div
                 key="empty"
@@ -512,9 +590,19 @@ export function PolicyBriefingPanel({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
-                className="mx-auto min-h-[200px] w-full max-w-[1200px] py-12"
-                aria-hidden
-              />
+                className="mx-auto flex min-h-[260px] w-full max-w-2xl flex-col items-center justify-center px-6 py-14 text-center"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/90 bg-slate-50 text-slate-700 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+                  <Sparkles className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                </span>
+                <p className="mt-5 font-work-sans text-lg font-semibold text-slate-900 dark:text-[var(--foreground)]">
+                  No indexed records match these filters yet
+                </p>
+                <p className="mt-2 max-w-md font-work-sans text-sm leading-relaxed text-slate-600 dark:text-[var(--foreground-secondary)]">
+                  Try a wider timeframe or all policy areas, or type a question in the search box to generate a
+                  tailored briefing from the library.
+                </p>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>

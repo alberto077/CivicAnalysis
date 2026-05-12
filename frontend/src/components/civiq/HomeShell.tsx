@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Header } from "@/components/civiq/Header";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
@@ -12,6 +12,8 @@ import {
   sendChat,
   type PolicyResponse,
 } from "@/lib/api";
+import { buildGeneralizedBriefingFromPolicies } from "@/lib/generalized-briefing";
+import { useRecentPoliciesSnapshot } from "@/lib/useRecentPoliciesSnapshot";
 
 const DashboardFilters = dynamic(
   () =>
@@ -83,6 +85,42 @@ export function HomeShell() {
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+
+  const { policies: snapshotPolicies, snapshotLoading, snapshotError } = useRecentPoliciesSnapshot(
+    selectedArea,
+    selectedLocation,
+    selectedTime,
+    isPersonalized,
+    profile,
+    isLoaded,
+  );
+
+  const filterSummary = useMemo(
+    () =>
+      [selectedLocation, selectedArea === "All" ? "All policy areas" : selectedArea, selectedTime].join(
+        " · ",
+      ),
+    [selectedArea, selectedLocation, selectedTime],
+  );
+
+  const generalizedBriefing = useMemo((): PolicyResponse | null => {
+    if (response) return null;
+    if (snapshotLoading || snapshotError) return null;
+    if (!snapshotPolicies.length) return null;
+    return buildGeneralizedBriefingFromPolicies(snapshotPolicies, {
+      selectedArea,
+      locationLabel: selectedLocation,
+      timeLabel: selectedTime,
+    });
+  }, [
+    response,
+    snapshotPolicies,
+    snapshotLoading,
+    snapshotError,
+    selectedArea,
+    selectedLocation,
+    selectedTime,
+  ]);
 
   // Show onboarding on first load if profile doesn't exist
   useEffect(() => {
@@ -236,15 +274,20 @@ export function HomeShell() {
             error={error}
             response={response}
             briefingQuery={lastBriefingQuery}
+            snapshotLoading={snapshotLoading}
+            snapshotError={snapshotError}
+            generalizedBriefing={generalizedBriefing}
+            filterSummary={filterSummary}
           />
         </div>
 
         {/* 2. Dashboard feed */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
           <div id="updates">
-            <RecentUpdates 
-              selectedArea={selectedArea} 
-              selectedLocation={selectedLocation} 
+            <RecentUpdates
+              policies={snapshotPolicies}
+              policiesLoading={snapshotLoading}
+              policiesError={snapshotError}
             />
           </div>
         </div>
