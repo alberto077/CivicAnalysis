@@ -1,9 +1,7 @@
 "use client";
 
 import { motion, type HTMLMotionProps } from "framer-motion";
-import { useSyncExternalStore, type ReactNode } from "react";
-
-const noopSubscribe = () => () => {};
+import { startTransition, useEffect, useState, type ReactNode } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -15,7 +13,9 @@ type MotionRevealProps = {
 
 /**
  * Framer Motion applies different initial props on the server vs client, which breaks hydration.
- * We render a static div for SSR + the first client pass, then swap to motion.div after mount.
+ * We render a static div for SSR + the first client paint, then swap to motion.div after commit.
+ * (A noop `useSyncExternalStore` with divergent server/client snapshots can trigger
+ * "state update on a component that hasn't mounted yet" during hydration.)
  */
 export function MotionReveal({
   children,
@@ -23,7 +23,11 @@ export function MotionReveal({
   delay = 0,
   ...rest
 }: MotionRevealProps) {
-  const motionReady = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const [motionReady, setMotionReady] = useState(false);
+
+  useEffect(() => {
+    startTransition(() => setMotionReady(true));
+  }, []);
 
   if (!motionReady) {
     return <div className={className}>{children}</div>;

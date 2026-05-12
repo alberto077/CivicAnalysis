@@ -2,36 +2,16 @@
 
 import { Rss } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
-import { getRecentPolicies, type PolicyBriefing } from "@/lib/api";
+import type { PolicyBriefing } from "@/lib/api";
 
 type RecentUpdatesProps = {
-  selectedArea?: string;
-  selectedLocation?: string;
+  policies: PolicyBriefing[];
+  policiesLoading: boolean;
+  policiesError: string | null;
 };
 
-export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesProps) {
-  const [policies, setPolicies] = useState<PolicyBriefing[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const area = selectedArea === "All" ? undefined : selectedArea;
-        const borough = selectedLocation === "All NYC" ? undefined : selectedLocation;
-        const data = await getRecentPolicies(borough, area);
-        setPolicies(data.policies);
-      } catch (e) {
-        console.error("Failed to load recent policies", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [selectedArea, selectedLocation]);
-
+export function RecentUpdates({ policies, policiesLoading, policiesError }: RecentUpdatesProps) {
   return (
     <section className="w-full py-16 sm:py-24">
       <MotionReveal>
@@ -51,7 +31,7 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
       <MotionReveal className="mt-10">
         <div className="glass-card feature-border-glow feature-border-glow-updates overflow-hidden rounded-2xl md:rounded-3xl">
           <AnimatePresence mode="wait">
-            {loading ? (
+            {policiesLoading ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
@@ -60,6 +40,22 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                 className="flex items-center justify-center py-20"
               >
                 <p className="text-sm text-[var(--muted)] animate-pulse">Loading updates...</p>
+              </motion.div>
+            ) : policiesError ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center px-6 py-16 text-center"
+                role="alert"
+              >
+                <p className="font-work-sans text-sm font-semibold text-[var(--foreground)]">
+                  Could not load recent updates
+                </p>
+                <p className="font-work-sans mt-1 max-w-md text-xs font-normal text-[var(--muted)]">
+                  {policiesError}
+                </p>
               </motion.div>
             ) : policies.length > 0 ? (
               <motion.ul
@@ -77,9 +73,9 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                     className="lift-row flex flex-col gap-2 px-6 py-6 transition-colors hover:bg-white/45 sm:flex-row sm:items-start sm:gap-8 md:px-8 dark:hover:bg-[rgba(255,255,255,0.04)]"
                   >
                     <div className="min-w-0 flex-1">
-                      <a 
-                        href={p.source_url} 
-                        target="_blank" 
+                      <a
+                        href={p.source_url}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="font-work-sans font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
                       >
@@ -108,7 +104,9 @@ export function RecentUpdates({ selectedArea, selectedLocation }: RecentUpdatesP
                 className="flex flex-col items-center justify-center py-20 text-center px-6"
               >
                 <p className="font-work-sans text-sm font-medium text-[var(--foreground)]">No recent updates found</p>
-                <p className="font-work-sans mt-1 text-xs font-normal text-[var(--muted)]">Try adjusting your filters or search keywords.</p>
+                <p className="font-work-sans mt-1 text-xs font-normal text-[var(--muted)]">
+                  Try adjusting your filters or search keywords.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
