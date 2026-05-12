@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Header } from "@/components/civiq/Header";
 import { RecentUpdates } from "@/components/civiq/RecentUpdates";
+import { ProfileActivitySection } from "@/components/civiq/ProfileActivitySection";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { SettingsModal } from "@/components/civiq/SettingsModal";
@@ -14,6 +15,7 @@ import {
 } from "@/lib/api";
 import { buildGeneralizedBriefingFromPolicies } from "@/lib/generalized-briefing";
 import { useRecentPoliciesSnapshot } from "@/lib/useRecentPoliciesSnapshot";
+import { useProfileActivityFeed } from "@/lib/useProfileActivityFeed";
 
 const DashboardFilters = dynamic(
   () =>
@@ -85,6 +87,24 @@ export function HomeShell() {
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [profileSkipped, setProfileSkipped] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isLoaded) return;
+    if (profile) {
+      localStorage.removeItem("civic_profile_skipped");
+      setProfileSkipped(false);
+    } else {
+      setProfileSkipped(Boolean(localStorage.getItem("civic_profile_skipped")));
+    }
+  }, [isLoaded, profile]);
+
+  const profileActivity = useProfileActivityFeed({
+    isProfileLoaded: isLoaded,
+    profile,
+    isPersonalized,
+    selectedTime,
+  });
 
   const { policies: snapshotPolicies, snapshotLoading, snapshotError } = useRecentPoliciesSnapshot(
     selectedArea,
@@ -230,11 +250,16 @@ export function HomeShell() {
         isOpen={showOnboarding} 
         initialProfile={profile}
         onSave={(data) => {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("civic_profile_skipped");
+          }
+          setProfileSkipped(false);
           saveProfile(data);
           setShowOnboarding(false);
         }}
         onSkip={() => {
           localStorage.setItem("civic_profile_skipped", "true");
+          setProfileSkipped(true);
           setShowOnboarding(false);
         }}
       />
@@ -280,6 +305,20 @@ export function HomeShell() {
             filterSummary={filterSummary}
           />
         </div>
+
+        <ProfileActivitySection
+          isProfileLoaded={isLoaded}
+          profile={profile}
+          profileSkipped={profileSkipped}
+          items={profileActivity.items}
+          loading={profileActivity.loading}
+          error={profileActivity.error}
+          mode={profileActivity.mode}
+          mappedAreas={profileActivity.mappedAreas}
+          profileBorough={profileActivity.profileBorough}
+          onSetupProfile={() => setShowOnboarding(true)}
+          onEditProfile={() => setShowEditProfile(true)}
+        />
 
         {/* 2. Dashboard feed */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
