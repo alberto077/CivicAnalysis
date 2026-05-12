@@ -101,7 +101,8 @@ function buildRepCards(district: District, distId: number): RepCard[] {
       level: "Borough President",
       sublabel: borough,
       icon: <Flag className="h-4 w-4" />,
-      colorClasses: "bg-violet-50 border-violet-100",
+      colorClasses:
+        "bg-violet-50 border-violet-100 dark:bg-violet-950/35 dark:border-violet-800/50",
       accentColor: "#7c3aed",
       name: bp.name,
       title: `Borough President of ${borough}`,
@@ -367,8 +368,8 @@ function RepCardItem({ card }: { card: RepCard }) {
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none mb-1" style={{ color: card.accentColor }}>{card.level}</p>
-              <p className="text-sm font-bold text-slate-800 leading-tight dark:text-[var(--foreground)]">{card.name}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5 leading-tight dark:text-[var(--foreground-secondary)]">{card.sublabel}</p>
+              <p className="text-sm font-bold text-slate-800 leading-tight dark:text-foreground">{card.name}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 leading-tight dark:text-(--foreground-secondary)">{card.sublabel}</p>
             </div>
             {card.website && (
               <a href={card.website} target="_blank" rel="noopener noreferrer"
@@ -417,8 +418,8 @@ function RepCardItem({ card }: { card: RepCard }) {
           )}
           {(card.phone || card.email) && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {card.phone && <a href={`tel:${card.phone}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)]"><Phone className="h-3 w-3" />{card.phone}</a>}
-              {card.email && <a href={`mailto:${card.email}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)]"><Mail className="h-3 w-3" />{card.email}</a>}
+              {card.phone && <a href={`tel:${card.phone}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:text-(--foreground-secondary) dark:hover:text-foreground"><Phone className="h-3 w-3" />{card.phone}</a>}
+              {card.email && <a href={`mailto:${card.email}`} className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:text-(--foreground-secondary) dark:hover:text-foreground"><Mail className="h-3 w-3" />{card.email}</a>}
             </div>
           )}
         </div>
@@ -596,17 +597,17 @@ function CivicEventsMap() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 relative bg-white dark:bg-[var(--surface-card)] rounded-[2.5rem] border border-slate-200 dark:border-[var(--border)] shadow-sm overflow-hidden h-175">
+        <div className="lg:col-span-8 relative bg-white dark:bg-(--surface-card) rounded-[2.5rem] border border-slate-200 dark:border-(--border) shadow-sm overflow-hidden h-175">
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
           <div ref={mapContainerRef} className="w-full h-full" />
           {!mapReady && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-[var(--surface-elevated)]">
-              <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-[var(--muted)]" />
-              <p className="text-sm text-slate-400 dark:text-[var(--foreground-secondary)]">Loading map…</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-(--surface-elevated)">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-(--muted)" />
+              <p className="text-sm text-slate-400 dark:text-(--foreground-secondary)">Loading map…</p>
             </div>
           )}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-999 pointer-events-none">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 dark:bg-[var(--surface-elevated)]/95 backdrop-blur-md shadow-md border border-slate-200/60 dark:border-[var(--border)] text-[11px] font-semibold text-slate-500 dark:text-[var(--foreground-secondary)] whitespace-nowrap">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 dark:bg-(--surface-elevated)/95 backdrop-blur-md shadow-md border border-slate-200/60 dark:border-(--border) text-[11px] font-semibold text-slate-500 dark:text-(--foreground-secondary) whitespace-nowrap">
               <Calendar className="h-3.5 w-3.5 text-amber-500 shrink-0" />
               Permanent Locations — live event pins coming soon
             </div>
@@ -615,22 +616,22 @@ function CivicEventsMap() {
 
         <div className="lg:col-span-4 space-y-4">
           {/* location toggles */}
-          <div className="bg-white dark:bg-[var(--surface-card)] rounded-4xl border border-slate-200 dark:border-[var(--border)] p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--foreground-secondary)] mb-3">Location Types</p>
+          <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-3">Location Types</p>
             <div className="space-y-1.5">
               {(Object.entries(PIN_META) as [PinCategory, { label: string; color: string }][]).map(([cat, meta]) => {
                 const active = activePinCats.has(cat);
                 const count = CIVIC_PINS.filter((p) => p.category === cat).length;
                 return (
                   <button key={cat} onClick={() => togglePin(cat)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${active ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-[var(--surface-elevated)] dark:border-[var(--border)] dark:text-[var(--foreground)]" : "bg-white border-slate-100 text-slate-400 dark:bg-[var(--surface-card)] dark:border-[var(--border)] dark:text-[var(--muted)]"}`}>
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${active ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-(--surface-elevated) dark:border-(--border) dark:text-foreground" : "bg-white border-slate-100 text-slate-400 dark:bg-(--surface-card) dark:border-(--border) dark:text-(--muted)"}`}>
                     <div className="flex items-center gap-2">
                       <div className="h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-slate-700 shadow-sm shrink-0" style={{ backgroundColor: active ? meta.color : "#cbd5e1" }} />
                       <span className="font-semibold">{meta.label}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400 dark:text-[var(--muted)]">{count}</span>
-                      {active ? <Eye className="h-3 w-3 text-slate-400 dark:text-[var(--foreground-secondary)]" /> : <EyeOff className="h-3 w-3 text-slate-300 dark:text-[var(--muted)]" />}
+                      <span className="text-slate-400 dark:text-(--muted)">{count}</span>
+                      {active ? <Eye className="h-3 w-3 text-slate-400 dark:text-(--foreground-secondary)" /> : <EyeOff className="h-3 w-3 text-slate-300 dark:text-(--muted)" />}
                     </div>
                   </button>
                 );
@@ -639,12 +640,12 @@ function CivicEventsMap() {
           </div>
 
           {/* boundary toggles */}
-          <div className="bg-white dark:bg-[var(--surface-card)] rounded-4xl border border-slate-200 dark:border-[var(--border)] p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--foreground-secondary)] mb-3">Boundary Lines - City, State, Federal</p>
+          <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-3">Boundary Lines - City, State, Federal</p>
             <div className="space-y-1.5">
               {boundaryLayers.map((bl) => (
                 <button key={bl.id} onClick={() => toggleBoundary(bl.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${bl.enabled ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-[var(--surface-elevated)] dark:border-[var(--border)] dark:text-[var(--foreground)]" : "bg-white border-slate-100 text-slate-400 dark:bg-[var(--surface-card)] dark:border-[var(--border)] dark:text-[var(--muted)]"}`}>
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${bl.enabled ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-(--surface-elevated) dark:border-(--border) dark:text-foreground" : "bg-white border-slate-100 text-slate-400 dark:bg-(--surface-card) dark:border-(--border) dark:text-(--muted)"}`}>
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="h-2.5 w-6 rounded-full shrink-0" style={{ backgroundColor: bl.enabled ? bl.color : "#e2e8f0" }} />
                     <span className="font-semibold truncate">{bl.label}</span>
@@ -660,38 +661,38 @@ function CivicEventsMap() {
       </div>
 
       {/* boundary explanations */}
-      <div className="bg-white dark:bg-[var(--surface-card)] rounded-4xl border border-slate-200 dark:border-[var(--border)] p-6 shadow-sm">
-        <h4 className="text-sm font-bold text-slate-800 dark:text-[var(--foreground)] mb-1 flex items-center gap-2">
-          <Layers className="h-4 w-4 text-slate-400 dark:text-[var(--foreground-secondary)]" />
+      <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-6 shadow-sm">
+        <h4 className="text-sm font-bold text-slate-800 dark:text-foreground mb-1 flex items-center gap-2">
+          <Layers className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary)" />
           Understanding Boundary Lines &amp; Levels of Government
         </h4>
-        <p className="text-xs text-slate-400 dark:text-[var(--foreground-secondary)] mb-5 leading-relaxed max-w-2xl">
+        <p className="text-xs text-slate-400 dark:text-(--foreground-secondary) mb-5 leading-relaxed max-w-2xl">
           Each boundary on the map represents a different jurisdiction with its own elected officials. Your address typically falls inside multiple overlapping districts simultaneously — each with a different representative who makes decisions affecting your life.
         </p>
         <div className="space-y-2">
           {INITIAL_BOUNDARY_LAYERS.map((bl) => (
-            <div key={bl.id} className="rounded-2xl border border-slate-100 dark:border-[var(--border)] overflow-hidden">
+            <div key={bl.id} className="rounded-2xl border border-slate-100 dark:border-(--border) overflow-hidden">
               <button onClick={() => setExpandedBoundary(expandedBoundary === bl.id ? null : bl.id)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-[var(--surface-elevated)] transition-colors text-left">
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-(--surface-elevated) transition-colors text-left">
                 <div className="flex items-center gap-3">
                   <div className="h-3 w-6 rounded-full shrink-0" style={{ backgroundColor: bl.color, opacity: 0.8 }} />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-[var(--foreground)]">{bl.label}</span>
+                  <span className="text-sm font-semibold text-slate-700 dark:text-foreground">{bl.label}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>{bl.govLevel}</span>
                 </div>
-                {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-[var(--foreground-secondary)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-[var(--foreground-secondary)] shrink-0" />}
+                {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary) shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary) shrink-0" />}
               </button>
               <AnimatePresence>
                 {expandedBoundary === bl.id && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-                    <p className="px-4 pb-4 text-xs text-slate-500 dark:text-[#b8c8dc] leading-relaxed border-t border-slate-100 dark:border-[var(--border)] pt-3">{bl.description}</p>
+                    <p className="px-4 pb-4 text-xs text-slate-500 dark:text-[#b8c8dc] leading-relaxed border-t border-slate-100 dark:border-(--border) pt-3">{bl.description}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           ))}
         </div>
-        <p className="mt-5 pt-5 border-t border-slate-100 dark:border-[var(--border)] text-[11px] text-slate-400 dark:text-[var(--foreground-secondary)] leading-relaxed">
-          <span className="font-bold text-slate-500 dark:text-[var(--muted)]">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
+        <p className="mt-5 pt-5 border-t border-slate-100 dark:border-(--border) text-[11px] text-slate-400 dark:text-(--foreground-secondary) leading-relaxed">
+          <span className="font-bold text-slate-500 dark:text-(--muted)">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
         </p>
       </div>
 
@@ -839,8 +840,8 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
     <div className="w-full py-16">
       {!hideHeader && (
         <div className="mb-8">
-          <h2 className="font-display text-4xl font-bold text-slate-900 dark:text-[var(--foreground)]">{title}</h2>
-          <p className="mt-2 text-lg text-slate-500 dark:text-[var(--foreground-secondary)]">{subtitle}</p>
+          <h2 className="font-display text-4xl font-bold text-slate-900 dark:text-foreground">{title}</h2>
+          <p className="mt-2 text-lg text-slate-500 dark:text-(--foreground-secondary)">{subtitle}</p>
           <div className="mt-5 bg-blue-50/60 dark:bg-blue-950/25 rounded-2xl border border-blue-100/70 dark:border-blue-800/40 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 max-w-full">
             <div className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
               <Info className="h-4 w-4 text-blue-600 dark:text-blue-300" />
@@ -856,13 +857,13 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
       )}
 
       {/* TABS */}
-      <div className="flex items-stretch w-full mb-8 border-b border-slate-200 dark:border-[var(--border)]">
+      <div className="flex items-stretch w-full mb-8 border-b border-slate-200 dark:border-(--border)">
         {TABS.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all border-b-2 ${
               activeTab === tab.id
                 ? "border-(--accent) text-(--accent)"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 dark:text-[var(--foreground-secondary)] dark:hover:text-[var(--foreground)] dark:hover:border-[var(--border)]"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 dark:text-(--foreground-secondary) dark:hover:text-foreground dark:hover:border-(--border)"
             }`}>
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
@@ -876,28 +877,28 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
         {/* ════ NYS EXPLORER ════ */}
         {activeTab === "nys" && (
           <motion.div key="nys" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <div className="bg-white dark:bg-[var(--surface-card)] rounded-[2.5rem] border border-slate-200 dark:border-[var(--border)] shadow-sm overflow-hidden h-175 relative flex flex-col group">
-              <div className="bg-slate-50 dark:bg-[var(--surface-elevated)] border-b border-slate-100 dark:border-[var(--border)] px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-[var(--foreground)]">
+            <div className="bg-white dark:bg-(--surface-card) rounded-[2.5rem] border border-slate-200 dark:border-(--border) shadow-sm overflow-hidden h-175 relative flex flex-col group">
+              <div className="bg-slate-50 dark:bg-(--surface-elevated) border-b border-slate-100 dark:border-(--border) px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-foreground">
                   <MapIcon className="h-4 w-4 text-(--accent)" />Interactive Boundary Map — New York State
                 </div>
                 <div className="flex items-center gap-2">
                   <form onSubmit={(e) => { e.preventDefault(); setNysQuery(nysInput.trim() ? encodeURIComponent(nysInput.trim()) : ""); }} className="flex gap-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-[var(--muted)]" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-(--muted)" />
                       <input type="text" value={nysInput} onChange={(e) => setNysInput(e.target.value)} placeholder="Address or zip…"
-                        className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-[var(--border)] bg-white dark:bg-[var(--surface-card)] text-slate-900 dark:text-[var(--foreground)] text-xs outline-none focus:ring-2 focus:ring-(--accent-soft) w-44 transition-shadow placeholder:text-slate-400 dark:placeholder:text-[var(--muted)]" />
+                        className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-(--border) bg-white dark:bg-(--surface-card) text-slate-900 dark:text-foreground text-xs outline-none focus:ring-2 focus:ring-(--accent-soft) w-44 transition-shadow placeholder:text-slate-400 dark:placeholder:text-(--muted)" />
                     </div>
                     <button type="submit" className="px-3 py-1.5 rounded-xl bg-(--accent) text-white text-xs font-bold hover:opacity-90 transition-opacity">Locate</button>
                     {nysQuery && (
                       <button type="button" onClick={() => { setNysQuery(""); setNysInput(""); }}
-                        className="px-2 py-1.5 rounded-xl border border-slate-200 dark:border-[var(--border)] text-slate-400 dark:text-[var(--muted)] hover:text-slate-600 dark:hover:text-[var(--foreground)] transition-colors">
+                        className="px-2 py-1.5 rounded-xl border border-slate-200 dark:border-(--border) text-slate-400 dark:text-(--muted) hover:text-slate-600 dark:hover:text-foreground transition-colors">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </form>
                   <button onClick={() => window.open(iframeSrc, "_blank")}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-[var(--foreground-secondary)] hover:text-(--accent) transition-colors px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[var(--surface-card)]">
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-(--foreground-secondary) hover:text-(--accent) transition-colors px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-(--surface-card)">
                     <Maximize2 className="h-3.5 w-3.5" />Expand
                   </button>
                 </div>
@@ -905,14 +906,14 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
               <iframe key={iframeSrc} src={iframeSrc} className="w-full flex-1 border-none bg-slate-100 dark:bg-[#0b0f14]" title="NYS Districts ArcGIS Map" allow="geolocation" loading="lazy" />
               {!nysQuery && (
                 <div className="absolute bottom-6 left-6 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 dark:bg-[var(--surface-elevated)]/95 backdrop-blur-md shadow-lg border border-slate-200/50 dark:border-[var(--border)] text-[11px] font-bold text-slate-600 dark:text-[var(--foreground-secondary)] uppercase tracking-widest">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 dark:bg-(--surface-elevated)/95 backdrop-blur-md shadow-lg border border-slate-200/50 dark:border-(--border) text-[11px] font-bold text-slate-600 dark:text-(--foreground-secondary) uppercase tracking-widest">
                     💡 Type an address or zip in the toolbar above to zoom in.
                   </div>
                 </div>
               )}
             </div>
-            <p className="mt-4 text-xs text-slate-400 dark:text-[var(--foreground-secondary)] text-center">
-              Powered by <a href="https://nysboe.maps.arcgis.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600 dark:hover:text-[var(--foreground)]">NYS Board of Elections ArcGIS</a>
+            <p className="mt-4 text-xs text-slate-400 dark:text-(--foreground-secondary) text-center">
+              Powered by <a href="https://nysboe.maps.arcgis.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600 dark:hover:text-foreground">NYS Board of Elections ArcGIS</a>
               {" "}· Shows state legislative, congressional, and county boundaries across New York State.
             </p>
           </motion.div>
@@ -924,11 +925,11 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             {/* Map */}
-            <div className="lg:col-span-8 relative bg-white dark:bg-[var(--surface-card)] rounded-[2.5rem] border border-slate-200 dark:border-[var(--border)] shadow-sm overflow-hidden h-175">
+            <div className="lg:col-span-8 relative bg-white dark:bg-(--surface-card) rounded-[2.5rem] border border-slate-200 dark:border-(--border) shadow-sm overflow-hidden h-175">
               {mapLoading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-[var(--surface-elevated)]">
-                  <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-[var(--muted)]" />
-                  <p className="text-sm text-slate-400 dark:text-[var(--foreground-secondary)] font-medium">Loading geographic data…</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-(--surface-elevated)">
+                  <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-(--muted)" />
+                  <p className="text-sm text-slate-400 dark:text-(--foreground-secondary) font-medium">Loading geographic data…</p>
                 </div>
               ) : geoData ? (
                 <ComposableMap projection="geoMercator" projectionConfig={{ scale: 65000, center: [-73.94, 40.7] }} className="w-full h-full">
@@ -967,17 +968,17 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                   </ZoomableGroup>
                 </ComposableMap>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 dark:text-[var(--foreground-secondary)]">
-                  <AlertCircle className="h-10 w-10 text-slate-300 dark:text-[var(--muted)]" /><p className="text-sm">Failed to load map data.</p>
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 dark:text-(--foreground-secondary)">
+                  <AlertCircle className="h-10 w-10 text-slate-300 dark:text-(--muted)" /><p className="text-sm">Failed to load map data.</p>
                 </div>
               )}
-              <div className="absolute bottom-5 left-5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-[var(--surface-elevated)]/90 backdrop-blur shadow-sm border border-slate-100 dark:border-[var(--border)] text-[10px] font-bold text-slate-500 dark:text-[var(--foreground-secondary)] uppercase tracking-widest pointer-events-none">
+              <div className="absolute bottom-5 left-5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-(--surface-elevated)/90 backdrop-blur shadow-sm border border-slate-100 dark:border-(--border) text-[10px] font-bold text-slate-500 dark:text-(--foreground-secondary) uppercase tracking-widest pointer-events-none">
                 <Layers className="h-3 w-3" />51 Council Districts
               </div>
               <AnimatePresence>
                 {hoveredId && (
                   <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                    className="absolute bottom-5 right-5 px-3 py-1.5 rounded-lg bg-white/90 dark:bg-[var(--surface-elevated)]/95 backdrop-blur shadow-md border border-slate-100 dark:border-[var(--border)] text-xs font-semibold text-slate-700 dark:text-[var(--foreground)] pointer-events-none">
+                    className="absolute bottom-5 right-5 px-3 py-1.5 rounded-lg bg-white/90 dark:bg-(--surface-elevated)/95 backdrop-blur shadow-md border border-slate-100 dark:border-(--border) text-xs font-semibold text-slate-700 dark:text-foreground pointer-events-none">
                     District {hoveredId}
                   </motion.div>
                 )}
@@ -988,20 +989,20 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             <div className="lg:col-span-4 space-y-4">
 
               {/* SEARCH */}
-              <div className="bg-white dark:bg-[var(--surface-card)] rounded-4xl border border-slate-200 dark:border-[var(--border)] p-6 shadow-sm">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--foreground-secondary)] mb-2">
+              <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-6 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-2">
                   Find Representatives
                 </p>
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 dark:text-[var(--muted)]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 dark:text-(--muted)" />
                     <input
                       type="text"
                       value={searchInput}
                       onChange={(e) => { setSearchInput(e.target.value); setShowSuggestions(true); }}
                       onFocus={() => setShowSuggestions(true)}
                       placeholder="Address, zip, rep name, or district #"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-[var(--border)] bg-slate-50 dark:bg-[var(--surface-elevated)] text-slate-900 dark:text-[var(--foreground)] text-sm outline-none focus:ring-2 focus:ring-(--accent-soft) transition-shadow placeholder:text-slate-300 dark:placeholder:text-[var(--muted)]"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-(--border) bg-slate-50 dark:bg-(--surface-elevated) text-slate-900 dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-(--accent-soft) transition-shadow placeholder:text-slate-300 dark:placeholder:text-(--muted)"
                     />
                   </div>
                   <button type="submit" disabled={searchMode === "loading" || !searchInput.trim() || !mapLoaded}
@@ -1018,15 +1019,15 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
 
                 {/* suggestions dropdown */}
                 {showSuggestions && districtSuggestions.length > 0 && (
-                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto border border-slate-100 dark:border-[var(--border)] rounded-xl bg-white dark:bg-[var(--surface-elevated)] shadow-md">
+                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto border border-slate-100 dark:border-(--border) rounded-xl bg-white dark:bg-(--surface-elevated) shadow-md">
                     {districtSuggestions.map((d) => (
                       <button key={d.id} onClick={() => resolveDistrict(d.id)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-[var(--surface-card)] transition-colors flex items-center justify-between group">
+                        className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-(--surface-card) transition-colors flex items-center justify-between group">
                         <div>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-[var(--foreground)]">{d.rep}</p>
-                          <p className="text-[11px] text-slate-400 dark:text-[var(--foreground-secondary)]">District {d.id} · {d.name}</p>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-foreground">{d.rep}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-(--foreground-secondary)">District {d.id} · {d.name}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-slate-300 dark:text-[var(--muted)] group-hover:text-slate-500 dark:group-hover:text-[var(--foreground-secondary)] transition-colors" />
+                        <ChevronRight className="h-4 w-4 text-slate-300 dark:text-(--muted) group-hover:text-slate-500 dark:group-hover:text-(--foreground-secondary) transition-colors" />
                       </button>
                     ))}
                   </div>
@@ -1050,7 +1051,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
 
                 {/* loading note */}
                 {!mapLoaded && searchMode === "idle" && (
-                  <p className="mt-2 text-[11px] text-slate-400 dark:text-[var(--foreground-secondary)] flex items-center gap-1.5">
+                  <p className="mt-2 text-[11px] text-slate-400 dark:text-(--foreground-secondary) flex items-center gap-1.5">
                     <Loader2 className="h-3 w-3 animate-spin" /> Loading district data…
                   </p>
                 )}
@@ -1062,7 +1063,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                   <motion.div key={selectedDistrict.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-2">
                     {/* all rep levels */}
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-[var(--foreground-secondary)] px-1 mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) px-1 mb-2">
                       Local Representatives
                     </p>
                   </div>
@@ -1086,10 +1087,10 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                   </motion.div>
                 ) : (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="bg-slate-100/50 dark:bg-[var(--surface-elevated)]/50 rounded-4xl border-2 border-dashed border-slate-200 dark:border-[var(--border)] p-12 text-center h-100 flex flex-col items-center justify-center">
-                    <MapPin className="h-10 w-10 text-slate-300 dark:text-[var(--muted)] mb-4" />
-                    <h3 className="text-slate-900 dark:text-[var(--foreground)] font-bold mb-2">No District Selected</h3>
-                    <p className="text-sm text-slate-400 dark:text-[var(--foreground-secondary)] max-w-55">
+                    className="bg-slate-100/50 dark:bg-(--surface-elevated)/50 rounded-4xl border-2 border-dashed border-slate-200 dark:border-(--border) p-12 text-center h-100 flex flex-col items-center justify-center">
+                    <MapPin className="h-10 w-10 text-slate-300 dark:text-(--muted) mb-4" />
+                    <h3 className="text-slate-900 dark:text-foreground font-bold mb-2">No District Selected</h3>
+                    <p className="text-sm text-slate-400 dark:text-(--foreground-secondary) max-w-55">
                       Click any district on the map, or search by address, zip, rep name, or district number.
                     </p>
                   </motion.div>
@@ -1111,15 +1112,15 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
           <motion.div key="resources" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
               <div>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-[var(--foreground)] flex items-center gap-2">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-foreground flex items-center gap-2">
                   <Info className="h-5 w-5 text-(--accent)" />Civic Map Resources
                 </h3>
-                <p className="text-slate-500 dark:text-[var(--foreground-secondary)] mt-1 text-sm">
+                <p className="text-slate-500 dark:text-(--foreground-secondary) mt-1 text-sm">
                   Official tools, district finders, calendars, and boundary data — with guidance on when to use each.
                 </p>
               </div>
               <a href="https://opdgig.dos.ny.gov/" target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-fit py-3 px-5 rounded-xl bg-slate-50 dark:bg-[var(--surface-elevated)] text-slate-600 dark:text-[var(--foreground)] text-xs font-bold hover:bg-(--accent) hover:text-white transition-all border border-slate-200 dark:border-[var(--border)]">
+                className="flex items-center justify-center gap-2 w-fit py-3 px-5 rounded-xl bg-slate-50 dark:bg-(--surface-elevated) text-slate-600 dark:text-foreground text-xs font-bold hover:bg-blue-800 hover:text-white transition-all border border-slate-200 dark:border-(--border)">
                 NYS Open Data Portal <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -1129,23 +1130,23 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
               const govLevels = ["City", "State", "Federal"] as const;
               const allTags = [...new Set(RESOURCES.map((r) => r.tag))].sort();
               const inactivePill =
-                "bg-white dark:bg-[var(--surface-elevated)] text-slate-500 dark:text-[var(--foreground-secondary)] border-slate-200 dark:border-[var(--border)] hover:border-slate-600 dark:hover:border-[var(--muted)]";
+                "bg-white dark:bg-[var(--surface-elevated)] text-slate-500 dark:text-(--foreground-secondary) border-slate-200 dark:border-[var(--border)] hover:border-slate-600 dark:hover:border-[var(--muted)]";
               return (
                 <div className="space-y-2 mb-6">
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => setResourceFilter("all")}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${resourceFilter === "all" ? "bg-[rgba(20,31,45,0.85)] dark:bg-[var(--accent)] text-white border-transparent" : inactivePill}`}>
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${resourceFilter === "all" ? "bg-[rgba(20,31,45,0.85)] dark:bg-blue-800 text-white border-transparent" : inactivePill}`}>
                       All ({RESOURCES.length})
                     </button>
                     {govLevels.map((f) => (
                       <button key={f} onClick={() => setResourceFilter(f)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${resourceFilter === f ? "bg-[rgba(20,31,45,0.85)] dark:bg-[var(--accent)] text-white border-transparent" : inactivePill}`}>
+                        className={`px-4 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${resourceFilter === f ? "bg-[rgba(20,31,45,0.85)] dark:bg-blue-800 text-white border-transparent" : inactivePill}`}>
                         {f} ({RESOURCES.filter((r) => r.govLevel === f).length})
                       </button>
                     ))}
                     {allTags.map((tag) => (
                       <button key={tag} onClick={() => setResourceFilter(tag)}
-                        className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all ${resourceFilter === tag ? "bg-[rgba(20,31,45,0.85)] dark:bg-[var(--accent)] text-white border-transparent" : `${TAG_COLORS[tag] ?? inactivePill} hover:border-slate-600 dark:hover:border-[var(--muted)]`}`}>
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold border-2 transition-all ${resourceFilter === tag ? "bg-[rgba(20,31,45,0.85)] dark:bg-blue-800 text-white border-transparent" : `${TAG_COLORS[tag] ?? inactivePill} hover:border-slate-600 dark:hover:border-(--muted)`}`}>
                         {tag} ({RESOURCES.filter((r) => r.tag === tag).length})
                       </button>
                     ))}
@@ -1157,20 +1158,20 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredResources.map((r) => (
                 <motion.div key={r.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.01 }}
-                  className="bg-white dark:bg-[var(--surface-card)] rounded-3xl border border-slate-200 dark:border-[var(--border)] p-6 hover:shadow-xl dark:hover:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)] transition-all group flex flex-col h-full">
+                  className="bg-white dark:bg-(--surface-card) rounded-3xl border border-slate-200 dark:border-(--border) p-6 hover:shadow-xl dark:hover:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.55)] transition-all group flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-widest ${TAG_COLORS[r.tag] ?? "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/70 dark:text-slate-300 dark:border-slate-600/80"}`}>{r.tag}</span>
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset ${GOV_LEVEL_RES_COLORS[r.govLevel]}`}>{r.govLevel}</span>
                   </div>
-                  <h4 className="font-bold text-slate-900 dark:text-[var(--foreground)] mb-0.5">{r.title}</h4>
-                  <p className="text-[11px] font-semibold text-slate-400 dark:text-[var(--foreground-secondary)] mb-3">{r.org}</p>
+                  <h4 className="font-bold text-slate-900 dark:text-foreground mb-0.5">{r.title}</h4>
+                  <p className="text-[11px] font-semibold text-slate-400 dark:text-(--foreground-secondary) mb-3">{r.org}</p>
                   <p className="text-sm text-slate-500 dark:text-[#b8c8dc] leading-relaxed mb-4 flex-1">{r.useCase}</p>
-                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-[var(--surface-elevated)] border border-slate-100 dark:border-[var(--border)] mb-5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[var(--muted)] mt-0.5 shrink-0">Use</span>
+                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-(--surface-elevated) border border-slate-100 dark:border-(--border) mb-5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-(--muted) mt-0.5 shrink-0">Use</span>
                     <p className="text-xs font-semibold text-slate-600 dark:text-[#c8d4e0] leading-snug">{r.bestFor}</p>
                   </div>
                   <a href={r.link} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-200 dark:bg-[var(--surface-elevated)] text-slate-900 dark:text-[var(--foreground)] text-xs font-bold hover:bg-(--accent) hover:text-white transition-all border border-transparent dark:border-[var(--border)]">
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-foreground text-xs font-bold hover:bg-(--accent) dark:hover:bg-blue-800 hover:text-white transition-all border border-transparent dark:border-(--border)">
                     Explore <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </motion.div>

@@ -28,9 +28,9 @@ const limelight = Limelight({
 });
 
 export const metadata: Metadata = {
-  title: "Civic Spiegel · Civic Research Assistant",
+  title: "Civic Spiegel · NY Civic Research Assistant",
   description:
-    "Location-aware, RAG-powered policy briefings and research assistance for New Yorkers.",
+    "RAG-powered policy briefings and research assistance for New Yorkers.",
 };
 
 export default function RootLayout({
