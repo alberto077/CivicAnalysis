@@ -119,7 +119,7 @@ export function buildGeneralizedBriefingFromPolicies(
     "Residents, community boards, and advocates tracking how agencies and legislatures publish updates on housing, budgets, safety, and services.",
   ];
 
-  const key_numbers = [`**${n}** records in this snapshot`];
+  const key_numbers: string[] = [];
 
   const what_happens_next = [
     "Ask a concrete question in the search box (for example a bill number, ZIP code, or “how does this affect renters?”) for a tailored briefing.",

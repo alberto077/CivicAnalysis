@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getBackendOrigin } from "@/lib/backend-internal";
+import { BACKEND_CHAT_FETCH_TIMEOUT_MS, getBackendOrigin } from "@/lib/backend-internal";
 import {
   extractRagMarkdown,
   ragReplyHasError,
   type RetrievalTier,
 } from "@/lib/policy-reply";
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -273,7 +273,7 @@ export async function POST(request: Request) {
         session_preamble: sessionPreamble,
       }),
       cache: "no-store",
-      signal: AbortSignal.timeout(55_000),
+      signal: AbortSignal.timeout(BACKEND_CHAT_FETCH_TIMEOUT_MS),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -374,7 +374,7 @@ export async function POST(request: Request) {
         temperature: 0.35,
       }),
       cache: "no-store",
-      signal: AbortSignal.timeout(55_000),
+      signal: AbortSignal.timeout(90_000),
     });
 
     const data = (await upstreamOpenAi.json()) as unknown;

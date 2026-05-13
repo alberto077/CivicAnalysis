@@ -63,8 +63,8 @@ class LLMEngine:
                 source_url = (chunk.get("source_url") or "").strip()
                 url_line = f"Official URL (from index): {source_url}\n" if source_url else ""
                 text_content = (chunk.get("text_content") or "").strip()
-                if len(text_content) > 1200:
-                    text_content = f"{text_content[:1200]}..."
+                if len(text_content) > 1500:
+                    text_content = f"{text_content[:1500]}..."
                 formatted_chunks.append(
                     f"[Context {idx}]\n"
                     f"Title: {title}\n"
@@ -102,15 +102,29 @@ class LLMEngine:
             "- Short sentences. Roughly 8th-grade reading level.\n"
             "- Conversational but informative—no legalese, no bureaucratic filler.\n"
             "- Avoid repetition across sections.\n"
-            "- Prefer bullets over long paragraphs; each bullet one idea, under ~22 words when possible.\n"
+            "- Prefer bullets over long paragraphs; each bullet one idea, usually under ~30 words (a bit more room "
+            "when needed for agency names, amounts, or dates).\n"
             "- Use plain words residents use (rent, fine, vote, timeline, cost, neighborhood).\n\n"
+
+            "BRIEFING DEPTH (when context supports it—still skimmable):\n"
+            "- Aim for **4–6** bullets in what_happened, why_it_matters, whos_affected, and what_happens_next; "
+            "use at least **3** when the documents clearly contain that many distinct facts.\n"
+            "- It is OK to add **one short trailing clause** in a bullet (after a comma or em dash) for nuance—"
+            "e.g. who votes, which fund pays, or what remains uncertain.\n"
+            "- Put extra procedural detail, secondary dates, or background in **read_more** as **2–5** bullets; "
+            "use [] only when the context is thin.\n\n"
 
             "HIGH-SIGNAL PRIORITIES (weave into bullets where relevant):\n"
             "- Who is affected, public effect, cost or budget impact, timeline, controversy or debate, what happens next.\n\n"
 
             "EMPHASIS (inside bullet strings only):\n"
             "- Wrap the most important phrase in each bullet with double asterisks, like **this**.\n"
-            "- In key_numbers, lead with the number or stat; you may bold the figure, e.g. **$2.4M** or **51–0 vote**.\n\n"
+            "- In key_numbers, lead with the numeric fact and bold that token (e.g. **125** or **$12.5M**)—"
+            "only when that exact figure appears in the Context Documents below.\n\n"
+
+            "ANTI-HALLUCINATION:\n"
+            "- Do not reuse any numbers, dollar amounts, dates, or vote scores from this prompt as content. "
+            "Every digit or figure in key_numbers must appear verbatim in the Context Documents block.\n\n"
 
             "LOCALITY:\n"
             "- If ZIP, borough, or neighborhood is known, tie impacts to that area in whos_affected and why_it_matters.\n"
@@ -123,12 +137,12 @@ class LLMEngine:
             "{\n"
             '  "tldr": ["One or two short sentences total—plain text, no bullets inside a string."],\n'
             '  "topic_tags": ["2-5 short topic chips, Title Case, e.g. Housing", "Budget"],\n'
-            '  "what_happened": ["short bullet", "..."],\n'
-            '  "why_it_matters": ["short bullet", "..."],\n'
-            '  "whos_affected": ["short bullet", "..."],\n'
-            '  "key_numbers": ["**$2.4M** …", "**June 12, 2025** …", "51–0 committee vote"],\n'
-            '  "what_happens_next": ["short bullet next step or timeline", "..."],\n'
-            '  "read_more": ["optional extra bullets—deeper detail not needed for the skim layer"],\n'
+            '  "what_happened": ["often 4-6 bullets when context is rich", "..."],\n'
+            '  "why_it_matters": ["often 4-6 bullets when context is rich", "..."],\n'
+            '  "whos_affected": ["often 4-6 bullets when context is rich", "..."],\n'
+            '  "key_numbers": [],\n'
+            '  "what_happens_next": ["often 3-5 bullets for deadlines, votes, or implementation steps", "..."],\n'
+            '  "read_more": ["2-5 optional bullets for procedure, history, or caveats when useful"],\n'
             '  "at_a_glance": ["same factual bullets as what_happened for backward compatibility"],\n'
             '  "key_takeaways": ["same as why_it_matters"],\n'
             '  "what_this_means": ["same as whos_affected"],\n'
@@ -136,7 +150,7 @@ class LLMEngine:
             '  "sources": [\n'
             '    {\n'
             '      "title": "Short official title from context",\n'
-            '      "description": "One sentence on why this source matters.",\n'
+            '      "description": "One or two short sentences on why this source matters.",\n'
             '      "url": "https://... official URL copied exactly from context when present; otherwise empty string",\n'
             '      "source_type": "e.g. Report, Hearing, Law — from context or empty string",\n'
             '      "published_date": "ISO or human date from context, or empty string"\n'
@@ -145,20 +159,23 @@ class LLMEngine:
             "}\n\n"
 
             "RULES:\n"
-            "- tldr: 1–2 strings only; each string one short sentence; no jargon.\n"
+            "- tldr: 1–2 strings only; each may include one extra short clause if it sharpens the headline "
+            "(keep each string roughly under ~40 words); no jargon.\n"
             "- topic_tags: 2–5 items; 1–3 words each.\n"
             "- Never echo context labels like 'Context 1'.\n"
             "- Do not repeat the same fact in tldr and bullets unless tldr is a true headline summary.\n"
-            "- read_more may be [] if nothing extra; do not pad.\n"
-            "- key_numbers: only strings with real numeric facts taken from context (money with digits, "
-            "calendar dates with numerals, vote counts, percentages, headcounts). Use [] if none. "
+            "- read_more may be [] if nothing extra; do not pad with generic filler.\n"
+            "- Prefer fuller sections when the retrieved context is long or detailed; err slightly longer rather than "
+            "omitting useful facts the user would expect from the documents.\n"
+            "- key_numbers: only strings whose numeric facts appear verbatim in the Context Documents (money with "
+            "digits, calendar dates with numerals, vote counts, percentages, headcounts). Use [] if none. "
             "Never use placeholders like $X, XX, **Date**, or invented figures.\n"
             "- Mirror content: at_a_glance must equal what_happened; key_takeaways = why_it_matters; "
             "what_this_means = whos_affected; relevant_actions = what_happens_next (same strings, same order).\n\n"
 
             "SOURCES:\n"
             "- Use clean titles from context.\n"
-            "- description: one short sentence on why it matters; no invented facts.\n"
+            "- description: one or two short sentences on why it matters; no invented facts.\n"
             "- url: MUST be copied exactly from the \"Official URL (from index):\" line in that context block when "
             "present; otherwise use an empty string. Never invent or guess URLs.\n"
             "- source_type and published_date: from the same context block when present; else empty string.\n"
@@ -184,10 +201,7 @@ class LLMEngine:
                     "**You (the reader)** see placeholder content until the model runs.",
                     "**Residents** get clearer, shorter civic copy tuned for phones.",
                 ],
-                "key_numbers": [
-                    "**0** live bills in this mock response",
-                    "**2** TL;DR sentences max in the real prompt",
-                ],
+                "key_numbers": [],
                 "what_happens_next": [
                     "Set **GROQ_API_KEY** in backend/.env, then restart **uvicorn**.",
                     "Ask a real NYC policy question from the home search.",
@@ -245,7 +259,7 @@ class LLMEngine:
             chat_completion = self.client.chat.completions.create(
                 messages=[{"role": "system", "content": system_prompt}, *turn_messages],
                 model="llama-3.1-8b-instant",
-                temperature=0.3,
+                temperature=0.34,
             )
             response_text = chat_completion.choices[0].message.content
             logger.info("LLM raw response length=%s", len(response_text or ""))

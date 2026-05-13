@@ -4,8 +4,10 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 import logging
+import math
+import re
 from datetime import datetime, timezone
 
 from sqlmodel import Session, select
@@ -401,6 +403,145 @@ def build_retrieval_sources_payload(
     return out
 
 
+def _money_suffix_to_mult(s: Optional[str]) -> float:
+    if not s:
+        return 1.0
+    t = s.lower()
+    if t in ("k", "thousand"):
+        return 1e3
+    if t in ("m", "million"):
+        return 1e6
+    if t in ("b", "billion"):
+        return 1e9
+    return 1.0
+
+
+def _parse_money_groups(num: str, suffix: Optional[str]) -> Optional[float]:
+    raw = (num or "").replace(",", "").strip()
+    if not raw:
+        return None
+    try:
+        base = float(raw)
+    except ValueError:
+        return None
+    return base * _money_suffix_to_mult(suffix)
+
+
+def _money_amounts_in_text(t: str) -> List[float]:
+    """Parse dollar / million-style amounts from a line or haystack (lowercased text ok)."""
+    amounts: List[float] = []
+    seen: Set[float] = set()
+    patterns = (
+        re.compile(r"\$\s*([\d,]+(?:\.\d+)?)\s*(million|billion|thousand|[kmb])?\b", re.I),
+        re.compile(r"(?<![\w$])([\d,]+(?:\.\d+)?)\s+(million|billion)\b(?![\w])", re.I),
+    )
+    for pat in patterns:
+        for m in pat.finditer(t):
+            suf = m.group(2) if m.lastindex and m.lastindex >= 2 else None
+            v = _parse_money_groups(m.group(1), suf)
+            if v is None or v < 0:
+                continue
+            key = round(v, 4)
+            if key in seen:
+                continue
+            seen.add(key)
+            amounts.append(v)
+    return amounts
+
+
+def _haystack_money_floats(hay_spaced: str, hay_compact: str) -> Set[float]:
+    """All monetary values found in retrieved context (normalized + compact)."""
+    combined = f"{hay_spaced} {hay_compact}"
+    return set(_money_amounts_in_text(combined))
+
+
+def _money_amounts_close(a: float, b: float) -> bool:
+    tol = max(1.0, abs(a) * 1e-6, abs(b) * 1e-6)
+    return math.isclose(a, b, rel_tol=1e-9, abs_tol=tol)
+
+
+def _norm_grounding_text(s: str) -> str:
+    t = (s or "").lower()
+    t = t.replace("\u2013", "-").replace("\u2014", "-")
+    t = re.sub(r"\s+", " ", t)
+    return t.strip()
+
+
+def _haystack_from_context(context_chunks: List[Dict]) -> Tuple[str, str]:
+    parts: List[str] = []
+    for ch in context_chunks or []:
+        for k in ("title", "text_content", "source_url", "published_date", "source_type"):
+            v = ch.get(k)
+            if isinstance(v, str) and v.strip():
+                parts.append(v)
+    joined = "\n".join(parts)
+    spaced = _norm_grounding_text(joined)
+    compact = re.sub(r"\s+", "", spaced)
+    return spaced, compact
+
+
+def _key_number_line_grounded(line: str, hay_spaced: str, hay_compact: str) -> bool:
+    raw = (line or "").strip()
+    if not raw or not re.search(r"\d", raw):
+        return False
+    nl = raw.lower()
+    nl = nl.replace("\u2013", "-").replace("\u2014", "-")
+    nl = re.sub(r"\*+", "", nl)
+    nl = re.sub(r"\s+", " ", nl).strip()
+
+    for m in re.findall(r"\d{4,}", nl):
+        if m not in hay_spaced and m not in hay_compact:
+            return False
+
+    line_moneys = _money_amounts_in_text(nl)
+    if line_moneys:
+        hay_money = _haystack_money_floats(hay_spaced, hay_compact)
+        for amt in line_moneys:
+            if not any(_money_amounts_close(amt, h) for h in hay_money):
+                return False
+
+    if re.search(r"\d\s*-\s*\d", nl):
+        vm = re.search(r"(\d{1,4})\s*-\s*(\d{1,4})", nl)
+        if vm:
+            vote = f"{vm.group(1)}-{vm.group(2)}"
+            if vote not in hay_compact and vote not in re.sub(r"\s+", "", hay_spaced):
+                return False
+
+    if not re.search(r"\d{4,}", nl) and not line_moneys:
+        runs = re.findall(r"\d[\d,]*\.?\d*", nl)
+        stripped_runs: List[str] = []
+        for r in runs:
+            d = re.sub(r"[^\d]", "", r)
+            if len(d) >= 3:
+                stripped_runs.append(d)
+        if stripped_runs:
+            if not any(dr in hay_compact for dr in stripped_runs):
+                return False
+        elif re.search(r"\d", nl):
+            return False
+
+    return True
+
+
+def filter_key_numbers_to_context(reply: Dict, context_chunks: List[Dict]) -> None:
+    """Drop key_numbers lines whose figures are not supported by retrieved chunk text."""
+    raw = reply.get("key_numbers")
+    if raw is None:
+        reply["key_numbers"] = []
+        return
+    if not isinstance(raw, list):
+        return
+    hay_spaced, hay_compact = _haystack_from_context(context_chunks)
+    if not hay_compact:
+        reply["key_numbers"] = []
+        return
+    kept: List[str] = []
+    for item in raw:
+        if isinstance(item, str) and _key_number_line_grounded(item, hay_spaced, hay_compact):
+            kept.append(item)
+    reply["key_numbers"] = kept
+
+
 @app.post("/api/chat")
 @limiter.limit("10/minute")
 async def chat_endpoint(request: Request, payload: ChatRequest):
@@ -451,6 +592,9 @@ async def chat_endpoint(request: Request, payload: ChatRequest):
             status_code=503,
             detail="The AI service is temporarily busy. Please try again in a moment.",
         )
+
+    if isinstance(response, dict) and not response.get("error"):
+        filter_key_numbers_to_context(response, context_chunks)
 
     return {
         "reply": response,
