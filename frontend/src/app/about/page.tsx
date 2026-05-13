@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
 import {
   Shield, Target, Users, Zap, ArrowRight, Database,
-  GitBranch, Map, MessageSquare, BookOpen, ExternalLink,
+  GitBranch, Map, MessageSquare, BookOpen, ExternalLink, Bot,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -11,8 +11,8 @@ import Link from "next/link";
 // ==================================================================================
 const govLevels = [
   { label: "City Council", count: "51 members", desc: "Local laws, city budget, zoning, sanitation, parks", color: "bg-blue-500" },
-  { label: "State Assembly", count: "150 members", desc: "State legislation, education, labor, state budget", color: "bg-emerald-500" },
-  { label: "State Senate", count: "59 members", desc: "Upper chamber, judicial confirmations, budget oversight", color: "bg-amber-500" },
+  { label: "State Assembly", count: "150 members", desc: "State legislation (lower chamber), education, labor, state budget", color: "bg-emerald-500" },
+  { label: "State Senate", count: "59 members", desc: "State legislation (upper chamber), confirmations, budget oversight", color: "bg-amber-500" },
   { label: "U.S. House", count: "26 NY members", desc: "Federal laws, appropriations, constituent services", color: "bg-purple-500" },
   { label: "U.S. Senate", count: "2 NY senators", desc: "Federal legislation, treaties, cabinet confirmations", color: "bg-violet-500" },
 ];
@@ -20,11 +20,19 @@ const govLevels = [
 const features = [
   {
     icon: MessageSquare,
-    title: "Policy Briefings & Chat with Speigel",
+    title: "Policy Briefings - Personalized & Generalized",
     desc: "Ask anything about NYC or NYS policy. The RAG engine retrieves relevant hearing transcripts, bills, and meeting records, then Llama 3.1 synthesizes a direct answer with citations.",
     href: "/",
     accent: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     tag: "Most used",
+  },
+  {
+    icon: Bot,
+    title: "Ask Spiegel",
+    desc: "Floating chat widget on every page. Multi-turn conversations with your profile context. Falls back to GPT-4o-mini when the document index has no matching content.",
+    href: "/",
+    accent: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    tag: null,
   },
   {
     icon: Users,
@@ -53,7 +61,7 @@ const features = [
   {
     icon: Database,
     title: "Data Sources",
-    desc: "Full transparency into every data source, API, and pipeline powering the platform. Primary government records only.",
+    desc: "Full public documentation of every source, API, scraper, pipeline step, and infrastructure decision powering the platform. Primary government records only.",
     href: "/data-sources",
     accent: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
     tag: null,
@@ -61,21 +69,22 @@ const features = [
 ];
 
 const techStack = [
-  { label: "Frontend", value: "Next.js 14 + Tailwind CSS" },
-  { label: "Backend", value: "FastAPI (Python)" },
-  { label: "Database", value: "Neon Postgres + pgvector" },
-  { label: "Embeddings", value: "BAAI/bge-small-en-v1.5 (384-dim)" },
-  { label: "LLM", value: "Llama 3.1 8B via Groq Cloud" },
-  { label: "Scraping", value: "Cheerio (TS) + BeautifulSoup (Py)" },
-  { label: "Automation", value: "GitHub Actions (daily)" },
-  { label: "Hosting", value: "Vercel (frontend) + Render (backend)" },
+  { label: "Frontend",      value: "Next.js 14 + TypeScript + Tailwind CSS"       },
+  { label: "Backend",       value: "FastAPI (Python 3.11) on Render"              },
+  { label: "Database",      value: "Neon Serverless Postgres + pgvector"          },
+  { label: "Embeddings",    value: "BAAI/bge-small-en-v1.5 (384-dim, FastEmbed)" },
+  { label: "Primary LLM",   value: "Llama 3.1 8B via Groq Cloud"                 },
+  { label: "Fallback LLM",  value: "GPT-4o-mini via OpenAI API"                  },
+  { label: "Scraping",      value: "Cheerio (TypeScript) + BeautifulSoup (Py)"   },
+  { label: "Automation",    value: "GitHub Actions (daily 06:00 UTC × 2)"        },
+  { label: "Hosting",       value: "Vercel (frontend) + Render (backend)"        },
 ];
 
 const values = [
   {
     icon: Shield,
     title: "Primary Sources Only",
-    text: "Every fact traces to an official government record — no aggregator bias, no AI hallucinations, no paraphrased summaries from third parties.",
+    text: "Every fact traces to an official government record — Legistar transcripts, NYS Open Legislation, House.gov, NYC Open Data. No aggregator bias, no paraphrased third-party summaries.",
     color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
   },
   {
@@ -87,13 +96,13 @@ const values = [
   {
     icon: Zap,
     title: "Live & Automated",
-    text: "Our GitHub Actions workflows run every morning. The representative directory and legislative corpus are refreshed daily from official APIs — no stale data.",
+    text: "Our GitHub Actions workflows run every morning. The representative directory and legislative corpus are refreshed and ingested daily from official APIs — no stale data.",
     color: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
   },
   {
     icon: Users,
     title: "Clear Information",
-    text: "Legislation is dense. The AI layer translates long records and complex language into clear, actionable takeaways without losing the underlying facts.",
+    text: "Legislation is dense. The AI layer translates long records and complex language into clear, actionable takeaways without losing the underlying facts or hallucinating false ones.",
     color: "bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400",
   },
 ];
