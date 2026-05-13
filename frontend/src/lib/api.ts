@@ -174,16 +174,38 @@ function buildDemographics(extra?: ChatExtra): Record<string, string> {
   return d;
 }
 
-export async function checkHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${CIVIC_API}/health`, {
-    method: "GET",
-    cache: "no-store",
-  });
+const HEALTH_TIMEOUT_USER_MESSAGE =
+  "Policy backend did not respond in time. If you run the stack locally, start the FastAPI server (port 8000) or set API_INTERNAL_BASE_URL for the Next server, then try again.";
 
-  const json = (await res.json()) as HealthResponse & { detail?: string };
+export async function checkHealth(): Promise<HealthResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${CIVIC_API}/health`, {
+      method: "GET",
+      cache: "no-store",
+      signal: AbortSignal.timeout(125_000),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/timeout|aborted/i.test(msg)) {
+      throw new Error(HEALTH_TIMEOUT_USER_MESSAGE);
+    }
+    throw new Error(msg || "Health check request failed.");
+  }
+
+  let json: HealthResponse & { detail?: string };
+  try {
+    json = (await res.json()) as HealthResponse & { detail?: string };
+  } catch {
+    throw new Error(`Health check failed (${res.status}): invalid response from server.`);
+  }
 
   if (!res.ok) {
-    throw new Error(json.detail || json.error || `HTTP ${res.status}`);
+    const raw = (json.detail || json.error || `HTTP ${res.status}`).trim();
+    if (/timeout|aborted/i.test(raw)) {
+      throw new Error(HEALTH_TIMEOUT_USER_MESSAGE);
+    }
+    throw new Error(raw);
   }
 
   return json;
@@ -208,7 +230,10 @@ function friendlyChatError(status: number, data: unknown): string {
     case 503:
       return serverMessage || "The AI service is temporarily busy. Please try again in a moment.";
     case 502:
-      return "We're having trouble reaching the AI service. Please try again shortly.";
+      return (
+        serverMessage ||
+        "We're having trouble reaching the AI service. Please try again shortly."
+      );
     default:
       return serverMessage || `Request failed: ${status}`;
   }
@@ -235,7 +260,15 @@ export async function sendChat(
     cache: "no-store",
   });
 
-  const data = (await res.json()) as unknown;
+  const raw = await res.text();
+  let data: unknown = {};
+  if (raw) {
+    try {
+      data = JSON.parse(raw) as unknown;
+    } catch {
+      data = { detail: raw.slice(0, 400) };
+    }
+  }
 
   if (!res.ok) {
     throw new Error(friendlyChatError(res.status, data));
