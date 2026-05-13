@@ -605,7 +605,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
       <MotionReveal>
         <div className="flex items-start justify-between">
           <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Representative Directory
+            Legislative Directory
           </h1>
         </div>
 
