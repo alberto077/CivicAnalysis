@@ -2,6 +2,7 @@
 
 import { ExternalLink, Sparkles, UserRound } from "lucide-react";
 import { MotionReveal } from "./MotionReveal";
+import { PolicyTitleSplit } from "./PolicyTitleSplit";
 import type { CivicProfile } from "@/lib/useProfile";
 import type { ProfileActivityItem, ProfileActivityMode } from "@/lib/useProfileActivityFeed";
 import type { PolicyApiArea } from "@/lib/profileIssueToPolicyArea";
@@ -145,8 +146,8 @@ export function ProfileActivitySection({
                     <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
                       {p.matchSummary}
                     </p>
-                    <h3 className="mt-2 line-clamp-2 min-h-0 font-work-sans text-[15px] font-semibold leading-snug text-[var(--foreground)]">
-                      {p.title}
+                    <h3 className="mt-2 line-clamp-2 min-h-0 font-work-sans text-[15px] leading-snug text-[var(--foreground)]">
+                      <PolicyTitleSplit title={p.title} />
                     </h3>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {p.source_type ? (

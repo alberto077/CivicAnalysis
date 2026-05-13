@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { type CivicProfile, useProfile } from "@/lib/useProfile";
 import { BOROUGHS, HOUSING, INCOME, AGE, ISSUES, DEMOGRAPHICS } from "./OnboardingModal";
 
@@ -21,6 +22,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
   }, [isOpen, profile]);
 
   if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
   const toggleArray = (key: "issues" | "demographics", val: string) => {
     setData(prev => ({
@@ -43,16 +45,22 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
     setData({ borough: "", income: "", housing: "", age: "", issues: [], demographics: [] });
   };
 
-  return (
+  const overlay = (
     <div
-      className="fixed inset-0 z-100 flex items-center justify-center bg-[#0d1b2a]/60 p-4 backdrop-blur-sm dark:bg-black/65 sm:p-6"
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-[#0d1b2a]/65 p-4 backdrop-blur-md backdrop-saturate-150 dark:bg-black/70 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="presentation"
     >
-      <div className="flex max-h-[90vh] w-full max-w-2xl animate-in flex-col rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] fade-in zoom-in duration-300 dark:border dark:border-(--border) dark:bg-(--surface-card) dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
+      <div
+        className="relative z-[1] flex max-h-[90vh] w-full max-w-2xl animate-in flex-col rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(26,54,93,0.4)] fade-in zoom-in duration-300 dark:border dark:border-(--border) dark:bg-(--surface-card) dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-modal-title"
+      >
         <div className="px-5 pt-5 sm:px-6 sm:pt-6 border-b border-(--border) shrink-0 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-limelight text-xl font-bold text-foreground tracking-tight">Edit profile</h2>
+              <h2 id="settings-modal-title" className="font-work-sans text-xl font-semibold text-foreground tracking-tight">Edit profile</h2>
               <p className="font-work-sans text-xs text-(--muted) mt-1">Configure your personalized assistant details.</p>
             </div>
             <button onClick={onClose} className="p-2 text-xl font-bold text-(--muted) hover:text-foreground">&times;</button>
@@ -77,7 +85,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           {activeTab === "Profile" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Location</h3>
+                <h3 className="font-work-sans text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Location</h3>
                 <div className="flex flex-wrap gap-2">
                   {BOROUGHS.map((b) => (
                     <button
@@ -93,7 +101,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Housing & Income</h3>
+                <h3 className="font-work-sans text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Housing & Income</h3>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {HOUSING.map((h) => (
                     <button
@@ -111,7 +119,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                     <button
                       key={i}
                       onClick={() => setSingle("income", i)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.income === i ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border)hite text-text-foregroundr:border-[var(--accent-soft)] dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${data.income === i ? "border-(--accent) bg-(--accent) text-white shadow-sm" : "border-(--border) bg-white text-foreground hover:border-(--accent-soft) dark:bg-(--surface-card) dark:text-foreground dark:hover:bg-(--surface-elevated)"
                         }`}
                     >
                       {i}
@@ -121,7 +129,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Age</h3>
+                <h3 className="font-work-sans text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Age</h3>
                 <div className="flex flex-wrap gap-2">
                   {AGE.map((a) => (
                     <button
@@ -137,7 +145,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </div>
 
               <div>
-                <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Demographic Traits</h3>
+                <h3 className="font-work-sans text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Demographic Traits</h3>
                 <div className="flex flex-wrap gap-2">
                   {DEMOGRAPHICS.map((demo) => (
                     <button
@@ -158,7 +166,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
           {activeTab === "Interests" && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <h3 className="font-limelight text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Issues Tracked</h3>
+              <h3 className="font-work-sans text-xs font-bold tracking-widest text-(--accent) uppercase mb-3">Issues Tracked</h3>
               <p className="text-sm text-(--muted) mb-4">Select the specific policy areas you want your civic assistant to monitor.</p>
               <div className="flex flex-wrap gap-2">
                 {ISSUES.map((issue) => (
@@ -194,4 +202,6 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       </div>
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }

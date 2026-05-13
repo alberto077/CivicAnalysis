@@ -3,6 +3,7 @@
 import { Rss } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MotionReveal, staggerContainer, staggerItem } from "./MotionReveal";
+import { PolicyTitleSplit } from "./PolicyTitleSplit";
 import type { PolicyBriefing } from "@/lib/api";
 
 type RecentUpdatesProps = {
@@ -77,9 +78,9 @@ export function RecentUpdates({ policies, policiesLoading, policiesError }: Rece
                         href={p.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-work-sans font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                        className="font-work-sans text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
                       >
-                        {p.title}
+                        <PolicyTitleSplit title={p.title} />
                       </a>
                       <div className="mt-1 flex items-center gap-3">
                         <span className="font-work-sans text-xs font-semibold uppercase tracking-wider text-[var(--accent)] bg-[var(--accent-soft)]/20 px-2 py-0.5 rounded">
