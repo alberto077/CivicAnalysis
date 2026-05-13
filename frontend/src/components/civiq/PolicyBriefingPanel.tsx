@@ -21,6 +21,7 @@ import { BriefingInline } from "./BriefingInline";
 import type { PolicyResponse } from "@/lib/api";
 import {
   buildBriefingSourceCards,
+  buildDisplayKeyNumbers,
   hasPolicyBriefingContent,
   type BriefingSourceCard,
 } from "@/lib/policy-reply";
@@ -79,40 +80,62 @@ function parseKeyNumberParts(text: string): { headline: string; caption: string 
   return { headline: t, caption: null };
 }
 
-function KeyNumberKpiCard({ text }: { text: string }) {
+function KeyNumberKpiCard({ text, compact = false }: { text: string; compact?: boolean }) {
   const { headline, caption } = parseKeyNumberParts(text);
   const headlineHasMarkup = /\*\*/.test(headline);
   const useHeroStat =
     Boolean(caption) || (headline.length <= 40 && !headlineHasMarkup);
 
   return (
-    <div className="relative min-w-0 w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/95 p-5 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_12px_32px_-20px_rgba(15,23,42,0.12)] dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_40px_-24px_rgba(0,0,0,0.45)]">
+    <div
+      className={`relative min-w-0 w-full overflow-hidden border border-slate-200/90 bg-gradient-to-br from-white to-slate-50/95 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_12px_32px_-20px_rgba(15,23,42,0.12)] dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_16px_40px_-24px_rgba(0,0,0,0.45)] ${
+        compact ? "max-w-[11.5rem] rounded-xl p-3.5" : "rounded-2xl p-5"
+      }`}
+    >
       <div
-        className="pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full bg-[var(--accent)]/55 dark:bg-[var(--accent)]/40"
+        className={`pointer-events-none absolute left-0 w-1 rounded-full bg-[var(--accent)]/55 dark:bg-[var(--accent)]/40 ${
+          compact ? "inset-y-2" : "inset-y-3"
+        }`}
         aria-hidden
       />
-      <div className="min-w-0 pl-4">
+      <div className={compact ? "min-w-0 pl-3" : "min-w-0 pl-4"}>
         {useHeroStat ? (
           <>
-            <div className="min-h-[2.5rem] min-w-0">
+            <div className={compact ? "min-h-[2rem] min-w-0" : "min-h-[2.5rem] min-w-0"}>
               {headlineHasMarkup ? (
-                <p className="min-w-0 break-words font-limelight text-[1.55rem] font-bold leading-tight tracking-tight text-slate-900 sm:text-[1.75rem] dark:text-[var(--foreground)]">
+                <p
+                  className={`min-w-0 break-words font-work-sans font-bold leading-tight tracking-tight text-slate-900 dark:text-[var(--foreground)] ${
+                    compact ? "text-[1.05rem] sm:text-[1.12rem]" : "text-[1.35rem] sm:text-[1.5rem]"
+                  }`}
+                >
                   <BriefingInline text={headline} />
                 </p>
               ) : (
-                <p className="min-w-0 break-words font-limelight text-[1.65rem] font-bold leading-none tracking-tight text-slate-900 tabular-nums sm:text-[1.85rem] dark:text-[var(--foreground)]">
+                <p
+                  className={`min-w-0 break-words font-work-sans font-bold leading-none tracking-tight text-slate-900 tabular-nums dark:text-[var(--foreground)] ${
+                    compact ? "text-[1.12rem] sm:text-[1.2rem]" : "text-[1.45rem] sm:text-[1.6rem]"
+                  }`}
+                >
                   {headline}
                 </p>
               )}
             </div>
             {caption ? (
-              <p className="mt-3 min-w-0 break-words text-[13px] font-medium leading-snug text-slate-600 dark:text-[#b8c8dc]">
+              <p
+                className={`min-w-0 break-words font-medium leading-snug text-slate-600 dark:text-[#b8c8dc] ${
+                  compact ? "mt-1.5 line-clamp-2 text-[10.5px]" : "mt-3 text-[13px]"
+                }`}
+              >
                 <BriefingInline text={caption} />
               </p>
             ) : null}
           </>
         ) : (
-          <p className="text-[15px] font-semibold leading-snug text-slate-800 dark:text-[#e8f0fa]">
+          <p
+            className={`font-semibold leading-snug text-slate-800 dark:text-[#e8f0fa] ${
+              compact ? "line-clamp-3 text-[11px]" : "text-[15px]"
+            }`}
+          >
             <BriefingInline text={text.trim()} />
           </p>
         )}
@@ -288,6 +311,18 @@ export function PolicyBriefingPanel({
     () => buildBriefingSourceCards(safe.sources, safe.retrieval_sources),
     [safe.sources, safe.retrieval_sources],
   );
+  const displayKeyNumbers = useMemo(
+    () => buildDisplayKeyNumbers(safe),
+    [
+      safe.key_numbers,
+      safe.tldr,
+      safe.what_happened,
+      safe.why_it_matters,
+      safe.whos_affected,
+      safe.what_happens_next,
+      safe.read_more,
+    ],
+  );
   const visibleSources = sourceCards.slice(0, SOURCES_VISIBLE_INITIAL);
   const extraSources = sourceCards.slice(SOURCES_VISIBLE_INITIAL);
 
@@ -462,13 +497,6 @@ export function PolicyBriefingPanel({
                       icon={Users}
                     />
                     <FeedSection
-                      eyebrow="By the numbers"
-                      title="Key numbers"
-                      items={safe.key_numbers}
-                      icon={Hash}
-                      variant="stats"
-                    />
-                    <FeedSection
                       eyebrow="Forward view"
                       title="What happens next"
                       items={safe.what_happens_next}
@@ -495,8 +523,50 @@ export function PolicyBriefingPanel({
                     </details>
                   )}
 
+                  {displayKeyNumbers.length > 0 ? (
+                    <section
+                      className="mt-12 border-t border-slate-200 pt-10 dark:border-[var(--border)]"
+                      aria-labelledby="briefing-key-numbers-heading"
+                    >
+                      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+                            <Hash className="h-5 w-5" strokeWidth={2} aria-hidden />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-[var(--foreground-secondary)]">
+                              By the numbers
+                            </p>
+                            <h3
+                              id="briefing-key-numbers-heading"
+                              className="font-work-sans text-lg font-bold tracking-tight text-slate-900 dark:text-white"
+                            >
+                              Key figures
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="grid min-w-0 justify-items-start gap-3 sm:gap-4"
+                        style={{
+                          gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))",
+                        }}
+                      >
+                        {displayKeyNumbers.map((item, i) => (
+                          <KeyNumberKpiCard key={`stat-above-src-${i}`} compact text={item} />
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+
                   {sourceCards.length > 0 && (
-                    <div className="border-t border-slate-200 pt-12 dark:border-[var(--border)]">
+                    <div
+                      className={
+                        displayKeyNumbers.length > 0
+                          ? "mt-10 border-t border-slate-200 pt-10 dark:border-[var(--border)]"
+                          : "border-t border-slate-200 pt-12 dark:border-[var(--border)]"
+                      }
+                    >
                       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                         <div className="flex min-w-0 flex-1 items-center gap-3">
                           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--accent)]">

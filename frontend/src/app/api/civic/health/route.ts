@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getBackendOrigin } from "@/lib/backend-internal";
+import { BACKEND_HEALTH_FETCH_TIMEOUT_MS, getBackendOrigin } from "@/lib/backend-internal";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -10,7 +10,7 @@ export async function GET() {
   try {
     upstream = await fetch(`${getBackendOrigin()}/api/health`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(55_000),
+      signal: AbortSignal.timeout(BACKEND_HEALTH_FETCH_TIMEOUT_MS),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
