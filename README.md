@@ -1,4 +1,4 @@
-# Civic Spiegel
+# Civic Spiegel: NY Civic Research Assistant
 
 **Civic Spiegel** is a civic intelligence platform that makes New York City and New York State government data legible and searchable. *Spiegel* is German for *mirror* — the platform holds a clear, undistorted, non-partisan reflection of official government records back to the residents those records affect.
 
