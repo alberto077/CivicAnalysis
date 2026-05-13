@@ -1,7 +1,7 @@
 import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { MotionReveal } from "@/components/civiq/MotionReveal";
-import { DataUsageKpis } from "@/components/civiq/DataUsageKpis";
+import { DataSourcesStatsPanel } from "@/components/civiq/DataSourcesStatsPanel";
 import {
   Database, Globe, Cpu, Zap, Layers, ShieldCheck, Bot, User, Accessibility,
   ExternalLink, Info, GitBranch, Map, FileText, BarChart2,
@@ -76,13 +76,13 @@ const infrastructure = [
 
 // DATA PIPELINE =====================================================================
 const pipelineSteps = [
-  {  n: "1",	title: "Scrape & Fetch",	color: "bg-blue-500/20 text-blue-300",		  body: "GitHub Actions triggers daily. Python scrapers hit Legistar, NYS Senate Open Legislation, and NYC Open Data endpoints. TypeScript scrapers fetch member HTML from council, assembly, and senate sites.",},
-  {  n: "2",	title: "Extract & Clean",	color: "bg-violet-500/20 text-violet-300",	body: "Raw HTML is stripped. PDF transcripts are parsed for plain text. Junk content (empty strings, procedural placeholders) is filtered out in base_scraper.py before any storage occurs.",},
-  {  n: "3",	title: "Classify",		  	color: "bg-amber-500/20 text-amber-300",	  body: "tag_classifier.py uses keyword matching and spaCy NER to tag each document with policy areas (Housing, Transit, Budget…), affected demographics, jurisdiction level, and policy stage.",},
-  {  n: "4",	title: "Chunk & Embed", 	color: "bg-emerald-500/20 text-emerald-300",	body: "Documents are split into ~500-word sentence-aware chunks with 50-word overlap. Each chunk is passed through BAAI/bge-small-en-v1.5 to produce a 384-dim float32 vector.",},
-  {  n: "5",	title: "Store",			    	color: "bg-rose-500/20 text-rose-300",		  body: "Chunks and their embeddings are inserted into Neon Postgres. Deduplication checks source_url before insert. The politicians.json cache is committed back to the repo.",},
-  {  n: "6",	title: "Retrieve",	  		color: "bg-cyan-500/20 text-cyan-300",		  body: "At query time, the user's message (augmented with borough/ZIP context) is embedded and compared via pgvector cosine distance. Falls back to lexical search, then recency, if vector recall is empty.",},
-  {  n: "7",	title: "Generate",	  		color: "bg-pink-500/20 text-pink-300",		  body: "Top chunks are passed to Groq (Llama 3.1 8B) with the user's demographic context. The LLM returns either a structured JSON briefing or plain markdown depending on the interface.",},
+  {  n: "1",	title: "Scrape & Fetch",	color: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",		  body: "GitHub Actions triggers daily. Python scrapers hit Legistar, NYS Senate Open Legislation, and NYC Open Data endpoints. TypeScript scrapers fetch member HTML from council, assembly, and senate sites.",},
+  {  n: "2",	title: "Extract & Clean",	color: "bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300",	body: "Raw HTML is stripped. PDF transcripts are parsed for plain text. Junk content (empty strings, procedural placeholders) is filtered out in base_scraper.py before any storage occurs.",},
+  {  n: "3",	title: "Classify",		  	color: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300",	  body: "tag_classifier.py uses keyword matching and spaCy NER to tag each document with policy areas (Housing, Transit, Budget…), affected demographics, jurisdiction level, and policy stage.",},
+  {  n: "4",	title: "Chunk & Embed", 	color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300",	body: "Documents are split into ~500-word sentence-aware chunks with 50-word overlap. Each chunk is passed through BAAI/bge-small-en-v1.5 to produce a 384-dim float32 vector.",},
+  {  n: "5",	title: "Store",			    	color: "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300",		  body: "Chunks and their embeddings are inserted into Neon Postgres. Deduplication checks source_url before insert. The politicians.json cache is committed back to the repo.",},
+  {  n: "6",	title: "Retrieve",	  		color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300",		  body: "At query time, the user's message (augmented with borough/ZIP context) is embedded and compared via pgvector cosine distance. Falls back to lexical search, then recency, if vector recall is empty.",},
+  {  n: "7",	title: "Generate",	  		color: "bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-300",		  body: "Top chunks are passed to Groq (Llama 3.1 8B) with the user's demographic context. The LLM returns either a structured JSON briefing or plain markdown depending on the interface.",},
 ];
 
 
@@ -146,42 +146,31 @@ export default function DataSourcesPage() {
       <main className="flex-1 pb-24">
 
         {/* HERO */}
-        <div className="bg-slate-900 pt-32 pb-20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.08),transparent_60%)]" />
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+        <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100 to-slate-50 pt-32 pb-28 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.14),transparent_58%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.08),transparent_60%)]" />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <MotionReveal>
               <div className="mb-5 flex items-center gap-3">
-                <div className="rounded-xl bg-blue-500/15 p-2.5 text-blue-400">
+                <div className="rounded-xl bg-blue-100 p-2.5 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
                   <Database className="h-5 w-5" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Civic Spiegel</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:text-slate-500">
+                  Civic Spiegel
+                </span>
               </div>
-              <h1 className="text-4xl font-bold text-white sm:text-5xl mb-5">
-                <span className="text-white">Data Sources &amp; Architecture</span>
+              <h1 className="mb-5 text-4xl font-bold text-slate-900 sm:text-5xl dark:text-white">
+                <span>Data Sources &amp; Architecture</span>
               </h1>
-              <p className="max-w-2xl text-lg leading-relaxed text-slate-400">
-                Every fact in <em className="text-slate-300 not-italic font-medium">Civic Spiegel</em> traces back to a primary government source. No third-party analysis,
-                no aggregator bias — raw official records, indexed and made searchable.
+              <p className="max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-400">
+                Every fact in <em className="font-medium not-italic text-slate-800 dark:text-slate-300">Civic Spiegel</em>{" "}
+                traces back to a primary government source. No third-party analysis, no aggregator bias — raw official
+                records, indexed and made searchable.
               </p>
 
-              {/* quick stats */}
-              <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
-                {[
-                  { n: "290+", label: "Representatives tracked" },
-                  { n: "6", label: "Government levels" },
-                  { n: "384", label: "Vector dimensions" },
-                  { n: "Daily", label: "Refresh cadence" },
-                ].map(stat => (
-                  <div key={stat.label} className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
-                    <div className="text-2xl font-bold text-white">{stat.n}</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
+              <DataSourcesStatsPanel />
             </MotionReveal>
           </div>
         </div>
-        <DataUsageKpis />
 
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
@@ -192,24 +181,24 @@ export default function DataSourcesPage() {
               {/* RAG Pipeline */}
               <MotionReveal>
                 <SectionHeader icon={GitBranch} title="How the Pipeline Works" color="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" />
-                <div className="rounded-4xl bg-slate-900 p-8 space-y-1">
+                <div className="space-y-1 rounded-4xl border border-slate-200 bg-white p-8 shadow-sm dark:border-white/5 dark:bg-slate-900 dark:shadow-none">
                   {pipelineSteps.map((step, i) => (
-                    <div key={step.n} className="flex gap-4 group">
+                    <div key={step.n} className="group flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${step.color}`}>
                           {step.n}
                         </div>
                         {i < pipelineSteps.length - 1 && (
-                          <div className="w-px flex-1 bg-white/5 my-1" />
+                          <div className="my-1 w-px flex-1 bg-slate-200 dark:bg-white/5" />
                         )}
                       </div>
                       <div className="pb-5">
-                        <p className="text-sm font-bold text-white mb-1">{step.title}</p>
-                        <p className="text-xs leading-relaxed text-slate-400">{step.body}</p>
+                        <p className="mb-1 text-sm font-bold text-slate-900 dark:text-white">{step.title}</p>
+                        <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">{step.body}</p>
                       </div>
                     </div>
                   ))}
-                  <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-2 border-t border-slate-200 pt-2 text-[11px] text-slate-500 dark:border-white/5 dark:text-slate-500">
                     <RefreshCw className="h-3 w-3" />
                     Steps 1-5 run automatically every day at 06:00 UTC via GitHub Actions
                   </div>
@@ -331,15 +320,16 @@ export default function DataSourcesPage() {
 
               {/* data model */}
               <MotionReveal>
-                <div className="rounded-4xl bg-slate-900 p-7 text-white">
-                  <div className="mb-1 flex items-center gap-2 font-bold uppercase tracking-widest text-slate-400">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
-                      <Database className="h-6 w-6 text-slate-400" />
+                <div className="rounded-4xl border border-slate-200 bg-white p-7 text-slate-900 shadow-sm dark:border-transparent dark:bg-slate-900 dark:text-white dark:shadow-none">
+                  <div className="mb-1 flex items-center gap-2 font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
+                      <Database className="h-6 w-6 text-slate-600 dark:text-slate-400" />
                     </span>
-                    <h3 className="font-bold text-lg mb-1">Database Model</h3>
+                    <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Database Model</h3>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                    A single Neon Postgres instance handles relational data and vector search via pgvector — no separate vector store needed.
+                  <p className="mb-6 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                    A single Neon Postgres instance handles relational data and vector search via pgvector — no separate
+                    vector store needed.
                   </p>
                   <div className="space-y-3">
                     {[
@@ -350,9 +340,12 @@ export default function DataSourcesPage() {
                       { table: "PolicyDocument", desc: "Scraped source with metadata_tags JSON" },
                       { table: "DocumentChunk", desc: "Text chunk + 384-dim pgvector embedding" },
                     ].map(row => (
-                      <div key={row.table} className="rounded-xl bg-white/5 border border-white/8 px-4 py-3">
-                        <code className="text-[11px] font-bold text-blue-300">{row.table}</code>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{row.desc}</p>
+                      <div
+                        key={row.table}
+                        className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-white/8 dark:bg-white/5"
+                      >
+                        <code className="text-[11px] font-bold text-blue-700 dark:text-blue-300">{row.table}</code>
+                        <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-400">{row.desc}</p>
                       </div>
                     ))}
                   </div>
