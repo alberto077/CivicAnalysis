@@ -688,6 +688,17 @@ function normTitleKey(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+// Host + pathname only — used to recover the indexed URL when the model emits
+// a truncated version of the same link (LLMs routinely drop `?ID=…` etc).
+function urlPathKey(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.host.toLowerCase()}${u.pathname}`;
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Merge LLM narrative sources with retrieval index URLs so cards always prefer
  * official links when titles align; unmatched retrieval rows are appended.
@@ -701,8 +712,12 @@ export function buildBriefingSourceCards(
 
   const retrievalList = retrieval.filter((r) => safeHttpUrl(r.source_url));
   const byExact = new Map<string, PolicyRetrievalSource>();
+  const byPath = new Map<string, string>();
   for (const r of retrievalList) {
     byExact.set(normTitleKey(r.title), r);
+    const url = safeHttpUrl(r.source_url);
+    const key = url ? urlPathKey(url) : "";
+    if (url && key && !byPath.has(key)) byPath.set(key, url);
   }
 
   for (const s of llmSources) {
@@ -716,9 +731,13 @@ export function buildBriefingSourceCards(
             key.includes(normTitleKey(r.title)),
         ) ?? undefined;
     }
-    const url =
-      safeHttpUrl(s.url) ||
-      (match ? safeHttpUrl(match.source_url) : undefined);
+    // Trust the retrieval index over the model: it preserves query params
+    // (e.g. `?ID=12345`) that the LLM tends to drop. Fall back to the LLM URL
+    // only when there's no title match and no same-path retrieval row.
+    const matchUrl = match ? safeHttpUrl(match.source_url) : undefined;
+    const llmUrl = safeHttpUrl(s.url);
+    const llmPathHit = llmUrl ? byPath.get(urlPathKey(llmUrl)) : undefined;
+    const url = matchUrl ?? llmPathHit ?? llmUrl;
     if (url) usedUrls.add(url);
     out.push({
       title: s.title.trim() || "Source",
