@@ -43,7 +43,7 @@ Civic Spiegel scrapes official sources daily, embeds the text into a vector data
 |---|---|
 | **Policy Briefings** | Ask anything about NYC/NYS policy. RAG engine retrieves official transcripts, bills, and meeting records. Llama 3.1 8B synthesizes a structured answer with source citations. |
 | **Ask Spiegel** | Floating chat widget available on every page. Multi-turn conversation with user profile context. Falls back to GPT-4o-mini when the document index has no matching content. |
-| **Representative Directory** | 290+ elected officials across all five government levels — searchable by borough, district, party, committee, subcommittee, and caucus. Updated daily. |
+| **Legislative Directory** | 290+ elected officials representing NY across all five government levels — searchable by borough, district, party, committee, subcommittee, and caucus. Updated daily. |
 | **Explore Maps** | NYC Council district choropleth with address lookup. NYS statewide ArcGIS embed. Civic Hub map with location pins and six toggleable boundary layers. |
 | **Civic Calendar** | Nine official public meeting calendars, hearing schedules, and livestreams in one place. |
 | **Accessibility** | Seven display settings (large text, high contrast, reduce motion, underline links, readable font, focus mode, color-blind friendly) plus browser text-to-speech. |
@@ -119,7 +119,7 @@ Data we use is gathered through automated workflows:
 
 **Frontend proxy pattern** — The browser never calls the Python backend directly. It calls Next.js `/api/civic/*` routes which forward to FastAPI. Centralizes error handling, caching, and timeout management.
 
-**Static JSON for politicians** — The representative directory is pre-built into `public/data/politicians.json` by GitHub Actions and committed to the repo. Served as a static asset with a 24-hour CDN cache. No scraping happens at request time.
+**Static JSON for politicians** — The representative directory for NY legislature is pre-built into `public/data/politicians.json` by GitHub Actions and committed to the repo. Served as a static asset with a 24-hour CDN cache. No scraping happens at request time.
 
 **Dual LLM** — Groq (Llama 3.1 8B) is the primary LLM for RAG-grounded answers. OpenAI GPT-4o-mini is the fallback when the document retrieval tier is `'none'` or the RAG response is empty. This ensures the chat always has something useful to say.
 
@@ -156,7 +156,7 @@ Data we use is gathered through automated workflows:
 | NYT Regional RSS | Supplementary news context | None |
 
 
-### Representative Directory (TypeScript scraper daily)
+### Legislative Directory (TypeScript scraper daily)
 
 | Source | What It Provides |
 |---|---|
