@@ -101,15 +101,15 @@ class NYCCouncilLegistarScraper(BaseScraper):
             title = item.get("MatterName", "No Title")
             description = item.get("MatterTitle", "")
             content = item.get("_full_text", "") or description
-            
+
             published_date = item.get("MatterLastModifiedDate")
             status = item.get("MatterStatusName", "Unknown Status")
             matter_type = item.get("MatterTypeName", "Legislation")
 
             # Classification
             ml_tags = self.classifier.classify(title, content)
-            
-            
+
+
             # Embeddings (on summarized content)
             chunks_text = self.embedder.chunk_text(content)
             vectors = self.embedder.generate_embeddings(chunks_text)
@@ -122,9 +122,17 @@ class NYCCouncilLegistarScraper(BaseScraper):
                     "embedding": vector,
                 })
 
+            # LegislationDetail.aspx uses an internal record id we can't derive from the API.
+            # The gateway redirect takes the API's MatterId directly and resolves to the
+            # canonical detail page server-side.
+            source_url = (
+                f"https://legistar.council.nyc.gov/gateway.aspx"
+                f"?m=l&id=/matter.aspx?key={matter_id}"
+            )
+
             processed.append({
                 "title": f"NYC Council {matter_type} ({file_number}): {title}",
-                "source_url": f"https://legistar.council.nyc.gov/LegislationDetail.aspx?ID={matter_id}",
+                "source_url": source_url,
                 "source_type": "NYC Council Legistar",
                 "published_date": published_date,
                 "metadata_tags": {
