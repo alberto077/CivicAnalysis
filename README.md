@@ -125,7 +125,7 @@ Data we use is gathered through automated workflows:
 
 **GitHub Actions as ML compute** — The Python pipeline uses FastEmbed + spaCy, which together need ~2–4GB RAM. Render's free tier has 512MB. GitHub Actions' Ubuntu runners have 7GB. We use Actions for all the heavy lifting and Render only for live query-time inference.
 
-![RAG/LLM - Data Pipeline Workflow](/frontend/public/rag_pipeline.png)
+<!-- ![RAG/LLM - Data Pipeline Workflow](/frontend/public/rag_pipeline.png) -->
 
 ---
 
