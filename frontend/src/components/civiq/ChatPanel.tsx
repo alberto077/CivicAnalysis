@@ -144,8 +144,8 @@ export function ChatPanel({
     <section className={`mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6 lg:px-8 ${isStandalone ? "pt-12" : "mt-8"}`}>
       <div className="rounded-[40px] border border-white/60 bg-white/40 p-8 shadow-2xl backdrop-blur-xl dark:border-[var(--border)] dark:bg-[var(--surface-card)]/85 md:p-12">
         <div className="flex items-center gap-3 mb-6">
-           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg">
-             <MessageSquare className="h-5 w-5" />
+           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+             <MessageSquare className="h-4 w-4" />
            </div>
            <div>
               <h2 className="font-limelight text-3xl font-bold tracking-tight text-slate-900 dark:text-[var(--foreground)]">
@@ -214,8 +214,8 @@ export function ChatPanel({
               placeholder={isStandalone ? "Ask a policy question..." : "Ask a follow-up..."}
               className="font-work-sans h-14 w-full rounded-2xl border border-slate-200 bg-white pl-5 pr-14 text-sm font-normal text-slate-900 shadow-inner outline-none transition-all focus:ring-2 focus:ring-[var(--accent-soft)] dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]"
             />
-            <div className={`absolute right-4 top-1/2 -translate-y-1/2 rounded-xl p-2 transition-colors ${message.trim() ? "text-[var(--accent)]" : "text-slate-300 dark:text-[var(--muted)]"}`}>
-               <Sparkles className="h-5 w-5" />
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${message.trim() ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "text-slate-300 dark:text-[var(--muted)]"}`}>
+               <Sparkles className="h-4 w-4" />
             </div>
           </div>
 

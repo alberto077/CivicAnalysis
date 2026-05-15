@@ -415,11 +415,15 @@ export function FloatingChatBot() {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 rounded-full border border-white/45 bg-[linear-gradient(135deg,rgba(26,54,93,0.96)_0%,#1a3f6d_48%,#163a66_100%)] py-3 pl-5 pr-5 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.14)_inset,0_6px_28px_-10px_rgba(26,54,93,0.55),0_18px_48px_-16px_rgba(168,218,220,0.38)] transition-[padding,box-shadow,transform] duration-300 ease-out hover:scale-[1.045] hover:px-7 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset,0_10px_36px_-12px_rgba(26,54,93,0.62),0_22px_56px_-18px_rgba(168,218,220,0.42)] active:scale-[0.98]"
+            className="flex items-center gap-2.5 rounded-full border-2 border-white/90 bg-slate-950/78 py-3 pl-5 pr-5 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.22),0_0_10px_3px_rgba(255,255,255,0.32),0_0_18px_6px_rgba(255,255,255,0.12)] backdrop-blur-md transition-[padding,box-shadow,transform,border-color] duration-300 ease-out hover:scale-[1.045] hover:border-white hover:px-7 hover:shadow-[0_0_0_2px_rgba(255,255,255,0.38),0_0_12px_4px_rgba(255,255,255,0.4),0_0_22px_7px_rgba(255,255,255,0.14)] active:scale-[0.98] dark:border-white/85 dark:bg-slate-950/62 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_8px_3px_rgba(255,255,255,0.2),0_0_14px_5px_rgba(147,197,253,0.14)] dark:hover:border-white dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.4),0_0_12px_4px_rgba(255,255,255,0.28),0_0_20px_7px_rgba(56,189,248,0.14)]"
             aria-label="Open Ask Spiegel"
           >
-            <Sparkles className="h-5 w-5 shrink-0 opacity-95" strokeWidth={1.75} aria-hidden />
-            <span className="font-work-sans text-sm font-semibold tracking-wide">Ask Spiegel</span>
+            <Sparkles
+              className="h-5 w-5 shrink-0 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.9)] dark:drop-shadow-[0_0_5px_rgba(255,255,255,0.65)]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <span className="font-work-sans text-sm font-semibold tracking-wide text-white">Ask Spiegel</span>
           </button>
         </div>
       ) : null}

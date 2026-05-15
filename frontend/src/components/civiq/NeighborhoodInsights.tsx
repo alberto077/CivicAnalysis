@@ -9,21 +9,25 @@ const insights = [
     title: "Zoning Changes",
     body: "Track text amendments, special districts, and ULURP milestones with plain-language deltas.",
     Icon: Landmark,
+    accent: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   },
   {
     title: "Housing Policy",
     body: "Affordable housing lotteries, MIH tweaks, and tenant protection notices surfaced for your area.",
     Icon: Home,
+    accent: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
   {
     title: "Transit Updates",
     body: "Bus redesigns, station access work, and street allocation pilots that touch your commute.",
     Icon: Bus,
+    accent: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   {
     title: "Budget Decisions",
     body: "Capital commitments, council discretionary funds, and agency spending shifts with local fingerprints.",
     Icon: Building2,
+    accent: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
   },
 ] as const;
 
@@ -51,8 +55,10 @@ export function NeighborhoodInsights() {
             variants={staggerItem}
             className="group glass-card lift-card flex h-full flex-col rounded-2xl p-6 md:rounded-3xl"
           >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,rgba(232,121,166,0.1)_0%,rgba(91,127,163,0.1)_100%)] text-[var(--accent)] ring-1 ring-white/55">
-              <item.Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.65} aria-hidden />
+            <span
+              className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${item.accent}`}
+            >
+              <item.Icon className="h-4 w-4" strokeWidth={1.65} aria-hidden />
             </span>
             <h3 className="font-limelight mt-4 text-base font-semibold text-[var(--foreground)]">
               {item.title}

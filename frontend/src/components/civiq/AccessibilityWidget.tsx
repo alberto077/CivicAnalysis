@@ -453,12 +453,12 @@ export function AccessibilityWidget() {
       <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#12355b] text-white shadow-2xl transition hover:-translate-y-1 hover:opacity-95"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/90 bg-slate-950/78 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_10px_3px_rgba(255,255,255,0.28),0_0_16px_5px_rgba(255,255,255,0.1)] backdrop-blur-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-white hover:shadow-[0_0_0_2px_rgba(255,255,255,0.34),0_0_12px_4px_rgba(255,255,255,0.32),0_0_20px_6px_rgba(255,255,255,0.12)] dark:border-white/85 dark:bg-slate-950/62 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.22),0_0_8px_3px_rgba(255,255,255,0.18),0_0_14px_5px_rgba(147,197,253,0.12)] dark:hover:border-white dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.36),0_0_12px_4px_rgba(255,255,255,0.24),0_0_18px_6px_rgba(56,189,248,0.12)]"
           aria-label="Open accessibility menu"
         >
-          <AccessibilityIcon className="h-6 w-6" />
+          <AccessibilityIcon className="h-6 w-6 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.85)] dark:drop-shadow-[0_0_5px_rgba(255,255,255,0.6)]" />
         {activeCount > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#facc15] px-1 text-[10px] font-black text-[#061525]">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#facc15] px-1 text-[10px] font-black text-[#061525] dark:bg-sky-300 dark:text-slate-950 dark:ring-1 dark:ring-sky-100/40">
             {activeCount}
           </span>
         ) : null}

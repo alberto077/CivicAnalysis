@@ -67,7 +67,7 @@ export function ProfileActivitySection({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-violet)] dark:ring-[var(--border)]">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
                 <Sparkles className="h-4 w-4" strokeWidth={1.65} aria-hidden />
               </span>
               <h2

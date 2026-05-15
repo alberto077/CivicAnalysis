@@ -207,20 +207,24 @@ function FeedSection({
   items,
   icon: Icon,
   variant = "bullets",
+  iconAccentClass = "bg-slate-500/10 text-slate-600 dark:text-slate-400",
 }: {
   eyebrow: string;
   title: string;
   items: string[];
   icon: typeof Newspaper;
   variant?: "bullets" | "stats";
+  iconAccentClass?: string;
 }) {
   if (!items.length) return null;
 
   return (
     <section className="scroll-mt-4">
       <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-violet)]">
-          <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
+        <span
+          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${iconAccentClass}`}
+        >
+          <Icon className="h-4 w-4" strokeWidth={2} />
         </span>
         <div>
           <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-[var(--foreground-secondary)]">
@@ -365,7 +369,7 @@ export function PolicyBriefingPanel({
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:text-[var(--icon-pink)] dark:hover:text-[var(--foreground)]"
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:text-[var(--icon-pink)] dark:hover:text-[var(--foreground)]"
             >
               <Share2 className="h-4 w-4" />
             </button>
@@ -444,8 +448,8 @@ export function PolicyBriefingPanel({
                   {safe.tldr.length > 0 && (
                     <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] sm:p-6">
                       <div className="flex gap-4">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] dark:bg-white/10 dark:text-[var(--icon-pink)]">
-                          <Sparkles className="h-5 w-5" />
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                          <Sparkles className="h-4 w-4" strokeWidth={1.75} />
                         </span>
                         <div className="min-w-0 space-y-2">
                           <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-[var(--foreground-secondary)]">
@@ -483,24 +487,28 @@ export function PolicyBriefingPanel({
                       title="What happened"
                       items={safe.what_happened}
                       icon={Newspaper}
+                      iconAccentClass="bg-blue-500/10 text-blue-600 dark:text-blue-400"
                     />
                     <FeedSection
                       eyebrow="Impact"
                       title="Why it matters"
                       items={safe.why_it_matters}
                       icon={Lightbulb}
+                      iconAccentClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
                     />
                     <FeedSection
                       eyebrow="People & place"
                       title="Who's affected"
                       items={safe.whos_affected}
                       icon={Users}
+                      iconAccentClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     />
                     <FeedSection
                       eyebrow="Forward view"
                       title="What happens next"
                       items={safe.what_happens_next}
                       icon={ArrowRight}
+                      iconAccentClass="bg-violet-500/10 text-violet-600 dark:text-violet-400"
                     />
                   </div>
 
@@ -530,8 +538,8 @@ export function PolicyBriefingPanel({
                     >
                       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-amber)]">
-                            <Hash className="h-5 w-5" strokeWidth={2} aria-hidden />
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <Hash className="h-4 w-4" strokeWidth={2} aria-hidden />
                           </span>
                           <div className="min-w-0">
                             <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-[var(--foreground-secondary)]">
@@ -569,8 +577,8 @@ export function PolicyBriefingPanel({
                     >
                       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-indigo-600 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--accent)]">
-                            <Globe2 className="h-5 w-5" />
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                            <Globe2 className="h-4 w-4" />
                           </span>
                           <div className="min-w-0">
                             <h3 className="font-work-sans text-lg font-bold tracking-tight text-slate-900 dark:text-white">
@@ -662,8 +670,8 @@ export function PolicyBriefingPanel({
                 transition={{ duration: 0.35 }}
                 className="mx-auto flex min-h-[260px] w-full max-w-2xl flex-col items-center justify-center px-6 py-14 text-center"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/90 bg-slate-50 text-slate-700 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-pink)]">
-                  <Sparkles className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400">
+                  <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 </span>
                 <p className="mt-5 font-work-sans text-lg font-semibold text-slate-900 dark:text-[var(--foreground)]">
                   No indexed records match these filters yet

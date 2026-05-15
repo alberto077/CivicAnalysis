@@ -115,7 +115,7 @@ function SourceCard({
           href={source.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 rounded-lg bg-slate-50 p-2 text-slate-400 transition-all group-hover:bg-white group-hover:shadow-sm dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-600 transition-all group-hover:bg-white group-hover:text-slate-700 group-hover:shadow-sm dark:bg-slate-500/10 dark:text-slate-400 dark:group-hover:bg-(--surface-card) dark:group-hover:text-foreground"
           aria-label={`Visit ${source.name}`}
         >
           <ExternalLink className="h-4 w-4" />
@@ -128,7 +128,7 @@ function SourceCard({
 function SectionHeader({ icon: Icon, title, color }: { icon: React.ElementType; title: string; color: string }) {
   return (
     <div className="mb-6 flex items-center gap-3">
-      <div className={`rounded-xl p-2 ${color}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${color}`}>
         <Icon className="h-4 w-4" />
       </div>
       <h2 className="text-xl font-bold text-slate-900 dark:text-foreground">{title}</h2>
@@ -151,8 +151,8 @@ export default function DataSourcesPage() {
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <MotionReveal>
               <div className="mb-5 flex items-center gap-3">
-                <div className="rounded-xl bg-blue-100 p-2.5 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
-                  <Database className="h-5 w-5" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <Database className="h-4 w-4" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:text-slate-500">
                   Civic Spiegel
@@ -275,7 +275,7 @@ export default function DataSourcesPage() {
                       className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-(--border) dark:bg-(--surface-card)"
                     >
                       <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400">
                           <item.icon className="h-4 w-4" />
                         </span>
                         <span>{item.type}</span>
@@ -322,8 +322,8 @@ export default function DataSourcesPage() {
               <MotionReveal>
                 <div className="rounded-4xl border border-slate-200 bg-white p-7 text-slate-900 shadow-sm dark:border-transparent dark:bg-slate-900 dark:text-white dark:shadow-none">
                   <div className="mb-1 flex items-center gap-2 font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
-                      <Database className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400">
+                      <Database className="h-4 w-4" />
                     </span>
                     <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">Database Model</h3>
                   </div>
@@ -356,8 +356,8 @@ export default function DataSourcesPage() {
               <MotionReveal>
                 <div className="rounded-4xl border border-slate-200 bg-white p-7 dark:border-(--border) dark:bg-(--surface-card)">
                   <div className="mb-1 flex items-center gap-2 font-bold uppercase tracking-widest text-slate-400">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
-                      <Search className="h-5 w-5 text-emerald-600" />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      <Search className="h-4 w-4" />
                     </span>
                     <h3 className="font-bold text-slate-900 dark:text-foreground mb-1">Retrieval Strategy</h3>
                   </div>
@@ -383,8 +383,8 @@ export default function DataSourcesPage() {
               <MotionReveal>
                 <div className="rounded-4xl border border-slate-200 bg-white p-7 dark:border-(--border) dark:bg-(--surface-card)">
                   <div className="mb-1 flex items-center gap-2 font-bold uppercase tracking-widest text-slate-400">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-(--surface-elevated) dark:text-(--foreground-secondary)">
-                      <RefreshCw className="h-5 w-5 text-blue-600" />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      <RefreshCw className="h-4 w-4" />
                     </span>
                     <h3 className="font-bold text-slate-900 dark:text-foreground mb-1">Automated Refresh</h3>
                   </div>

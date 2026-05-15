@@ -694,8 +694,8 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-(--border) dark:bg-(--surface-elevated) dark:hover:border-(--accent)"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
-                        <BookOpen className="h-5 w-5" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <BookOpen className="h-4 w-4" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-foreground">Consolidated Laws of NY</p>
@@ -712,8 +712,8 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-(--border) dark:bg-(--surface-elevated) dark:hover:border-(--accent)"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-                        <Users className="h-5 w-5" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Users className="h-4 w-4" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-foreground">Legislative Committees</p>
@@ -730,8 +730,8 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                     className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-(--accent) dark:border-(--border) dark:bg-(--surface-elevated) dark:hover:border-(--accent)"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-purple-50 p-2 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300">
-                        <Info className="h-5 w-5" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                        <Info className="h-4 w-4" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-foreground">Federal Delegation</p>

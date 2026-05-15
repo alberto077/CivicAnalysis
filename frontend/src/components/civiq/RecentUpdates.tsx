@@ -17,8 +17,8 @@ export function RecentUpdates({ policies, policiesLoading, policiesError }: Rece
     <section className="w-full py-16 sm:py-24">
       <MotionReveal>
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 transition-colors dark:bg-[var(--surface-elevated)] dark:ring-[var(--border)]">
-            <Rss className="h-4 w-4 dark:text-[var(--icon-pink)]" strokeWidth={1.65} aria-hidden />
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 transition-colors dark:text-blue-400">
+            <Rss className="h-4 w-4" strokeWidth={1.65} aria-hidden />
           </span>
           <h2 className="font-work-sans text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Recent policy updates
