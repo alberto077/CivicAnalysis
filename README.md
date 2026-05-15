@@ -125,7 +125,7 @@ Data we use is gathered through automated workflows:
 
 **GitHub Actions as ML compute** — The Python pipeline uses FastEmbed + spaCy, which together need ~2–4GB RAM. Render's free tier has 512MB. GitHub Actions' Ubuntu runners have 7GB. We use Actions for all the heavy lifting and Render only for live query-time inference.
 
-<!-- ![RAG/LLM - Data Pipeline Workflow](/frontend/public/rag_pipeline.png) -->
+![RAG/LLM - Data Pipeline Workflow](/frontend/public/rag_pipeline.png)
 
 ---
 
@@ -190,7 +190,7 @@ Address geocoding via NYC Planning Labs geocoder (free, no key required).
 7. **LLM generation** — Groq Llama 3.1 8B → structured JSON briefing or plain markdown
 8. **OpenAI fallback** — if `retrieval_tier='none'`, GPT-4o-mini answers from general knowledge
 
-![Data Pipeline Steps](/frontend/public/pipeline_steps.png)
+<!-- ![Data Pipeline Steps](/frontend/public/pipeline_steps.png) -->
 
 ---
 
