@@ -64,7 +64,7 @@ export function ThemeToggle() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(166,197,238,0.52)_0%,rgba(166,197,238,0.18)_45%,rgba(166,197,238,0)_72%)]"
+              className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(210,170,255,0.42)_0%,rgba(120,210,255,0.28)_38%,rgba(255,140,200,0.14)_58%,transparent_74%)]"
               aria-hidden
             />
           ) : null}
@@ -81,7 +81,7 @@ export function ThemeToggle() {
               className="relative z-[1] flex items-center justify-center"
             >
               <Moon
-                className="size-4 text-[#c5d4e8] drop-shadow-[0_0_8px_rgba(166,197,238,0.8)]"
+                className="size-4 text-[#d8c4ff] drop-shadow-[0_0_12px_rgba(200,160,255,0.55),0_0_20px_rgba(72,230,255,0.35)]"
                 strokeWidth={2}
                 aria-hidden
               />

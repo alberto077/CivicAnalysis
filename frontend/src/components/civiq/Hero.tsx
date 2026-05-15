@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import { ArrowRight, Search } from "lucide-react";
 
 type HeroProps = {
   query: string;
@@ -33,7 +34,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
     0.22 + introLen * HEADLINE_LETTER_STAGGER + 0.12;
 
   return (
-    <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16">
+    <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28">
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.82]"
         style={{ backgroundImage: "url('/images/skylinehero.png')" }}
@@ -56,10 +57,10 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 opacity-85 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto w-full min-w-0 max-w-4xl">
         <div className="grid grid-cols-1 items-center gap-12">
-          <div className="mx-auto w-full text-center">
+          <div className="mx-auto w-full text-center opacity-85">
           <h1 className="font-limelight mx-auto mt-5 max-w-3xl text-center text-[2.9rem] leading-[1.08] tracking-[3.8px] text-[rgba(20,31,45,0.92)] sm:text-[3.6rem] md:text-[4.2rem] lg:text-[4.65rem] dark:text-[var(--foreground)]">
             <motion.span
               className="block w-full"
@@ -135,18 +136,16 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
           <label htmlFor="location-search" className="font-work-sans sr-only">
             Ask about your neighborhood, local policies, budgets, or city decisions
           </label>
-          <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)] dark:bg-[linear-gradient(165deg,rgba(28,34,42,0.96)_0%,rgba(17,22,28,0.94)_100%)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_-20px_rgba(0,0,0,0.55)]">
-            <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.65"
-                className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-4-4" strokeLinecap="round" />
-              </svg>
+          <div className="hero-search-shell glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)]">
+            <span
+              className="hero-search-icon-wrap relative box-content flex shrink-0 overflow-visible border-0 [border-image:none] rounded-none opacity-100 my-0.5 -mx-0.5 text-[#12355b] dark:text-white"
+              aria-hidden
+            >
+              <Search
+                className="hero-search-icon-glow relative z-0 box-content h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 text-white transition-transform duration-300 group-focus-within:scale-105"
+                strokeWidth={1.75}
+                aria-hidden
+              />
             </span>
             <input
               id="location-search"
@@ -156,26 +155,20 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Ask about your Neighborhood"
               disabled={loading}
-              className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] placeholder:text-[0.98rem] placeholder:text-[var(--muted)]/85 placeholder:font-normal focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 dark:text-[var(--foreground)] dark:opacity-100 dark:placeholder:text-[var(--muted)]"
+              className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[18px] font-medium tracking-[1.2px] text-[rgba(20,31,45,0.7)] opacity-[0.88] [-webkit-background-clip:unset] [background-clip:unset] placeholder:text-[0.98rem] placeholder:text-slate-400 placeholder:font-normal shadow-none focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60 dark:text-white dark:opacity-100 dark:placeholder:text-zinc-300"
             />
             <button
               type="submit"
               disabled={loading || !query.trim()}
               aria-label={loading ? "Loading briefing" : "Submit briefing request"}
-              className="command-submit box-border flex aspect-square h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center rounded-[1.05rem] bg-[var(--accent-mid)] p-1 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/85 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--accent-mid)] disabled:pointer-events-none disabled:opacity-50 sm:p-1.5 sm:rounded-[1.1rem] md:rounded-[1.15rem]"
+              className="command-submit hero-droplet-submit relative box-border flex h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center overflow-visible border-0 bg-transparent p-0 shadow-none transition-[transform,filter] duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(0,0,0,0.08)] disabled:pointer-events-none dark:focus-visible:ring-sky-200/45 dark:focus-visible:ring-offset-[rgba(255,255,255,0.06)]"
             >
               <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="block h-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] w-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] shrink-0"
+              <ArrowRight
+                className="hero-submit-arrow relative z-10 block h-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] w-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] shrink-0 text-[#12355b] dark:text-white"
+                strokeWidth={2.5}
                 aria-hidden
-              >
-                <path d="M5 12h13" strokeLinecap="round" />
-                <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              />
             </button>
           </div>
         </motion.form>

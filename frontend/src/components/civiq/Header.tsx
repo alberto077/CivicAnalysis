@@ -78,12 +78,12 @@ export function Header() {
             <button
               type="button"
               onClick={() => setShowEditProfile(true)}
-              className="group flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-2.5 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:bg-[var(--surface-card)] dark:hover:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.4)]"
+              className="group flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-2.5 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:border-white/12 dark:bg-[linear-gradient(135deg,rgba(148,163,184,0.22)_0%,rgba(100,116,139,0.28)_48%,rgba(71,85,105,0.24)_100%)] dark:backdrop-blur-xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_22px_-12px_rgba(15,23,42,0.4)] dark:hover:border-sky-200/25 dark:hover:bg-[linear-gradient(135deg,rgba(148,163,184,0.32)_0%,rgba(100,116,139,0.38)_48%,rgba(71,85,105,0.32)_100%)] dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_6px_28px_-10px_rgba(15,23,42,0.45)]"
               title="Update Preferences"
               aria-label="Update Preferences"
             >
-              <Settings className="h-4 w-4 transition-transform group-hover:rotate-90" />
-              <span className="hidden text-[10px] font-bold uppercase tracking-widest sm:inline">
+              <Settings className="h-4 w-4 shrink-0 text-[var(--muted)] transition-transform group-hover:rotate-90 group-hover:text-[var(--accent)] dark:text-sky-300 dark:group-hover:text-sky-200" />
+              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] group-hover:text-[var(--accent)] sm:inline dark:text-white dark:group-hover:text-white">
                 Profile
               </span>
             </button>
@@ -91,7 +91,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:text-[var(--icon-amber)] dark:hover:text-[var(--accent)] md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >

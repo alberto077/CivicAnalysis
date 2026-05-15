@@ -4,6 +4,9 @@
 import { Accessibility as AccessibilityIcon } from "lucide-react"; //used https://lucide.dev/icons/accessibility
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { floatingFabDark, floatingFabIconLight, floatingFabLight } from "@/lib/floating-fab-styles";
+import { useFooterAwareBottom } from "@/lib/useFooterAwareBottom";
+
 type AccessibilitySettings = {
   largeText: boolean;
   highContrast: boolean;
@@ -181,10 +184,12 @@ function SettingButton({
 }
 
 export function AccessibilityWidget() {
+  const stackRef = useRef<HTMLDivElement>(null);
   const hasLoadedSavedSettings = useRef(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
+  const footerAwareBottom = useFooterAwareBottom(24, 32, 12, 56, stackRef, isOpen);
   const [settings, setSettings] =
     useState<AccessibilitySettings>(DEFAULT_SETTINGS);
 
@@ -316,9 +321,18 @@ export function AccessibilityWidget() {
   }
 
   return (
-    <div className="fixed bottom-5 left-5 z-50">
+    <div
+      ref={stackRef}
+      className="fixed left-5 z-50 flex flex-col items-start transition-[bottom] duration-200 ease-out sm:left-8"
+      style={{ bottom: `${footerAwareBottom}px` }}
+    >
       {isOpen ? (
-        <div className="mb-4 flex max-h-[calc(100vh-13rem)] w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
+        <div
+          className="mb-4 flex w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]"
+          style={{
+            maxHeight: `min(calc(100dvh - ${footerAwareBottom}px - 5rem), calc(100vh - 13rem))`,
+          }}
+        >
           <div className="shrink-0 bg-gradient-to-br from-[#12355b] via-[#0b1f3a] to-[#061525] px-5 py-4 text-white dark:from-[#0e2845] dark:via-[#081628] dark:to-[#04101c]">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -453,12 +467,12 @@ export function AccessibilityWidget() {
       <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#12355b] text-white shadow-2xl transition hover:-translate-y-1 hover:opacity-95"
+          className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-white backdrop-blur-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 ${floatingFabLight} ${floatingFabDark}`}
           aria-label="Open accessibility menu"
         >
-          <AccessibilityIcon className="h-6 w-6" />
+          <AccessibilityIcon className={`h-6 w-6 text-white ${floatingFabIconLight}`} />
         {activeCount > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#facc15] px-1 text-[10px] font-black text-[#061525]">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#facc15] px-1 text-[10px] font-black text-[#061525] dark:bg-sky-300 dark:text-slate-950 dark:ring-1 dark:ring-sky-100/40">
             {activeCount}
           </span>
         ) : null}
