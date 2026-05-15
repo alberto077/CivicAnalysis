@@ -13,6 +13,8 @@ import {
   type FloatingChatTurn,
   type FloatingRetrievalSource,
 } from "@/lib/api";
+import { floatingFabDark, floatingFabIconLight, floatingFabLight } from "@/lib/floating-fab-styles";
+import { useFooterAwareBottom } from "@/lib/useFooterAwareBottom";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -104,6 +106,7 @@ const askSpiegelPanelHeight = "min(calc(100dvh - 2rem), min(920px, max(600px, 86
 
 export function FloatingChatBot() {
   const pathname = usePathname();
+  const footerAwareBottom = useFooterAwareBottom(24, 32, 12, 52);
 
   /** Avoid FAB SSR/client DOM mismatch (e.g. motion/compiler wrappers vs native button). */
   const [launcherMounted, setLauncherMounted] = useState(false);
@@ -411,15 +414,18 @@ export function FloatingChatBot() {
       </AnimatePresence>
 
       {launcherMounted && !isOpen ? (
-        <div className="fixed bottom-6 right-5 z-[120] sm:bottom-8 sm:right-8">
+        <div
+          className="fixed right-5 z-[120] transition-[bottom] duration-200 ease-out sm:right-8"
+          style={{ bottom: `${footerAwareBottom}px` }}
+        >
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2.5 rounded-full border-2 border-white/90 bg-slate-950/78 py-3 pl-5 pr-5 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.22),0_0_10px_3px_rgba(255,255,255,0.32),0_0_18px_6px_rgba(255,255,255,0.12)] backdrop-blur-md transition-[padding,box-shadow,transform,border-color] duration-300 ease-out hover:scale-[1.045] hover:border-white hover:px-7 hover:shadow-[0_0_0_2px_rgba(255,255,255,0.38),0_0_12px_4px_rgba(255,255,255,0.4),0_0_22px_7px_rgba(255,255,255,0.14)] active:scale-[0.98] dark:border-white/85 dark:bg-slate-950/62 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.24),0_0_8px_3px_rgba(255,255,255,0.2),0_0_14px_5px_rgba(147,197,253,0.14)] dark:hover:border-white dark:hover:shadow-[0_0_0_2px_rgba(255,255,255,0.4),0_0_12px_4px_rgba(255,255,255,0.28),0_0_20px_7px_rgba(56,189,248,0.14)]"
+            className={`flex items-center gap-2.5 rounded-full border-2 py-3 pl-5 pr-5 text-white backdrop-blur-md transition-[padding,box-shadow,transform,border-color] duration-300 ease-out hover:scale-[1.045] hover:px-7 active:scale-[0.98] ${floatingFabLight} ${floatingFabDark}`}
             aria-label="Open Ask Spiegel"
           >
             <Sparkles
-              className="h-5 w-5 shrink-0 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.9)] dark:drop-shadow-[0_0_5px_rgba(255,255,255,0.65)]"
+              className={`h-5 w-5 shrink-0 text-white ${floatingFabIconLight}`}
               strokeWidth={1.75}
               aria-hidden
             />

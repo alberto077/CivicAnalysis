@@ -138,7 +138,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
           </label>
           <div className="hero-search-shell glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)]">
             <span
-              className="hero-search-icon-wrap relative box-content flex shrink-0 overflow-visible border-0 [border-image:none] rounded-none opacity-100 my-0.5 -mx-0.5 text-white"
+              className="hero-search-icon-wrap relative box-content flex shrink-0 overflow-visible border-0 [border-image:none] rounded-none opacity-100 my-0.5 -mx-0.5 text-[#12355b] dark:text-white"
               aria-hidden
             >
               <Search
@@ -165,7 +165,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             >
               <span className="sr-only">{loading ? "Briefing…" : "Get briefing"}</span>
               <ArrowRight
-                className="hero-submit-arrow relative z-10 block h-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] w-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] shrink-0 text-white"
+                className="hero-submit-arrow relative z-10 block h-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] w-[clamp(0.95rem,calc(0.32 * 100cqh - 2px),1.25rem)] shrink-0 text-[#12355b] dark:text-white"
                 strokeWidth={2.5}
                 aria-hidden
               />

@@ -655,42 +655,51 @@ h3.section-title,
   background-color: transparent;
 }
 
-/* Hero search magnifier: transparent paint + soft white bloom (no filled backdrop) */
+/* Hero search magnifier: navy in light mode, white bloom in dark */
 .hero-search-shell .hero-search-icon-glow {
   background: transparent;
   fill: none;
-  color: #fff;
+  color: #12355b;
   border-radius: 7px;
   box-shadow:
-    0px 0px 5.7px 1.3px rgba(255, 255, 255, 0.35),
-    inset 0px 0px 5.7px 3.6px rgba(255, 255, 255, 0.24);
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.45))
-    drop-shadow(0 0 22px rgba(255, 255, 255, 0.22))
-    drop-shadow(0 0 40px rgba(255, 255, 255, 0.1));
+    0px 0px 5.7px 1.3px rgba(18, 53, 91, 0.22),
+    inset 0px 0px 5.7px 3.6px rgba(110, 179, 232, 0.18);
+  filter: drop-shadow(0 0 8px rgba(18, 53, 91, 0.35))
+    drop-shadow(0 0 16px rgba(74, 139, 196, 0.28))
+    drop-shadow(0 0 28px rgba(110, 179, 232, 0.14));
 }
 
 .hero-search-shell .hero-search-icon-glow circle {
-  box-shadow: inset 0px 4px 12px 9.2px rgba(255, 250, 250, 0.26);
-  background-color: rgba(227, 227, 227, 1);
+  box-shadow: inset 0px 4px 12px 9.2px rgba(110, 179, 232, 0.2);
+  background-color: rgba(232, 241, 250, 1);
 }
 
 .dark .hero-search-shell .hero-search-icon-glow {
+  color: #fff;
+  box-shadow:
+    0px 0px 5.7px 1.3px rgba(255, 255, 255, 0.35),
+    inset 0px 0px 5.7px 3.6px rgba(255, 255, 255, 0.24);
   filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.42))
     drop-shadow(0 0 28px rgba(255, 255, 255, 0.2))
     drop-shadow(0 0 48px rgba(147, 197, 253, 0.14));
 }
 
-/* Submit arrow: white stroke + luminous white glow; slim navy halo for contrast on the bar */
+.dark .hero-search-shell .hero-search-icon-glow circle {
+  box-shadow: inset 0px 4px 12px 9.2px rgba(255, 250, 250, 0.26);
+  background-color: rgba(227, 227, 227, 1);
+}
+
+/* Submit arrow: navy in light mode; white stroke + glow in dark */
 .hero-search-shell .hero-droplet-submit .hero-submit-arrow {
-  color: #fff;
-  filter: drop-shadow(0 0 0.75px rgba(26, 54, 93, 0.55))
-    drop-shadow(0 0 1px rgba(26, 54, 93, 0.35))
-    drop-shadow(0 0 10px rgba(255, 255, 255, 0.95))
-    drop-shadow(0 0 20px rgba(255, 255, 255, 0.65))
-    drop-shadow(0 0 34px rgba(255, 255, 255, 0.4));
+  color: #12355b;
+  filter: drop-shadow(0 0 0.75px rgba(18, 53, 91, 0.65))
+    drop-shadow(0 0 6px rgba(74, 139, 196, 0.45))
+    drop-shadow(0 0 14px rgba(110, 179, 232, 0.32))
+    drop-shadow(0 0 24px rgba(157, 212, 255, 0.2));
 }
 
 .dark .hero-search-shell .hero-droplet-submit .hero-submit-arrow {
+  color: #fff;
   filter: drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.5))
     drop-shadow(0 0 12px rgba(255, 255, 255, 0.85))
     drop-shadow(0 0 26px rgba(255, 255, 255, 0.45))
