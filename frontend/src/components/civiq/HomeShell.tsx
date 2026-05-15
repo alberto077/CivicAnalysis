@@ -265,7 +265,7 @@ export function HomeShell() {
       />
 
       <Header />
-      <main className="relative z-10 flex-1">
+      <main className="relative z-10 mt-10 flex-1">
         <Hero
           query={query}
           onQueryChange={setQuery}
