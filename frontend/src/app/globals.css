@@ -37,6 +37,16 @@
   --shadow-btn:
     0 2px 8px -2px rgba(91, 127, 163, 0.35),
     0 1px 2px rgba(30, 42, 51, 0.06);
+
+  /* Vibrant icon hues (light: saturated but readable on pale surfaces) */
+  --icon-blue: #2563eb;
+  --icon-violet: #7c3aed;
+  --icon-pink: #db2777;
+  --icon-mint: #059669;
+  --icon-amber: #d97706;
+  --icon-cyan: #0891b2;
+  --icon-lime: #65a30d;
+  --icon-rose: #e11d48;
 }
 
 /* Editorial dark — calm blue-gray, not pure black */
@@ -69,6 +79,16 @@
   --shadow-btn:
     0 2px 8px -2px rgba(0, 0, 0, 0.35),
     0 1px 0 rgba(255, 255, 255, 0.04) inset;
+
+  /* Vibrant icon hues on dark (luminous, not muddy grays) */
+  --icon-blue: #5cb3ff;
+  --icon-violet: #c9a3ff;
+  --icon-pink: #ff7eb8;
+  --icon-mint: #5cf0c3;
+  --icon-amber: #ffe066;
+  --icon-cyan: #48e6ff;
+  --icon-lime: #d2fa8f;
+  --icon-rose: #ff9dad;
 }
 
 @theme inline {

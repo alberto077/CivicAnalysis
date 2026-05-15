@@ -80,7 +80,7 @@ function FilterDropdown({
       >
         <span className="min-w-0 flex-1 truncate">{value}</span>
         <ChevronDown
-          className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ease-out ${open ? "rotate-180" : "rotate-0"}`}
+          className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ease-out dark:text-[var(--icon-violet)] ${open ? "rotate-180" : "rotate-0"}`}
           strokeWidth={2}
           aria-hidden
         />
@@ -158,7 +158,16 @@ export function DashboardFilters({
               >
                 {(() => {
                   const Icon = AREA_ICONS[area as keyof typeof AREA_ICONS];
-                  return <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />;
+                  return (
+                    <Icon
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        selectedArea === area
+                          ? "text-white dark:text-[#f0eceb]"
+                          : "text-[var(--foreground)] dark:text-[#aedff4]"
+                      }`}
+                      aria-hidden
+                    />
+                  );
                 })()}
                 {area}
               </button>
@@ -201,7 +210,7 @@ export function DashboardFilters({
               <span className="group relative inline-flex shrink-0">
                 <button
                   type="button"
-                  className="rounded-full p-0.5 text-[var(--muted)] transition hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)]"
+                  className="rounded-full p-0.5 text-[var(--muted)] transition hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:text-[var(--icon-amber)] dark:hover:text-[var(--icon-cyan)]"
                   aria-label="How personalize results works"
                   aria-describedby={personalizeTooltipId}
                 >

@@ -67,7 +67,7 @@ export function ProfileActivitySection({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 dark:bg-[var(--surface-elevated)] dark:ring-[var(--border)]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-violet)] dark:ring-[var(--border)]">
                 <Sparkles className="h-4 w-4" strokeWidth={1.65} aria-hidden />
               </span>
               <h2
@@ -104,7 +104,7 @@ export function ProfileActivitySection({
                 onClick={onSetupProfile}
                 className="filter-pill font-work-sans inline-flex items-center gap-2 rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)]"
               >
-                <UserRound className="h-3.5 w-3.5" aria-hidden />
+                <UserRound className="h-3.5 w-3.5 dark:text-[var(--icon-cyan)]" aria-hidden />
                 Set up profile
               </button>
             ) : (
@@ -167,7 +167,7 @@ export function ProfileActivitySection({
                           href={p.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-work-sans inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+                          className="font-work-sans inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline dark:text-[var(--icon-mint)]"
                         >
                           Open record
                           <ExternalLink className="size-3.5 shrink-0" aria-hidden />

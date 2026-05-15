@@ -633,9 +633,9 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 New York
               </div>
               {isReferenceOpen ? (
-                <ChevronUp className="h-5 w-5 text-slate-400 dark:text-(--muted)" />
+                <ChevronUp className="h-5 w-5 text-slate-400 dark:text-[var(--icon-violet)]" />
               ) : (
-                <ChevronDown className="h-5 w-5 text-slate-400 dark:text-(--muted)" />
+                <ChevronDown className="h-5 w-5 text-slate-400 dark:text-[var(--icon-violet)]" />
               )}
             </div>
           </button>
@@ -702,7 +702,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500 dark:text-(--muted)">Official NY State Legislative database</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-(--muted) dark:group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--icon-mint)] dark:group-hover:text-(--accent)" />
                   </a>
                   <a
                     href="https://www.nysenate.gov/senators-committees"
@@ -720,7 +720,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500 dark:text-(--muted)">View Senate committee assignments</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-(--muted) dark:group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--icon-mint)] dark:group-hover:text-(--accent)" />
                   </a>
                   <a
                     href="https://www.house.gov/representatives#new-york"
@@ -738,7 +738,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                         <p className="text-[10px] text-slate-500 dark:text-(--muted)">US House & Senate members</p>
                       </div>
                     </div>
-                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-(--muted) dark:group-hover:text-(--accent)" />
+                    <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-(--accent) dark:text-[var(--icon-mint)] dark:group-hover:text-(--accent)" />
                   </a>
                 </div>
 
@@ -791,7 +791,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 Search
               </span>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-(--muted)" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[var(--icon-cyan)]" />
                 <input
                   type="text"
                   value={searchTerm}
@@ -802,7 +802,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm("")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-(--muted) dark:hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-[var(--icon-amber)] dark:hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -987,7 +987,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
                   className="group relative flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-10 py-4 font-bold text-slate-900 transition-all hover:border-(--accent) hover:shadow-lg active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated) dark:text-foreground dark:hover:border-(--accent)"
                 >
                   <span>Show More</span>
-                  <ChevronDown className="h-5 w-5 text-slate-400 transition-transform group-hover:translate-y-0.5 group-hover:text-(--accent) dark:text-(--muted)" />
+                  <ChevronDown className="h-5 w-5 text-slate-400 transition-transform group-hover:translate-y-0.5 group-hover:text-(--accent) dark:text-[var(--icon-violet)]" />
                   <div className="absolute -right-3 -top-3 rounded-md bg-(--accent) px-2 py-1 text-[10px] font-bold text-white shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
                     +{filteredPoliticians.length - visibleCount}
                   </div>

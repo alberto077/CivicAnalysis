@@ -183,7 +183,7 @@ function SourceEvidenceCard({ card }: { card: BriefingSourceCard }) {
             href={card.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex max-w-full flex-wrap items-center gap-2 break-all text-sm font-semibold text-indigo-700 hover:underline dark:text-[var(--accent-soft)]"
+            className="inline-flex max-w-full flex-wrap items-center gap-2 break-all text-sm font-semibold text-indigo-700 hover:underline dark:text-[var(--icon-mint)]"
           >
             <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
             <span>Open official record</span>
@@ -219,7 +219,7 @@ function FeedSection({
   return (
     <section className="scroll-mt-4">
       <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-violet)]">
           <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} />
         </span>
         <div>
@@ -365,7 +365,7 @@ export function PolicyBriefingPanel({
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:hover:text-[var(--foreground)]"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground-secondary)] shadow-sm transition hover:bg-[var(--surface-card)] dark:text-[var(--icon-pink)] dark:hover:text-[var(--foreground)]"
             >
               <Share2 className="h-4 w-4" />
             </button>
@@ -444,7 +444,7 @@ export function PolicyBriefingPanel({
                   {safe.tldr.length > 0 && (
                     <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm dark:border-[var(--border)] dark:from-[var(--surface-elevated)] dark:to-[var(--surface-card)] sm:p-6">
                       <div className="flex gap-4">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] dark:bg-white/10 dark:text-white">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] dark:bg-white/10 dark:text-[var(--icon-pink)]">
                           <Sparkles className="h-5 w-5" />
                         </span>
                         <div className="min-w-0 space-y-2">
@@ -508,7 +508,7 @@ export function PolicyBriefingPanel({
                     <details className="group rounded-2xl border border-slate-200/90 bg-slate-50/50 dark:border-[var(--border)] dark:bg-[var(--surface-elevated)]/40">
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-work-sans text-sm font-semibold text-slate-800 outline-none transition hover:bg-slate-100/60 dark:text-[var(--foreground)] dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
                         <span>Read more</span>
-                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--foreground-secondary)]" />
+                        <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--icon-cyan)]" />
                       </summary>
                       <ul className="space-y-2 border-t border-slate-200/80 px-5 pb-5 pt-3 dark:border-[var(--border)]">
                         {safe.read_more.map((item, i) => (
@@ -530,7 +530,7 @@ export function PolicyBriefingPanel({
                     >
                       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-amber)]">
                             <Hash className="h-5 w-5" strokeWidth={2} aria-hidden />
                           </span>
                           <div className="min-w-0">
@@ -603,7 +603,7 @@ export function PolicyBriefingPanel({
                               Show {extraSources.length} more{" "}
                               {extraSources.length === 1 ? "source" : "sources"}
                             </span>
-                            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--foreground-secondary)]" />
+                            <ChevronDown className="h-4 w-4 shrink-0 text-slate-500 transition group-open:rotate-180 dark:text-[var(--icon-cyan)]" />
                           </summary>
                           <div className="grid min-w-0 grid-cols-1 gap-3 border-t border-slate-200/80 p-4 pt-4 md:grid-cols-2 dark:border-[var(--border)]">
                             {extraSources.map((card, i) => (
@@ -662,7 +662,7 @@ export function PolicyBriefingPanel({
                 transition={{ duration: 0.35 }}
                 className="mx-auto flex min-h-[260px] w-full max-w-2xl flex-col items-center justify-center px-6 py-14 text-center"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/90 bg-slate-50 text-slate-700 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--foreground)]">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/90 bg-slate-50 text-slate-700 shadow-sm dark:border-[var(--border)] dark:bg-[var(--surface-elevated)] dark:text-[var(--icon-pink)]">
                   <Sparkles className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <p className="mt-5 font-work-sans text-lg font-semibold text-slate-900 dark:text-[var(--foreground)]">

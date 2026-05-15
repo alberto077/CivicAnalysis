@@ -602,7 +602,7 @@ function CivicEventsMap() {
           <div ref={mapContainerRef} className="w-full h-full" />
           {!mapReady && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-(--surface-elevated)">
-              <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-(--muted)" />
+              <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-[var(--icon-blue)]" />
               <p className="text-sm text-slate-400 dark:text-(--foreground-secondary)">Loading map…</p>
             </div>
           )}
@@ -631,7 +631,7 @@ function CivicEventsMap() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-slate-400 dark:text-(--muted)">{count}</span>
-                      {active ? <Eye className="h-3 w-3 text-slate-400 dark:text-(--foreground-secondary)" /> : <EyeOff className="h-3 w-3 text-slate-300 dark:text-(--muted)" />}
+                      {active ? <Eye className="h-3 w-3 text-slate-400 dark:text-[var(--icon-cyan)]" /> : <EyeOff className="h-3 w-3 text-slate-300 dark:text-[var(--icon-violet)]" />}
                     </div>
                   </button>
                 );
@@ -663,7 +663,7 @@ function CivicEventsMap() {
       {/* boundary explanations */}
       <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-6 shadow-sm">
         <h4 className="text-sm font-bold text-slate-800 dark:text-foreground mb-1 flex items-center gap-2">
-          <Layers className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary)" />
+          <Layers className="h-4 w-4 text-slate-400 dark:text-[var(--icon-mint)]" />
           Understanding Boundary Lines &amp; Levels of Government
         </h4>
         <p className="text-xs text-slate-400 dark:text-(--foreground-secondary) mb-5 leading-relaxed max-w-2xl">
@@ -679,7 +679,7 @@ function CivicEventsMap() {
                   <span className="text-sm font-semibold text-slate-700 dark:text-foreground">{bl.label}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>{bl.govLevel}</span>
                 </div>
-                {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary) shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-(--foreground-secondary) shrink-0" />}
+                {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" />}
               </button>
               <AnimatePresence>
                 {expandedBoundary === bl.id && (
@@ -885,7 +885,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 <div className="flex items-center gap-2">
                   <form onSubmit={(e) => { e.preventDefault(); setNysQuery(nysInput.trim() ? encodeURIComponent(nysInput.trim()) : ""); }} className="flex gap-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-(--muted)" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-[var(--icon-cyan)]" />
                       <input type="text" value={nysInput} onChange={(e) => setNysInput(e.target.value)} placeholder="Address or zip…"
                         className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-(--border) bg-white dark:bg-(--surface-card) text-slate-900 dark:text-foreground text-xs outline-none focus:ring-2 focus:ring-(--accent-soft) w-44 transition-shadow placeholder:text-slate-400 dark:placeholder:text-(--muted)" />
                     </div>
@@ -928,7 +928,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
             <div className="lg:col-span-8 relative bg-white dark:bg-(--surface-card) rounded-[2.5rem] border border-slate-200 dark:border-(--border) shadow-sm overflow-hidden h-175">
               {mapLoading ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-(--surface-elevated)">
-                  <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-(--muted)" />
+                  <Loader2 className="h-8 w-8 animate-spin text-slate-300 dark:text-[var(--icon-blue)]" />
                   <p className="text-sm text-slate-400 dark:text-(--foreground-secondary) font-medium">Loading geographic data…</p>
                 </div>
               ) : geoData ? (
@@ -969,7 +969,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 </ComposableMap>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 dark:text-(--foreground-secondary)">
-                  <AlertCircle className="h-10 w-10 text-slate-300 dark:text-(--muted)" /><p className="text-sm">Failed to load map data.</p>
+                  <AlertCircle className="h-10 w-10 text-slate-300 dark:text-[var(--icon-amber)] mb-4" /><p className="text-sm">Failed to load map data.</p>
                 </div>
               )}
               <div className="absolute bottom-5 left-5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-(--surface-elevated)/90 backdrop-blur shadow-sm border border-slate-100 dark:border-(--border) text-[10px] font-bold text-slate-500 dark:text-(--foreground-secondary) uppercase tracking-widest pointer-events-none">
@@ -995,7 +995,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 </p>
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 dark:text-(--muted)" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 dark:text-[var(--icon-cyan)]" />
                     <input
                       type="text"
                       value={searchInput}
@@ -1027,7 +1027,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                           <p className="text-sm font-semibold text-slate-800 dark:text-foreground">{d.rep}</p>
                           <p className="text-[11px] text-slate-400 dark:text-(--foreground-secondary)">District {d.id} · {d.name}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-slate-300 dark:text-(--muted) group-hover:text-slate-500 dark:group-hover:text-(--foreground-secondary) transition-colors" />
+                        <ChevronRight className="h-4 w-4 text-slate-300 dark:text-[var(--icon-violet)] group-hover:text-slate-500 dark:group-hover:text-[var(--icon-pink)] transition-colors" />
                       </button>
                     ))}
                   </div>
@@ -1088,7 +1088,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 ) : (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="bg-slate-100/50 dark:bg-(--surface-elevated)/50 rounded-4xl border-2 border-dashed border-slate-200 dark:border-(--border) p-12 text-center h-100 flex flex-col items-center justify-center">
-                    <MapPin className="h-10 w-10 text-slate-300 dark:text-(--muted) mb-4" />
+                    <MapPin className="h-10 w-10 text-slate-300 dark:text-[var(--icon-rose)] mb-4" />
                     <h3 className="text-slate-900 dark:text-foreground font-bold mb-2">No District Selected</h3>
                     <p className="text-sm text-slate-400 dark:text-(--foreground-secondary) max-w-55">
                       Click any district on the map, or search by address, zip, rep name, or district number.

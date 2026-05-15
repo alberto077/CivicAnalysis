@@ -136,13 +136,16 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
             Ask about your neighborhood, local policies, budgets, or city decisions
           </label>
           <div className="hero-search-shell glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)] dark:bg-[linear-gradient(165deg,rgba(28,34,42,0.96)_0%,rgba(17,22,28,0.94)_100%)]">
-            <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
+            <span
+              className="flex shrink-0 text-[var(--icon-cyan)] dark:text-[var(--foreground)]"
+              aria-hidden
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.65"
-                className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105"
+                className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105 dark:opacity-95"
               >
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-4-4" strokeLinecap="round" />

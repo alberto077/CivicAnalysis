@@ -126,7 +126,7 @@ export function ThemedSelect({
           {currentOption?.label ?? value}
         </span>
         <ChevronDown
-          className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ease-out ${
+          className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ease-out dark:text-[var(--icon-violet)] ${
             open ? "rotate-180" : "rotate-0"
           }`}
           strokeWidth={2}

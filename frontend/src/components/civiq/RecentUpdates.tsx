@@ -18,7 +18,7 @@ export function RecentUpdates({ policies, policiesLoading, policiesError }: Rece
       <MotionReveal>
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/60 text-[var(--accent)] shadow-[0_4px_14px_-6px_rgba(91,127,163,0.25)] ring-1 ring-white/70 transition-colors dark:bg-[var(--surface-elevated)] dark:ring-[var(--border)]">
-            <Rss className="h-4 w-4" strokeWidth={1.65} aria-hidden />
+            <Rss className="h-4 w-4 dark:text-[var(--icon-pink)]" strokeWidth={1.65} aria-hidden />
           </span>
           <h2 className="font-work-sans text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl md:text-[2rem]">
             Recent policy updates

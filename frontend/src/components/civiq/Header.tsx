@@ -78,7 +78,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setShowEditProfile(true)}
-              className="group flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-2.5 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:bg-[var(--surface-card)] dark:hover:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.4)]"
+              className="group flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-2.5 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:bg-[var(--surface-card)] dark:text-[var(--icon-violet)] dark:hover:text-[var(--accent)] dark:hover:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.4)]"
               title="Update Preferences"
               aria-label="Update Preferences"
             >
@@ -91,7 +91,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:text-[var(--icon-amber)] dark:hover:text-[var(--accent)] md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
