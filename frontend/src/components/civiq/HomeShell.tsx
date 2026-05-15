@@ -35,7 +35,7 @@ const Hero = dynamic(
   {
     ssr: false,
     loading: () => (
-      <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16" aria-hidden>
+      <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28" aria-hidden>
         <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
           <div>
             <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24 dark:bg-[var(--surface-elevated)]/90" />

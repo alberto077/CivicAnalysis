@@ -33,7 +33,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
     0.22 + introLen * HEADLINE_LETTER_STAGGER + 0.12;
 
   return (
-    <section className="relative overflow-hidden pb-24 pt-10 sm:pb-32 sm:pt-16">
+    <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28">
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.82]"
         style={{ backgroundImage: "url('/images/skylinehero.png')" }}
@@ -135,7 +135,7 @@ export function Hero({ query, onQueryChange, loading, onSearch }: HeroProps) {
           <label htmlFor="location-search" className="font-work-sans sr-only">
             Ask about your neighborhood, local policies, budgets, or city decisions
           </label>
-          <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[0_22px_46px_-20px_rgba(13,27,42,0.32)] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)] dark:bg-[linear-gradient(165deg,rgba(28,34,42,0.96)_0%,rgba(17,22,28,0.94)_100%)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_-20px_rgba(0,0,0,0.55)]">
+          <div className="hero-search-shell glass-card search-shell command-shell group mx-auto flex h-14 w-full max-w-full items-center gap-2 rounded-[23px] border-0 bg-[linear-gradient(152deg,rgba(255,255,255,0.93)_0%,rgba(255,255,255,0.78)_100%)] py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] transition-[box-shadow,transform] duration-300 sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)] dark:bg-[linear-gradient(165deg,rgba(28,34,42,0.96)_0%,rgba(17,22,28,0.94)_100%)]">
             <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
               <svg
                 viewBox="0 0 24 24"
