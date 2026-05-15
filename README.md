@@ -28,12 +28,7 @@ Civic Spiegel scrapes official sources daily, embeds the text into a vector data
 
 ---
 
-![Home - Briefings Page](/frontend/public/briefings.png)
-
-
-![Example - Find Your Representatives (District 4)](/frontend/public/find_reps_example.png)
-
-![Example - Explore Maps (Civic Hub Boundary Lines)](/frontend/public/explore_maps_example.png)
+![User Workflow Diagram](/frontend/public/workflow_diagram.png)
 
 ---
 
@@ -47,6 +42,9 @@ Civic Spiegel scrapes official sources daily, embeds the text into a vector data
 | **Explore Maps** | NYC Council district choropleth with address lookup. NYS statewide ArcGIS embed. Civic Hub map with location pins and six toggleable boundary layers. |
 | **Civic Calendar** | Nine official public meeting calendars, hearing schedules, and livestreams in one place. |
 | **Accessibility** | Seven display settings (large text, high contrast, reduce motion, underline links, readable font, focus mode, color-blind friendly) plus browser text-to-speech. |
+
+![Civic Spiegel - Site Features](/frontend/public/site_features.png)
+
 
 ---
 
@@ -113,6 +111,8 @@ Data we use is gathered through automated workflows:
       /districts
 ```
 
+![GitHub Actions Workflow](/frontend/public/github_actions.png)
+
 ### Key Architecture Decisions
 
 **Single Postgres for relational + vector data** — pgvector extension collapses the relational DB and vector store into one Neon instance. No Pinecone/Chroma needed. Politicians, districts, legislation, votes, documents, and 384-dim embeddings all live in one place with full SQL join support.
@@ -124,6 +124,8 @@ Data we use is gathered through automated workflows:
 **Dual LLM** — Groq (Llama 3.1 8B) is the primary LLM for RAG-grounded answers. OpenAI GPT-4o-mini is the fallback when the document retrieval tier is `'none'` or the RAG response is empty. This ensures the chat always has something useful to say.
 
 **GitHub Actions as ML compute** — The Python pipeline uses FastEmbed + spaCy, which together need ~2–4GB RAM. Render's free tier has 512MB. GitHub Actions' Ubuntu runners have 7GB. We use Actions for all the heavy lifting and Render only for live query-time inference.
+
+![RAG/LLM - Data Pipeline Workflow](/frontend/public/rag_pipeline.png)
 
 ---
 
@@ -144,6 +146,8 @@ Data we use is gathered through automated workflows:
 ---
 
 ## 🗂️ Data Sources
+
+See all data used in: [Civic Spiegel - Data Sources](https://civic-spiegel.vercel.app/data-sources)
 
 ### Document Corpus (ingested by Python pipeline daily)
 
@@ -167,8 +171,6 @@ Data we use is gathered through automated workflows:
 | OpenStates REST + GraphQL | Party affiliation, committee enrichment for Assembly + Senate |
 | Hardcoded | US Senators Schumer + Gillibrand |
 
-<br>
-
 ### Geospatial Boundaries (static files in `/public`)
 
 6 GeoJSON files: NYC Council districts, NYC boroughs, NYC NTAs (195 neighborhoods), Congressional districts, NYS Senate districts, NYS Assembly districts.
@@ -188,6 +190,7 @@ Address geocoding via NYC Planning Labs geocoder (free, no key required).
 7. **LLM generation** — Groq Llama 3.1 8B → structured JSON briefing or plain markdown
 8. **OpenAI fallback** — if `retrieval_tier='none'`, GPT-4o-mini answers from general knowledge
 
+![Data Pipeline Steps](/frontend/public/pipeline_steps.png)
 
 ---
 
@@ -341,9 +344,18 @@ civic-spiegel/
     └── refresh-politicians.yml   # Daily 06:00 UTC: TS scraper → politicians.json
 ```
 
+---
+
+## ScreenShot - Examples
+
+![Home - Briefings Page](/frontend/public/briefings.png)
+
+![Example - Find Your Representatives (District 4)](/frontend/public/find_reps_example.png)
+
+![Example - Explore Maps (Civic Hub Boundary Lines)](/frontend/public/explore_maps_example.png)
 
 ---
 
 ## 🤝 Contributing
 
-Understanding the NYC/NYS political context is required reading for any data/ML actions.
+Understanding the NYC/NYS political context is required reading for any data/ML actions. Download or fork this project to run the live app locally.
