@@ -1,271 +1,218 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
-import {
-  Building2,
-  BusFront,
-  ChevronDown,
-  GraduationCap,
-  HeartPulse,
-  Home,
-  Info,
-  Leaf,
-  Scale,
-  Shield,
-} from "lucide-react";
+import { useEffect, useId, useRef, useState, useMemo } from "react";
+import { ChevronDown, Info, Sparkles, Users, Settings, Map as MapIcon, Layers } from "lucide-react";
+import { POLICY_AREAS } from "@/lib/policyMetadata";
+import { type CivicProfile } from "@/lib/useProfile";
 
-const POLICY_AREAS = ["All", "Housing", "Education", "Policing", "Transit", "Environment", "Health", "Immigration"];
-const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "All Time"];
-const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+const TIME_RANGES = ["Last 30 Days", "Last 6 Months", "All Time"] as const;
+const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"] as const;
 
-const FILTER_DROPDOWN_TRIGGER =
-  "filter-dd-trigger font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] focus-visible:outline-none dark:hover:brightness-100";
+const TRIGGER =
+  "filter-dd-trigger font-work-sans flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.52)_0%,rgba(255,255,255,0.26)_100%)] px-4 py-2.5 text-left text-[13px] font-medium tracking-[0.02em] text-[var(--foreground)] shadow-[0_10px_36px_-18px_rgba(26,54,93,0.22),0_2px_14px_-4px_rgba(15,23,42,0.08)] backdrop-blur-[28px] outline-none transition hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] dark:hover:brightness-100";
 
-const FILTER_DROPDOWN_PANEL =
-  "filter-dd-panel absolute left-0 right-0 z-[70] mt-1 max-h-60 overflow-auto rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(248,251,255,0.94)_100%)] py-1 shadow-[0_16px_44px_-16px_rgba(26,54,93,0.3),0_4px_18px_-6px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(18,22,28,0.98)_100%)]";
+const PANEL =
+  "filter-dd-panel absolute left-0 right-0 z-[70] mt-1 max-h-60 overflow-auto rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(248,251,255,0.94)_100%)] py-1 shadow-[0_16px_44px_-16px_rgba(26,54,93,0.355)] backdrop-blur-xl dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(18,22,28,0.98)_100%)]";
 
-const AREA_ICONS = {
-  All: Building2,
-  Housing: Home,
-  Education: GraduationCap,
-  Policing: Shield,
-  Transit: BusFront,
-  Environment: Leaf,
-  Health: HeartPulse,
-  Immigration: Scale,
-} as const;
-
-function FilterDropdown({
-  instanceId,
-  value,
-  options,
-  onChange,
-}: {
-  instanceId: string;
-  value: string;
-  options: readonly string[];
-  onChange: (next: string) => void;
+function FilterDropdown({ instanceId, value, options, onChange }: {
+  instanceId: string; value: string; options: readonly string[]; onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const listId = `${instanceId}-listbox`;
 
   useEffect(() => {
     if (!open) return;
-    const onDocMouseDown = (e: MouseEvent) => {
-      if (rootRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDocMouseDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocMouseDown);
-      document.removeEventListener("keydown", onKey);
-    };
+    const down = (e: MouseEvent) => { if (!rootRef.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", down);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("mousedown", down); document.removeEventListener("keydown", key); };
   }, [open]);
 
   return (
     <div ref={rootRef} className="relative min-w-0">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listId}
-        className={FILTER_DROPDOWN_TRIGGER}
-        onClick={() => setOpen(o => !o)}
-      >
+      <button ref={triggerRef} type="button" aria-haspopup="listbox" aria-expanded={open}
+        aria-controls={`${instanceId}-lb`} className={TRIGGER} onClick={() => setOpen((o) => !o)}>
         <span className="min-w-0 flex-1 truncate">{value}</span>
-        <ChevronDown
-          className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ease-out dark:text-[var(--icon-violet)] ${open ? "rotate-180" : "rotate-0"}`}
-          strokeWidth={2}
-          aria-hidden
-        />
+        <ChevronDown className={`pointer-events-none size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 dark:text-[var(--icon-violet)] ${open ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden />
       </button>
-      {open ? (
-        <ul
-          id={listId}
-          role="listbox"
-          className={FILTER_DROPDOWN_PANEL}
-        >
-          {options.map(opt => (
+      {open && (
+        <ul id={`${instanceId}-lb`} role="listbox" className={PANEL}>
+          {options.map((opt) => (
             <li key={opt} role="none" className="px-0.5">
-              <button
-                type="button"
-                role="option"
-                aria-selected={value === opt}
-                className={`filter-dd-option font-work-sans flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[0.02em] transition ${
-                  value === opt
-                    ? "bg-white/45 text-[var(--accent)] filter-dd-option-active dark:bg-[var(--surface-elevated)] dark:text-[var(--accent-soft)]"
-                    : "text-[var(--foreground)] hover:bg-white/38 dark:hover:bg-[var(--surface-elevated)]/70"
-                }`}
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                  triggerRef.current?.focus();
-                }}
-              >
+              <button type="button" role="option" aria-selected={value === opt}
+                className={`filter-dd-option font-work-sans flex w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium tracking-[0.02em] transition ${value === opt ? "bg-white/45 text-[var(--accent)] dark:bg-[var(--surface-elevated)] dark:text-[var(--accent-soft)]" : "text-[var(--foreground)] hover:bg-white/38 dark:hover:bg-[var(--surface-elevated)]/70"}`}
+                onClick={() => { onChange(opt); setOpen(false); triggerRef.current?.focus(); }}>
                 {opt}
               </button>
             </li>
           ))}
         </ul>
-      ) : null}
+      )}
     </div>
   );
 }
 
 export function DashboardFilters({
-  selectedArea, setSelectedArea,
   selectedLocation, setSelectedLocation,
   selectedTime, setSelectedTime,
   isPersonalized, setIsPersonalized,
   onEditProfile,
+  selectedArea, setSelectedArea,
+  mapMode, setMapMode,
+  profile,
 }: {
-  selectedArea: string; setSelectedArea: (v: string) => void;
   selectedLocation: string; setSelectedLocation: (v: string) => void;
   selectedTime: string; setSelectedTime: (v: string) => void;
   isPersonalized: boolean; setIsPersonalized: (v: boolean) => void;
   onEditProfile: () => void;
+  selectedArea: string; setSelectedArea: (v: string) => void;
+  mapMode: "vector" | "satellite"; setMapMode: (v: "vector" | "satellite") => void;
+  profile: CivicProfile | null;
 }) {
-  const personalizeInputId = `personalize-cb-${useId().replace(/:/g, "")}`;
-  const personalizeTooltipId = `personalize-tip-${useId().replace(/:/g, "")}`;
-  const locationDdId = `dd-loc-${useId().replace(/:/g, "")}`;
-  const timeDdId = `dd-time-${useId().replace(/:/g, "")}`;
+  const tipId = `personalize-tip-${useId().replace(/:/g, "")}`;
+  const locId = `dd-loc-${useId().replace(/:/g, "")}`;
+  const timeId = `dd-time-${useId().replace(/:/g, "")}`;
+
+  const profileAreaIds = useMemo(() => {
+    if (!isPersonalized || !profile) return new Set<string>();
+    return new Set<string>(profile.issues ?? []);
+  }, [isPersonalized, profile]);
 
   return (
-    <div className="relative z-40 w-full mb-2 sm:mb-4">
-      <div className="glass-card surface-float soft-inset rounded-3xl p-6 flex flex-col gap-8 border-[var(--border)]">
-        {/* Policy area heading + chips */}
-        <div className="space-y-3">
-          <span className="font-work-sans block min-w-0 whitespace-nowrap text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
-            Select Policy Area
-          </span>
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3">
-            {POLICY_AREAS.map(area => (
-              <button
-                key={area}
-                type="button"
-                onClick={() => setSelectedArea(area)}
-                className={`filter-pill inline-flex items-center gap-2 rounded-xl border-0 px-4 py-2 text-[13px] font-medium ${
-                  selectedArea === area
-                    ? "filter-pill-active bg-[linear-gradient(155deg,#f7a8af_0%,#ee7a85_100%)] text-white dark:bg-[linear-gradient(155deg,rgba(140,78,84,0.65)_0%,rgba(95,48,52,0.75)_100%)] dark:text-[#f0eceb] dark:shadow-[0_0_20px_-8px_rgba(168,92,98,0.35)]"
-                    : "bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] text-[var(--foreground)] hover:brightness-[1.02] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)] dark:hover:translate-y-[-1px] dark:hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,0.5)]"
-                }`}
-              >
-                {(() => {
-                  const Icon = AREA_ICONS[area as keyof typeof AREA_ICONS];
-                  return (
-                    <Icon
-                      className={`h-3.5 w-3.5 shrink-0 ${
-                        selectedArea === area
-                          ? "text-white dark:text-[#f0eceb]"
-                          : "text-[var(--foreground)] dark:text-[#aedff4]"
-                      }`}
-                      aria-hidden
-                    />
-                  );
-                })()}
-                {area}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="relative z-40 w-full">
+      <div className="glass-card surface-float soft-inset rounded-3xl px-6 py-5 border border-[var(--border)] bg-white/60 dark:bg-[var(--surface-card)]/50 backdrop-blur-md shadow-sm flex flex-col gap-5">
 
-        {/* Location, timeframe, then personalize + edit profile */}
-        <div className="grid grid-cols-1 gap-4 border-t border-[var(--border)]/50 pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-start lg:gap-x-6">
+        {/* Dropdowns and Control Toggles */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,2fr)_minmax(0,1.3fr)] lg:items-end lg:gap-x-8">
+
+          {/* Location Dropdown */}
           <div className="flex flex-col gap-2">
-            <span className="font-work-sans whitespace-nowrap text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
-              Target Location
-            </span>
-            <FilterDropdown
-              instanceId={locationDdId}
-              value={selectedLocation}
-              options={LOCATIONS}
-              onChange={setSelectedLocation}
-            />
+            <span className="font-work-sans text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Location</span>
+            <FilterDropdown instanceId={locId} value={selectedLocation} options={LOCATIONS} onChange={setSelectedLocation} />
           </div>
+
+          {/* Timeframe Dropdown */}
           <div className="flex flex-col gap-2">
-            <span className="font-work-sans whitespace-nowrap text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
-              Timeframe
-            </span>
-            <FilterDropdown
-              instanceId={timeDdId}
-              value={selectedTime}
-              options={TIME_RANGES}
-              onChange={setSelectedTime}
-            />
+            <span className="font-work-sans text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Timeframe</span>
+            <FilterDropdown instanceId={timeId} value={selectedTime} options={TIME_RANGES} onChange={setSelectedTime} />
           </div>
-          <div className="flex min-w-0 flex-col gap-2 lg:max-w-none">
-            <div className="flex min-w-0 items-center gap-1">
-              <label
-                htmlFor={personalizeInputId}
-                className="font-work-sans min-w-0 cursor-pointer truncate text-xs font-bold uppercase tracking-widest text-[var(--muted)]"
-              >
-                Personalize results
-              </label>
+
+          {/* Personalize/Generalize Toggle + Settings*/}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="font-work-sans text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Perspective</span>
               <span className="group relative inline-flex shrink-0">
-                <button
-                  type="button"
-                  className="rounded-full p-0.5 text-[var(--muted)] transition hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:text-[var(--icon-amber)] dark:hover:text-[var(--icon-cyan)]"
-                  aria-label="How personalize results works"
-                  aria-describedby={personalizeTooltipId}
-                >
-                  <Info className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                <button type="button" aria-label="How perspective works" aria-describedby={tipId}
+                  className="rounded-full p-0.5 text-[var(--muted)] transition hover:text-[var(--foreground)] dark:text-[var(--icon-amber)]">
+                  <Info className="size-3.5" strokeWidth={2} aria-hidden />
                 </button>
-                <span
-                  id={personalizeTooltipId}
-                  role="tooltip"
-                  className="pointer-events-none invisible absolute left-1/2 top-full z-[80] mt-1.5 w-[min(15rem,calc(100vw-2.5rem))] -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,251,255,0.96)_100%)] px-3 py-2 font-work-sans text-[11px] font-medium leading-snug tracking-[0.01em] text-[var(--foreground)] shadow-[0_12px_36px_-14px_rgba(26,54,93,0.35)] opacity-0 backdrop-blur-xl transition-[opacity,visibility] duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(22,28,36,0.98)_100%)]"
-                >
-                  When on, we use your saved borough and interests with these filters. When off, only the filters above apply.
+                <span id={tipId} role="tooltip"
+                  className="pointer-events-none invisible absolute left-1/2 bottom-full z-[80] mb-2 w-[min(16rem,calc(100vw-2.5rem))] -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,251,255,0.96)_100%)] px-3 py-2.5 font-work-sans text-[11px] font-medium leading-relaxed text-[var(--foreground)] shadow-[0_12px_36px_-14px_rgba(26,54,93,0.35)] opacity-0 backdrop-blur-xl transition-[opacity,visibility] duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(22,28,36,0.98)_100%)]">
+                  <strong>Personalized</strong> filters by your saved borough, housing, demographics, and selected interest areas. <strong>Generalized</strong> applies city-wide standards for general exploration.
                 </span>
               </span>
             </div>
-            <div className="flex flex-nowrap items-center gap-3">
-              <input
-                id={personalizeInputId}
-                type="checkbox"
-                className="peer sr-only"
-                checked={isPersonalized}
-                onChange={(e) => setIsPersonalized(e.target.checked)}
-              />
-              <label
-                htmlFor={personalizeInputId}
-                className="inline-flex shrink-0 cursor-pointer rounded-full peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent-soft)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent-soft)]/40 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--background)]"
-              >
-                <span className="inline-flex text-[clamp(12px,2.6vmin,16px)]">
-                  <span
-                    className={`relative box-border flex h-[1.5em] min-h-[1.5em] max-h-[1.5em] w-[2.75em] min-w-[2.75em] max-w-[2.75em] shrink-0 items-center rounded-full border border-solid px-[0.1875em] backdrop-blur-[14px] transition-[background,box-shadow,border-color] duration-300 ease-out ${
-                      isPersonalized
-                        ? "border-white/45 bg-[linear-gradient(128deg,rgba(26,54,93,0.4)_0%,rgba(90,140,180,0.34)_45%,rgba(230,100,112,0.28)_100%)] shadow-[0_1px_0_rgba(255,255,255,0.5)_inset,0_3px_14px_-4px_rgba(26,54,93,0.22),0_8px_26px_-12px_rgba(26,54,93,0.3)]"
-                        : "border-[rgba(26,54,93,0.28)] bg-[linear-gradient(135deg,rgba(255,255,255,0.94)_0%,rgba(214,226,240,0.88)_55%,rgba(196,212,228,0.82)_100%)] shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_3px_14px_-4px_rgba(15,23,42,0.14),0_8px_26px_-12px_rgba(26,54,93,0.28)]"
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center rounded-xl border border-[var(--border)] bg-slate-100/60 dark:bg-[var(--surface-elevated)]/60 p-0.5 shadow-inner gap-0.5 h-[38px]">
+                <button
+                  type="button"
+                  onClick={() => setIsPersonalized(true)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all h-full ${isPersonalized
+                    ? "bg-[var(--accent)] text-white shadow-sm"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     }`}
-                  >
-                    <span
-                      aria-hidden
-                      className={`pointer-events-none box-border block size-[1.125em] min-h-[1.125em] min-w-[1.125em] max-h-[1.125em] max-w-[1.125em] shrink-0 rounded-full border border-solid bg-[linear-gradient(168deg,rgba(255,255,255,0.98)_0%,rgba(236,246,255,0.72)_55%,rgba(255,255,255,0.88)_100%)] backdrop-blur-[6px] transition-[transform,box-shadow,border-color] duration-[1600ms] ease-[cubic-bezier(0.4,0,0.15,1)] will-change-transform ${
-                        isPersonalized
-                          ? "translate-x-[1.25em] border-white/80 shadow-[0_2px_10px_-3px_rgba(26,54,93,0.22),inset_0_1px_0_rgba(255,255,255,0.95)]"
-                          : "translate-x-0 border-[rgba(26,54,93,0.22)] shadow-[0_2px_12px_-2px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,1)]"
-                      }`}
-                    />
-                  </span>
-                </span>
-              </label>
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Personalized
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPersonalized(false)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all h-full ${!isPersonalized
+                    ? "bg-white dark:bg-[var(--surface-card)] text-[var(--foreground)] shadow-sm border border-[var(--border)]/10"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  Generalized
+                </button>
+              </div>
+
+              {/* Settings button */}
               <button
                 type="button"
                 onClick={onEditProfile}
-                className="filter-pill font-work-sans shrink-0 rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition duration-300 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)] dark:hover:translate-y-[-1px] dark:hover:shadow-[0_6px_16px_-10px_rgba(0,0,0,0.45)]"
+                className="font-work-sans flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white/80 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition-all hover:bg-slate-50 active:scale-[0.98] shadow-sm dark:bg-[var(--surface-elevated)] dark:hover:bg-[var(--surface-elevated)]/80 h-[38px]"
               >
-                Edit profile
+                <Settings className="h-3.5 w-3.5" />
+                Edit Profile
               </button>
             </div>
           </div>
+
+          {/* Map Mode control */}
+          <div className="flex flex-col gap-2">
+            <span className="font-work-sans text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Map Mode</span>
+            <div className="flex items-center rounded-xl border border-[var(--border)] bg-slate-100/60 dark:bg-[var(--surface-elevated)]/60 p-0.5 shadow-inner gap-0.5 h-[38px] w-full lg:w-fit">
+              <button
+                type="button"
+                onClick={() => setMapMode("vector")}
+                className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all h-full flex-1 lg:flex-none ${mapMode === "vector"
+                  ? "bg-[var(--accent)] text-white shadow-sm"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+              >
+                <MapIcon className="h-3.5 w-3.5" />
+                Vector
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapMode("satellite")}
+                className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-bold transition-all h-full flex-1 lg:flex-none ${mapMode === "satellite"
+                  ? "bg-white dark:bg-[var(--surface-card)] text-[var(--foreground)] shadow-sm border border-[var(--border)]/10"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  }`}
+              >
+                <Layers className="h-3.5 w-3.5" />
+                Satellite
+              </button>
+            </div>
+          </div>
+
         </div>
+
+        {/* Issue Tags/Filters */}
+        <div className="flex flex-col gap-2 pt-4 border-t border-[var(--border)]/40">
+          <span className="font-work-sans text-[10px] font-extrabold uppercase tracking-widest text-[var(--muted)]">Issue Focus</span>
+          <div className="flex flex-wrap gap-1.5">
+            {POLICY_AREAS.map((area) => {
+              const Icon = area.Icon;
+              const isActive = selectedArea === area.id;
+              const isInterest = profileAreaIds.has(area.id);
+              return (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => setSelectedArea(area.id)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all border ${isActive
+                    ? "border-transparent text-white shadow-sm"
+                    : isInterest
+                      ? "bg-amber-50/70 dark:bg-amber-950/15 border-amber-200/90 dark:border-amber-800/40 text-amber-700 dark:text-amber-400"
+                      : "bg-white/50 dark:bg-[var(--surface-card)]/50 border-[var(--border)]/50 text-[var(--muted)] hover:border-[var(--accent)]/30 hover:text-[var(--foreground)]"
+                    }`}
+                  style={isActive ? { background: area.color, boxShadow: `0 2px 8px -2px ${area.color}70` } : undefined}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {area.label}
+                  {isInterest && !isActive && <Sparkles className="h-2.5 w-2.5 text-amber-400 shrink-0 ml-0.5" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </div>
   );
