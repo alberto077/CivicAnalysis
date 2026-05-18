@@ -1,24 +1,27 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Sparkles, MapPin, Map as MapIcon, Layers, ChevronUp, ChevronDown, Mail, Phone, ExternalLink, Info, CheckCircle2 } from "lucide-react";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { Sparkles, MapPin, Map as MapIcon, Layers, ChevronUp, ChevronDown, Mail, Phone, ExternalLink, Info, CheckCircle2, Plus, Minus } from "lucide-react";
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 import { type PolicyBriefing, getDistrictsMap, getDistricts, type District } from "@/lib/api";
 import { type CivicProfile } from "@/lib/useProfile";
 import { useTheme } from "next-themes";
 import { MotionReveal } from "./MotionReveal";
 import { POLICY_AREAS, getPolicyAreaMetadata } from "@/lib/policyMetadata";
 
-// ─── Leaflet (client-side only) ───────────────────────────────────────────────
-let MapContainer: any, TileLayer: any, GeoJSON: any, ZoomControl: any;
-if (typeof window !== "undefined") {
-  require("leaflet/dist/leaflet.css");
-  const rl = require("react-leaflet");
-  MapContainer = rl.MapContainer;
-  TileLayer = rl.TileLayer;
-  GeoJSON = rl.GeoJSON;
-  ZoomControl = rl.ZoomControl;
-}
+import dynamic from "next/dynamic";
+
+const LeafletMapWrapper = dynamic(() => import("./LeafletMapWrapper"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[420px] flex w-full items-center justify-center bg-slate-50 dark:bg-[#111827]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]" />
+        <p className="text-[11px] text-[var(--muted)]">Loading satellite view…</p>
+      </div>
+    </div>
+  ),
+});
 
 const LOCATION_TO_BORO: Record<string, string> = {
   Manhattan: "Manhattan", Brooklyn: "Brooklyn", Queens: "Queens",
@@ -75,6 +78,7 @@ export function LegislativeActivityMap({
   const geoJsonRef = useRef<any>(null);
 
   const [districts, setDistricts] = useState<District[]>([]);
+  const [vectorPos, setVectorPos] = useState({ coordinates: [-73.94, 40.712] as [number, number], zoom: 1 });
 
   useEffect(() => { getDistrictsMap().then(setGeoData); }, []);
   useEffect(() => { getDistricts().then(setDistricts).catch(console.error); }, []);
@@ -218,94 +222,85 @@ export function LegislativeActivityMap({
             </div>
           ) : mapMode === "vector" ? (
             /* ── Vector / SVG map ─────────────────────────────────────────── */
-            <div className="w-full flex-1 flex items-center justify-center" style={{ height: 420 }}>
+            <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden" style={{ height: 420 }}>
+              <div className="absolute bottom-3 right-3 z-[1000] flex flex-col shadow-md rounded-lg overflow-hidden border border-[var(--border)] bg-white/95 dark:bg-[var(--surface-elevated)]/95 backdrop-blur-md">
+                <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors border-b border-[var(--border)]" aria-label="Zoom in">
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+                <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors" aria-label="Zoom out">
+                  <Minus className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+              </div>
               <ComposableMap
                 projection="geoMercator"
                 projectionConfig={{ scale: 40000, center: [-73.94, 40.712] }}
                 style={{ width: "100%", height: "100%" }}
               >
-                <Geographies geography={geoData}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => {
-                      const id = parseInt(geo.properties.coun_dist);
-                      const activity = districtActivity[id] ?? 0;
-                      const isSelected = selectedDistrictId === id;
-                      const isHovered = hoveredDistrictId === id;
-                      return (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          onMouseEnter={() => setHoveredDistrictId(id)}
-                          onMouseLeave={() => setHoveredDistrictId(null)}
-                          onClick={() => handleDistrictClick(id, geo)}
-                          style={{
-                            default: {
-                              fill: getColor(activity),
-                              stroke: isSelected ? baseColor : "rgba(255,255,255,0.8)",
-                              strokeWidth: isSelected ? 1.5 : 0.4,
-                              outline: "none",
-                              transition: "all 150ms ease",
-                            },
-                            hover: {
-                              fill: isSelected ? getColor(activity) : `${baseColor}90`,
-                              stroke: baseColor,
-                              strokeWidth: 1.5,
-                              outline: "none",
-                              cursor: "pointer",
-                            },
-                            pressed: { fill: baseColor, outline: "none" },
-                          }}
-                        />
-                      );
-                    })
-                  }
-                </Geographies>
+                <ZoomableGroup
+                  center={vectorPos.coordinates}
+                  zoom={vectorPos.zoom}
+                  minZoom={1}
+                  maxZoom={8}
+                  translateExtent={[[0, 0], [800, 600]]}
+                  onMoveEnd={setVectorPos}
+                  // Explicitly allow trackpad pinch (wheel with ctrlKey) and standard touch/mouse events
+                  filterZoomEvent={(e: any) => {
+                    if (e.type === "wheel") return true;
+                    return !e.button;
+                  }}
+                >
+                  <Geographies geography={geoData}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => {
+                        const id = parseInt(geo.properties.coun_dist);
+                        const activity = districtActivity[id] ?? 0;
+                        const isSelected = selectedDistrictId === id;
+                        const isHovered = hoveredDistrictId === id;
+                        return (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            onMouseEnter={() => setHoveredDistrictId(id)}
+                            onMouseLeave={() => setHoveredDistrictId(null)}
+                            onClick={() => handleDistrictClick(id, geo)}
+                            style={{
+                              default: {
+                                fill: getColor(activity),
+                                stroke: isSelected ? baseColor : "rgba(255,255,255,0.8)",
+                                strokeWidth: isSelected ? 1.5 : 0.4,
+                                outline: "none",
+                                transition: "all 150ms ease",
+                              },
+                              hover: {
+                                fill: isSelected ? getColor(activity) : `${baseColor}90`,
+                                stroke: baseColor,
+                                strokeWidth: 1.5,
+                                outline: "none",
+                                cursor: "pointer",
+                              },
+                              pressed: { fill: baseColor, outline: "none" },
+                            }}
+                          />
+                        );
+                      })
+                    }
+                  </Geographies>
+                </ZoomableGroup>
               </ComposableMap>
             </div>
           ) : (
             /* ── Leaflet / satellite map ──────────────────────────────────── */
-            <div className="flex-1" style={{ height: 420 }}>
-              <MapContainer
-                center={[40.7128, -74.006]}
-                zoom={10}
-                scrollWheelZoom={false}
-                zoomControl={false}
-                style={{ width: "100%", height: "100%", background: isDark ? "#111827" : "#f8fafc" }}
-              >
-                <TileLayer
-                  url={tileUrl}
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                />
-                <GeoJSON
-                  ref={geoJsonRef}
-                  data={geoData}
-                  style={(feature: any) => {
-                    const id = parseInt(feature.properties.coun_dist);
-                    const sel = selectedDistrictId === id;
-                    return {
-                      fillColor: getColor(districtActivity[id] ?? 0),
-                      fillOpacity: sel ? 0.95 : 0.78,
-                      weight: sel ? 2.5 : 0.6,
-                      color: sel ? baseColor : isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.85)",
-                      opacity: 1,
-                    };
-                  }}
-                  onEachFeature={(feature: any, layer: any) => {
-                    layer.on({
-                      mouseover: (e: any) => {
-                        const id = parseInt(feature.properties.coun_dist);
-                        if (id !== selectedDistrictId) e.target.setStyle({ weight: 2, color: baseColor, fillOpacity: 0.9 });
-                      },
-                      mouseout: (e: any) => {
-                        const id = parseInt(feature.properties.coun_dist);
-                        if (id !== selectedDistrictId) e.target.setStyle({ weight: 0.6, color: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.85)", fillOpacity: 0.78 });
-                      },
-                      click: () => handleDistrictClick(parseInt(feature.properties.coun_dist), feature),
-                    });
-                  }}
-                />
-                <ZoomControl position="bottomright" />
-              </MapContainer>
+            <div className="flex-1 relative w-full h-[420px]">
+              <LeafletMapWrapper
+                isDark={isDark}
+                tileUrl={tileUrl}
+                geoData={geoData}
+                districtActivity={districtActivity}
+                selectedDistrictId={selectedDistrictId}
+                getColor={getColor}
+                baseColor={baseColor}
+                handleDistrictClick={handleDistrictClick}
+              />
             </div>
           )}
 
@@ -352,152 +347,157 @@ export function LegislativeActivityMap({
               </button>
             </div>
 
-            {/* Horizontal content grid */}
-            <div className="grid grid-cols-1 gap-4">
+            {/* Compact content layout */}
+            <div className="flex flex-col gap-3">
 
-              {/* Col 1: Councilmember Profile */}
-              <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-elevated)] shadow-sm flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-600 shadow-md flex items-center justify-center text-xs font-black text-white shrink-0 ring-2 ring-white dark:ring-slate-700">
-                    {selectedDistrictObj?.rep ? selectedDistrictObj.rep.slice(0, 2).toUpperCase() : "CM"}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">District Representative</p>
-                    <p className="font-limelight text-sm font-black text-slate-800 dark:text-white truncate leading-tight">
-                      {selectedDistrictObj?.rep || "Council Member"}
-                    </p>
-                    <p className="text-[10px] text-slate-500 dark:text-[var(--muted)] font-medium truncate mt-0.5">
-                      {selectedDistrictObj?.office || "City Council"}
-                    </p>
-                  </div>
-                </div>
+              {/* Top row: Profile & Metric */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                {selectedDistrictObj?.political_stance && selectedDistrictObj.political_stance !== "N/A" && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 self-start">
-                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
-                    <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">
-                      Stance: {selectedDistrictObj.political_stance}
-                    </span>
-                  </div>
-                )}
 
-                {/* Direct Action Contacts */}
-                {selectedDistrictObj && (selectedDistrictObj.email || selectedDistrictObj.phone || selectedDistrictObj.website) && (
-                  <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                    {selectedDistrictObj.phone && (
-                      <a
-                        href={`tel:${selectedDistrictObj.phone}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                        title={`Call ${selectedDistrictObj.rep}`}
-                      >
-                        <Phone className="h-3 w-3" /> Call
-                      </a>
-                    )}
-                    {selectedDistrictObj.email && (
-                      <a
-                        href={`mailto:${selectedDistrictObj.email}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                        title={`Email ${selectedDistrictObj.rep}`}
-                      >
-                        <Mail className="h-3 w-3" /> Email
-                      </a>
-                    )}
-                    {selectedDistrictObj.website && selectedDistrictObj.website !== "N/A" && (
-                      <a
-                        href={selectedDistrictObj.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                        title="Website"
-                      >
-                        <ExternalLink className="h-3 w-3" /> Web
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Col 2: Activity Metric + CTA */}
-              <div className="flex flex-col gap-3">
-                <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col gap-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Info className="h-3.5 w-3.5 shrink-0" style={{ color: baseColor }} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Activity Metric</span>
+                {/* Col 1: Councilmember Profile */}
+                <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-elevated)] shadow-sm flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-600 shadow-md flex items-center justify-center text-xs font-black text-white shrink-0 ring-2 ring-white dark:ring-slate-700">
+                      {selectedDistrictObj?.rep ? selectedDistrictObj.rep.slice(0, 2).toUpperCase() : "CM"}
                     </div>
-                    <span className="text-xs font-black text-slate-700 dark:text-slate-300">
-                      {districtPolicies.length} Active
-                    </span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                    Recent policy changes regarding <strong style={{ color: baseColor }}>{activeArea.label}</strong>
-                  </p>
-                  {/* Glowing activity visual track */}
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1 relative">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        background: baseColor,
-                        width: `${Math.min(100, Math.max(10, districtPolicies.length * 15))}%`,
-                        boxShadow: `0 0 8px ${baseColor}`
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                <button
-                  onClick={() => {
-                    const name = selectedFeature.properties?.name ?? `Council District ${selectedDistrictId}`;
-                    const borough = selectedFeature.properties?.boro_name ?? "";
-                    const areaStr = selectedArea !== "All" ? ` ${activeArea.label}` : "";
-                    onSearch?.(`${name} ${borough}${areaStr}`.trim());
-                  }}
-                  className="w-full py-3 rounded-2xl text-white font-extrabold text-xs shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                  style={{
-                    background: `linear-gradient(135deg, ${baseColor}, ${baseColor}dd)`,
-                    boxShadow: `0 4px 12px -2px ${baseColor}50`
-                  }}
-                >
-                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                  Get Briefing
-                </button>
-              </div>
-
-              {/* Col 3: Recent Policy Changes */}
-              <div className="flex flex-col min-h-0 space-y-2">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recent Policy Changes</h4>
-                <div className="overflow-y-auto pr-1 space-y-2 scrollbar-none max-h-[200px]">
-                  {districtPolicies.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center">
-                      <CheckCircle2 className="h-5 w-5 text-slate-300 dark:text-slate-700 mb-1" />
-                      <p className="text-[10px] font-bold text-slate-400">No recent activity recorded in this category.</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">District Representative</p>
+                      <p className="font-limelight text-sm font-black text-slate-800 dark:text-white truncate leading-tight">
+                        {selectedDistrictObj?.rep || "Council Member"}
+                      </p>
+                      <p className="text-[10px] text-slate-500 dark:text-[var(--muted)] font-medium truncate mt-0.5">
+                        {selectedDistrictObj?.office || "City Council"}
+                      </p>
                     </div>
-                  ) : (
-                    districtPolicies.map((policy, idx) => (
-                      <div
-                        key={policy.id || idx}
-                        className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col gap-1"
-                      >
-                        <p className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight">
-                          {policy.title}
-                        </p>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-300 font-bold uppercase tracking-wide">
-                            {policy.source_type || "Legislation"}
-                          </span>
-                          {policy.id && (
-                            <a
-                              href={`/representatives#${policy.id}`}
-                              className="text-[9px] font-bold inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                            >
-                              Details <ExternalLink className="h-2 w-2" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                  </div>
+
+                  {selectedDistrictObj?.political_stance && selectedDistrictObj.political_stance !== "N/A" && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 self-start">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                        Stance: {selectedDistrictObj.political_stance}
+                      </span>
+                    </div>
                   )}
+
+                  {/* Direct Action Contacts */}
+                  {selectedDistrictObj && (selectedDistrictObj.email || selectedDistrictObj.phone || selectedDistrictObj.website) && (
+                    <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                      {selectedDistrictObj.phone && (
+                        <a
+                          href={`tel:${selectedDistrictObj.phone}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
+                          title={`Call ${selectedDistrictObj.rep}`}
+                        >
+                          <Phone className="h-3 w-3" /> Call
+                        </a>
+                      )}
+                      {selectedDistrictObj.email && (
+                        <a
+                          href={`mailto:${selectedDistrictObj.email}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
+                          title={`Email ${selectedDistrictObj.rep}`}
+                        >
+                          <Mail className="h-3 w-3" /> Email
+                        </a>
+                      )}
+                      {selectedDistrictObj.website && selectedDistrictObj.website !== "N/A" && (
+                        <a
+                          href={selectedDistrictObj.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
+                          title="Website"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Web
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Col 2: Activity Metric + CTA */}
+                <div className="flex flex-col gap-3">
+                  <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col gap-2 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5 shrink-0" style={{ color: baseColor }} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Activity Metric</span>
+                      </div>
+                      <span className="text-xs font-black text-slate-700 dark:text-slate-300">
+                        {districtPolicies.length} Active
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Recent policy changes regarding <strong style={{ color: baseColor }}>{activeArea.label}</strong>
+                    </p>
+                    {/* Glowing activity visual track */}
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1 relative">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          background: baseColor,
+                          width: `${Math.min(100, Math.max(10, districtPolicies.length * 15))}%`,
+                          boxShadow: `0 0 8px ${baseColor}`
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={() => {
+                      const name = selectedFeature.properties?.name ?? `Council District ${selectedDistrictId}`;
+                      const borough = selectedFeature.properties?.boro_name ?? "";
+                      const areaStr = selectedArea !== "All" ? ` ${activeArea.label}` : "";
+                      onSearch?.(`${name} ${borough}${areaStr}`.trim());
+                    }}
+                    className="w-full py-3 rounded-2xl text-white font-extrabold text-xs shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    style={{
+                      background: `linear-gradient(135deg, ${baseColor}, ${baseColor}dd)`,
+                      boxShadow: `0 4px 12px -2px ${baseColor}50`
+                    }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                    Get Briefing
+                  </button>
+                </div>
+
+                {/* Col 3: Recent Policy Changes */}
+                <div className="flex flex-col min-h-0 space-y-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recent Policy Changes</h4>
+                  <div className="overflow-y-auto pr-1 space-y-2 scrollbar-none max-h-[200px]">
+                    {districtPolicies.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center">
+                        <CheckCircle2 className="h-5 w-5 text-slate-300 dark:text-slate-700 mb-1" />
+                        <p className="text-[10px] font-bold text-slate-400">No recent activity recorded in this category.</p>
+                      </div>
+                    ) : (
+                      districtPolicies.map((policy, idx) => (
+                        <div
+                          key={policy.id || idx}
+                          className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col gap-1"
+                        >
+                          <p className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight">
+                            {policy.title}
+                          </p>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-300 font-bold uppercase tracking-wide">
+                              {policy.source_type || "Legislation"}
+                            </span>
+                            {policy.id && (
+                              <a
+                                href={`/representatives#${policy.id}`}
+                                className="text-[9px] font-bold inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                              >
+                                Details <ExternalLink className="h-2 w-2" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 

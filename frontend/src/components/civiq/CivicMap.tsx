@@ -5,7 +5,7 @@ import {
   ChevronRight, Building2, Flag, AlertCircle,
   // Landmark,
   Loader2, X, Maximize2, Calendar, Eye, EyeOff, ChevronDown, ChevronUp,
-  Phone, Mail
+  Phone, Mail, Plus, Minus
 } from "lucide-react";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useTheme } from "next-themes";
@@ -793,6 +793,9 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   const [searchInput, setSearchInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  /* map zoom state */
+  const [vectorPos, setVectorPos] = useState({ coordinates: [-73.94, 40.7] as [number, number], zoom: 1 });
+
   /* NYS embed */
   const [nysQuery, setNysQuery] = useState("");
   const [nysInput, setNysInput] = useState("");
@@ -997,7 +1000,18 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 </div>
               ) : geoData ? (
                 <ComposableMap projection="geoMercator" projectionConfig={{ scale: 65000, center: [-73.94, 40.7] }} className="w-full h-full">
-                  <ZoomableGroup>
+                  <ZoomableGroup
+                    center={vectorPos.coordinates}
+                    zoom={vectorPos.zoom}
+                    minZoom={1}
+                    maxZoom={8}
+                    translateExtent={[[0, 0], [800, 600]]}
+                    onMoveEnd={setVectorPos}
+                    filterZoomEvent={(e: any) => {
+                      if (e.type === "wheel") return true;
+                      return !e.button;
+                    }}
+                  >
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <Geographies geography={geoData as any}>
                       {({ geographies }) => geographies.map((geo) => {
@@ -1037,6 +1051,16 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                     <AlertCircle className="h-4 w-4" aria-hidden />
                   </span>
                   <p className="text-sm">Failed to load map data.</p>
+                </div>
+              )}
+              {!!geoData && !mapLoading && (
+                <div className="absolute top-5 right-5 z-[1000] flex flex-col shadow-md rounded-lg overflow-hidden border border-slate-200 dark:border-(--border) bg-white/95 dark:bg-(--surface-elevated)/95 backdrop-blur-md">
+                  <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-(--surface-card) text-slate-500 dark:text-(--muted) hover:text-slate-700 dark:hover:text-foreground transition-colors border-b border-slate-200 dark:border-(--border)" aria-label="Zoom in">
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                  <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-(--surface-card) text-slate-500 dark:text-(--muted) hover:text-slate-700 dark:hover:text-foreground transition-colors" aria-label="Zoom out">
+                    <Minus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
                 </div>
               )}
               <div className="absolute bottom-5 left-5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-(--surface-elevated)/90 backdrop-blur shadow-sm border border-slate-100 dark:border-(--border) text-[10px] font-bold text-slate-500 dark:text-(--foreground-secondary) uppercase tracking-widest pointer-events-none">
