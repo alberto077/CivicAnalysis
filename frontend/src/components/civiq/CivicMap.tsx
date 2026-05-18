@@ -64,19 +64,19 @@ function boroughFromId(id: number): string {
 }
 
 const BOROUGH_PRESIDENTS: Record<string, { name: string; url: string }> = {
-  Manhattan:      { name: "Mark Levine",        url: "https://www.manhattanbp.nyc.gov/" },
-  Bronx:          { name: "Vanessa Gibson",     url: "https://www.bronxboroughpresident.com/" },
-  Brooklyn:       { name: "Antonio Reynoso",    url: "https://www.brooklynbp.nyc.gov/" },
-  Queens:         { name: "Donovan Richards",   url: "https://www.queensbp.org/" },
-  "Staten Island":{ name: "Vito Fossella",      url: "https://www.statenislandusa.com/" },
+  Manhattan: { name: "Mark Levine", url: "https://www.manhattanbp.nyc.gov/" },
+  Bronx: { name: "Vanessa Gibson", url: "https://www.bronxboroughpresident.com/" },
+  Brooklyn: { name: "Antonio Reynoso", url: "https://www.brooklynbp.nyc.gov/" },
+  Queens: { name: "Donovan Richards", url: "https://www.queensbp.org/" },
+  "Staten Island": { name: "Vito Fossella", url: "https://www.statenislandusa.com/" },
 };
 
 const BOROUGH_CB_URLS: Record<string, string> = {
-  Manhattan:      "https://www.nyc.gov/site/cau/community-boards/manhattan-boards.page",
-  Bronx:          "https://www.nyc.gov/site/cau/community-boards/bronx-boards.page",
-  Brooklyn:       "https://www.nyc.gov/site/cau/community-boards/brooklyn-boards.page",
-  Queens:         "https://www.nyc.gov/site/cau/community-boards/queens-boards.page",
-  "Staten Island":"https://www.nyc.gov/site/cau/community-boards/staten-island-boards.page",
+  Manhattan: "https://www.nyc.gov/site/cau/community-boards/manhattan-boards.page",
+  Bronx: "https://www.nyc.gov/site/cau/community-boards/bronx-boards.page",
+  Brooklyn: "https://www.nyc.gov/site/cau/community-boards/brooklyn-boards.page",
+  Queens: "https://www.nyc.gov/site/cau/community-boards/queens-boards.page",
+  "Staten Island": "https://www.nyc.gov/site/cau/community-boards/staten-island-boards.page",
 };
 
 function buildRepCards(district: District, distId: number): RepCard[] {
@@ -94,7 +94,9 @@ function buildRepCards(district: District, distId: number): RepCard[] {
       name: district.rep || "Council Member",
       title: "NYC Council Member",
       district: `District ${distId}`,
-      website: `https://council.nyc.gov/district-${distId}/`,
+      website: district.website || `https://council.nyc.gov/district-${distId}/`,
+      phone: district.phone,
+      email: district.email,
       resolved: true,
     },
     {
@@ -204,77 +206,77 @@ function findDistrictForPoint(lat: number, lng: number, geoData: any): number | 
 
 // geo pins for civic events map (semi-permanent?)
 const CIVIC_PINS: CivicPin[] = [
-  { id: "city-hall",         name: "NYC City Hall",                    category: "city-hall",       address: "City Hall, New York, NY 10007",                  lat: 40.7128, lng: -74.0060, url: "https://www.nyc.gov/office-of-the-mayor/index.page" },
-  { id: "council-chambers",  name: "NYC Council Chambers",             category: "council",         address: "250 Broadway, New York, NY 10007",               lat: 40.7133, lng: -74.0079, url: "https://council.nyc.gov/" },
-  { id: "manhattan-muni",    name: "Manhattan Municipal Building",     category: "city-hall",       address: "1 Centre St, New York, NY 10007",                lat: 40.7127, lng: -74.0028 },
-  { id: "bh-manhattan",      name: "Manhattan Borough Hall",           category: "borough-hall",    address: "1 Centre St, New York, NY 10007",                lat: 40.7126, lng: -74.0030, url: "https://www.manhattanbp.nyc.gov/" },
-  { id: "bh-brooklyn",       name: "Brooklyn Borough Hall",            category: "borough-hall",    address: "209 Joralemon St, Brooklyn, NY 11201",           lat: 40.6924, lng: -73.9900, url: "https://www.brooklynbp.nyc.gov/" },
-  { id: "bh-queens",         name: "Queens Borough Hall",              category: "borough-hall",    address: "120-55 Queens Blvd, Queens, NY 11424",           lat: 40.7085, lng: -73.8330, url: "https://www.queensbp.org/" },
-  { id: "bh-bronx",          name: "Bronx Borough Hall",               category: "borough-hall",    address: "851 Grand Concourse, Bronx, NY 10451",           lat: 40.8238, lng: -73.9265, url: "https://www.bronxboroughpresident.com/" },
-  { id: "bh-staten-island",  name: "Staten Island Borough Hall",       category: "borough-hall",    address: "10 Richmond Terrace, Staten Island, NY 10301",  lat: 40.6437, lng: -74.0768, url: "https://www.statenislandusa.com/" },
-  { id: "cb-mn1",            name: "Manhattan CB 1",                   category: "community-board", address: "1 Centre St Suite 2400, New York, NY 10007",     lat: 40.7128, lng: -74.0035, url: "https://www.cb1manhattan.org/" },
-  { id: "cb-mn6",            name: "Manhattan CB 6",                   category: "community-board", address: "757 3rd Ave Suite 1400, New York, NY 10017",     lat: 40.7540, lng: -73.9717, url: "https://cbsix.org/" },
-  { id: "cb-mn12",           name: "Manhattan CB 12",                  category: "community-board", address: "711 W 168th St, New York, NY 10032",             lat: 40.8402, lng: -73.9394 },
-  { id: "cb-bk1",            name: "Brooklyn CB 1",                    category: "community-board", address: "435 Graham Ave, Brooklyn, NY 11211",             lat: 40.7147, lng: -73.9435 },
-  { id: "cb-bk6",            name: "Brooklyn CB 6",                    category: "community-board", address: "250 Baltic St, Brooklyn, NY 11201",              lat: 40.6840, lng: -73.9930 },
-  { id: "cb-qn1",            name: "Queens CB 1",                      category: "community-board", address: "120-55 Queens Blvd Rm 213, Queens, NY 11424",   lat: 40.7081, lng: -73.8326 },
-  { id: "cb-qn6",            name: "Queens CB 6",                      category: "community-board", address: "60-01 Metropolitan Ave, Ridgewood, NY 11385",   lat: 40.7062, lng: -73.8988 },
-  { id: "cb-bx1",            name: "Bronx CB 1",                       category: "community-board", address: "3024 E Tremont Ave, Bronx, NY 10461",            lat: 40.8491, lng: -73.8481 },
-  { id: "cb-si1",            name: "Staten Island CB 1",               category: "community-board", address: "1000 Richmond Terrace, Staten Island, NY 10301",lat: 40.6418, lng: -74.0900 },
-  { id: "cb-si3",            name: "Staten Island CB 3",               category: "community-board", address: "1243 Woodrow Rd, Staten Island, NY 10309",       lat: 40.5438, lng: -74.1935 },
-  { id: "co-d1",             name: "Council District 1 Office",        category: "council",         address: "1 Centre St Suite 2424, New York, NY 10007",     lat: 40.7129, lng: -74.0032, url: "https://council.nyc.gov/district-1/" },
-  { id: "co-d3",             name: "Council District 3 Office",        category: "council",         address: "250 Broadway Suite 1875, New York, NY 10007",    lat: 40.7132, lng: -74.0081, url: "https://council.nyc.gov/district-3/" },
-  { id: "co-d7",             name: "Council District 7 Office",        category: "council",         address: "2200 Grand Concourse, Bronx, NY 10457",          lat: 40.8527, lng: -73.9104, url: "https://council.nyc.gov/district-7/" },
-  { id: "nys-capitol",       name: "NYS Capitol",                      category: "state",           address: "State St & Washington Ave, Albany, NY 12224",   lat: 42.6526, lng: -73.7573, url: "https://www.nyassembly.gov/" },
-  { id: "nys-leg-office",    name: "NYS Legislative Office Building",  category: "state",           address: "198 State St, Albany, NY 12210",                 lat: 42.6521, lng: -73.7560 },
-  { id: "nys-senate",        name: "NYS Senate Chamber",               category: "state",           address: "State Capitol, Albany, NY 12247",                lat: 42.6527, lng: -73.7575, url: "https://www.nysenate.gov/" },
-  { id: "nys-gov-nyc",       name: "NYS Governor's NYC Office",        category: "state",           address: "633 3rd Ave, New York, NY 10017",                lat: 40.7529, lng: -73.9722, url: "https://www.governor.ny.gov/" },
-  { id: "nysdos-nyc",        name: "NYS Dept. of State NYC Office",    category: "state",           address: "123 William St, New York, NY 10038",             lat: 40.7087, lng: -74.0063 },
-  { id: "fed-javits",        name: "Jacob K. Javits Federal Building", category: "federal",         address: "26 Federal Plaza, New York, NY 10278",           lat: 40.7145, lng: -74.0040, url: "https://www.gsa.gov/" },
-  { id: "fed-schumer",       name: "Sen. Schumer NYC Office",          category: "federal",         address: "780 3rd Ave Suite 2301, New York, NY 10017",     lat: 40.7564, lng: -73.9720, url: "https://www.schumer.senate.gov/" },
-  { id: "fed-gillibrand",    name: "Sen. Gillibrand NYC Office",       category: "federal",         address: "780 3rd Ave Suite 2601, New York, NY 10017",     lat: 40.7565, lng: -73.9719, url: "https://www.gillibrand.senate.gov/" },
-  { id: "congress-d12",      name: "Rep. Nadler — CD12",               category: "federal",         address: "201 Varick St Suite 1007, New York, NY 10014",  lat: 40.7281, lng: -74.0026, url: "https://nadler.house.gov/" },
-  { id: "congress-d13",      name: "Rep. Espaillat — CD13",            category: "federal",         address: "163 W 125th St Suite 507, New York, NY 10027",  lat: 40.8079, lng: -73.9476, url: "https://espaillat.house.gov/" },
-  { id: "congress-d7",       name: "Rep. Velázquez — CD7",             category: "federal",         address: "266 Broadway Suite 201, Brooklyn, NY 11211",    lat: 40.7091, lng: -73.9573, url: "https://velazquez.house.gov/" },
-  { id: "court-sdny",        name: "US District Court — SDNY",         category: "courthouse",      address: "40 Foley Square, New York, NY 10007",           lat: 40.7143, lng: -74.0036, url: "https://www.nysd.uscourts.gov/" },
-  { id: "court-edny",        name: "US District Court — EDNY",         category: "courthouse",      address: "225 Cadman Plaza East, Brooklyn, NY 11201",     lat: 40.6956, lng: -73.9900, url: "https://www.nyed.uscourts.gov/" },
-  { id: "court-2nd-circuit", name: "US Court of Appeals — 2nd Circuit",category: "courthouse",      address: "40 Foley Square, New York, NY 10007",           lat: 40.7142, lng: -74.0038 },
-  { id: "court-criminal-mn", name: "NYC Criminal Court (Manhattan)",   category: "courthouse",      address: "100 Centre St, New York, NY 10013",             lat: 40.7148, lng: -74.0022 },
-  { id: "court-supreme-mn",  name: "NYS Supreme Court — Manhattan",    category: "courthouse",      address: "60 Centre St, New York, NY 10007",              lat: 40.7146, lng: -74.0041 },
-  { id: "court-supreme-bk",  name: "NYS Supreme Court — Brooklyn",     category: "courthouse",      address: "360 Adams St, Brooklyn, NY 11201",              lat: 40.6928, lng: -73.9905 },
-  { id: "court-supreme-qn",  name: "NYS Supreme Court — Queens",       category: "courthouse",      address: "88-11 Sutphin Blvd, Queens, NY 11435",          lat: 40.7034, lng: -73.8082 },
-  { id: "court-supreme-bx",  name: "NYS Supreme Court — Bronx",        category: "courthouse",      address: "851 Grand Concourse, Bronx, NY 10451",          lat: 40.8235, lng: -73.9263 },
-  { id: "court-supreme-si",  name: "NYS Supreme Court — Staten Island",category: "courthouse",      address: "18 Richmond Terrace, Staten Island, NY 10301",  lat: 40.6436, lng: -74.0756 },
+  { id: "city-hall", name: "NYC City Hall", category: "city-hall", address: "City Hall, New York, NY 10007", lat: 40.7128, lng: -74.0060, url: "https://www.nyc.gov/office-of-the-mayor/index.page" },
+  { id: "council-chambers", name: "NYC Council Chambers", category: "council", address: "250 Broadway, New York, NY 10007", lat: 40.7133, lng: -74.0079, url: "https://council.nyc.gov/" },
+  { id: "manhattan-muni", name: "Manhattan Municipal Building", category: "city-hall", address: "1 Centre St, New York, NY 10007", lat: 40.7127, lng: -74.0028 },
+  { id: "bh-manhattan", name: "Manhattan Borough Hall", category: "borough-hall", address: "1 Centre St, New York, NY 10007", lat: 40.7126, lng: -74.0030, url: "https://www.manhattanbp.nyc.gov/" },
+  { id: "bh-brooklyn", name: "Brooklyn Borough Hall", category: "borough-hall", address: "209 Joralemon St, Brooklyn, NY 11201", lat: 40.6924, lng: -73.9900, url: "https://www.brooklynbp.nyc.gov/" },
+  { id: "bh-queens", name: "Queens Borough Hall", category: "borough-hall", address: "120-55 Queens Blvd, Queens, NY 11424", lat: 40.7085, lng: -73.8330, url: "https://www.queensbp.org/" },
+  { id: "bh-bronx", name: "Bronx Borough Hall", category: "borough-hall", address: "851 Grand Concourse, Bronx, NY 10451", lat: 40.8238, lng: -73.9265, url: "https://www.bronxboroughpresident.com/" },
+  { id: "bh-staten-island", name: "Staten Island Borough Hall", category: "borough-hall", address: "10 Richmond Terrace, Staten Island, NY 10301", lat: 40.6437, lng: -74.0768, url: "https://www.statenislandusa.com/" },
+  { id: "cb-mn1", name: "Manhattan CB 1", category: "community-board", address: "1 Centre St Suite 2400, New York, NY 10007", lat: 40.7128, lng: -74.0035, url: "https://www.cb1manhattan.org/" },
+  { id: "cb-mn6", name: "Manhattan CB 6", category: "community-board", address: "757 3rd Ave Suite 1400, New York, NY 10017", lat: 40.7540, lng: -73.9717, url: "https://cbsix.org/" },
+  { id: "cb-mn12", name: "Manhattan CB 12", category: "community-board", address: "711 W 168th St, New York, NY 10032", lat: 40.8402, lng: -73.9394 },
+  { id: "cb-bk1", name: "Brooklyn CB 1", category: "community-board", address: "435 Graham Ave, Brooklyn, NY 11211", lat: 40.7147, lng: -73.9435 },
+  { id: "cb-bk6", name: "Brooklyn CB 6", category: "community-board", address: "250 Baltic St, Brooklyn, NY 11201", lat: 40.6840, lng: -73.9930 },
+  { id: "cb-qn1", name: "Queens CB 1", category: "community-board", address: "120-55 Queens Blvd Rm 213, Queens, NY 11424", lat: 40.7081, lng: -73.8326 },
+  { id: "cb-qn6", name: "Queens CB 6", category: "community-board", address: "60-01 Metropolitan Ave, Ridgewood, NY 11385", lat: 40.7062, lng: -73.8988 },
+  { id: "cb-bx1", name: "Bronx CB 1", category: "community-board", address: "3024 E Tremont Ave, Bronx, NY 10461", lat: 40.8491, lng: -73.8481 },
+  { id: "cb-si1", name: "Staten Island CB 1", category: "community-board", address: "1000 Richmond Terrace, Staten Island, NY 10301", lat: 40.6418, lng: -74.0900 },
+  { id: "cb-si3", name: "Staten Island CB 3", category: "community-board", address: "1243 Woodrow Rd, Staten Island, NY 10309", lat: 40.5438, lng: -74.1935 },
+  { id: "co-d1", name: "Council District 1 Office", category: "council", address: "1 Centre St Suite 2424, New York, NY 10007", lat: 40.7129, lng: -74.0032, url: "https://council.nyc.gov/district-1/" },
+  { id: "co-d3", name: "Council District 3 Office", category: "council", address: "250 Broadway Suite 1875, New York, NY 10007", lat: 40.7132, lng: -74.0081, url: "https://council.nyc.gov/district-3/" },
+  { id: "co-d7", name: "Council District 7 Office", category: "council", address: "2200 Grand Concourse, Bronx, NY 10457", lat: 40.8527, lng: -73.9104, url: "https://council.nyc.gov/district-7/" },
+  { id: "nys-capitol", name: "NYS Capitol", category: "state", address: "State St & Washington Ave, Albany, NY 12224", lat: 42.6526, lng: -73.7573, url: "https://www.nyassembly.gov/" },
+  { id: "nys-leg-office", name: "NYS Legislative Office Building", category: "state", address: "198 State St, Albany, NY 12210", lat: 42.6521, lng: -73.7560 },
+  { id: "nys-senate", name: "NYS Senate Chamber", category: "state", address: "State Capitol, Albany, NY 12247", lat: 42.6527, lng: -73.7575, url: "https://www.nysenate.gov/" },
+  { id: "nys-gov-nyc", name: "NYS Governor's NYC Office", category: "state", address: "633 3rd Ave, New York, NY 10017", lat: 40.7529, lng: -73.9722, url: "https://www.governor.ny.gov/" },
+  { id: "nysdos-nyc", name: "NYS Dept. of State NYC Office", category: "state", address: "123 William St, New York, NY 10038", lat: 40.7087, lng: -74.0063 },
+  { id: "fed-javits", name: "Jacob K. Javits Federal Building", category: "federal", address: "26 Federal Plaza, New York, NY 10278", lat: 40.7145, lng: -74.0040, url: "https://www.gsa.gov/" },
+  { id: "fed-schumer", name: "Sen. Schumer NYC Office", category: "federal", address: "780 3rd Ave Suite 2301, New York, NY 10017", lat: 40.7564, lng: -73.9720, url: "https://www.schumer.senate.gov/" },
+  { id: "fed-gillibrand", name: "Sen. Gillibrand NYC Office", category: "federal", address: "780 3rd Ave Suite 2601, New York, NY 10017", lat: 40.7565, lng: -73.9719, url: "https://www.gillibrand.senate.gov/" },
+  { id: "congress-d12", name: "Rep. Nadler — CD12", category: "federal", address: "201 Varick St Suite 1007, New York, NY 10014", lat: 40.7281, lng: -74.0026, url: "https://nadler.house.gov/" },
+  { id: "congress-d13", name: "Rep. Espaillat — CD13", category: "federal", address: "163 W 125th St Suite 507, New York, NY 10027", lat: 40.8079, lng: -73.9476, url: "https://espaillat.house.gov/" },
+  { id: "congress-d7", name: "Rep. Velázquez — CD7", category: "federal", address: "266 Broadway Suite 201, Brooklyn, NY 11211", lat: 40.7091, lng: -73.9573, url: "https://velazquez.house.gov/" },
+  { id: "court-sdny", name: "US District Court — SDNY", category: "courthouse", address: "40 Foley Square, New York, NY 10007", lat: 40.7143, lng: -74.0036, url: "https://www.nysd.uscourts.gov/" },
+  { id: "court-edny", name: "US District Court — EDNY", category: "courthouse", address: "225 Cadman Plaza East, Brooklyn, NY 11201", lat: 40.6956, lng: -73.9900, url: "https://www.nyed.uscourts.gov/" },
+  { id: "court-2nd-circuit", name: "US Court of Appeals — 2nd Circuit", category: "courthouse", address: "40 Foley Square, New York, NY 10007", lat: 40.7142, lng: -74.0038 },
+  { id: "court-criminal-mn", name: "NYC Criminal Court (Manhattan)", category: "courthouse", address: "100 Centre St, New York, NY 10013", lat: 40.7148, lng: -74.0022 },
+  { id: "court-supreme-mn", name: "NYS Supreme Court — Manhattan", category: "courthouse", address: "60 Centre St, New York, NY 10007", lat: 40.7146, lng: -74.0041 },
+  { id: "court-supreme-bk", name: "NYS Supreme Court — Brooklyn", category: "courthouse", address: "360 Adams St, Brooklyn, NY 11201", lat: 40.6928, lng: -73.9905 },
+  { id: "court-supreme-qn", name: "NYS Supreme Court — Queens", category: "courthouse", address: "88-11 Sutphin Blvd, Queens, NY 11435", lat: 40.7034, lng: -73.8082 },
+  { id: "court-supreme-bx", name: "NYS Supreme Court — Bronx", category: "courthouse", address: "851 Grand Concourse, Bronx, NY 10451", lat: 40.8235, lng: -73.9263 },
+  { id: "court-supreme-si", name: "NYS Supreme Court — Staten Island", category: "courthouse", address: "18 Richmond Terrace, Staten Island, NY 10301", lat: 40.6436, lng: -74.0756 },
 ];
 
 const PIN_META: Record<PinCategory, { label: string; color: string }> = {
-  "city-hall":       { label: "City Hall",       color: "#1d4ed8" },
-  "borough-hall":    { label: "Borough Hall",    color: "#7c3aed" },
-  "council":         { label: "Council Office",  color: "#0891b2" },
+  "city-hall": { label: "City Hall", color: "#1d4ed8" },
+  "borough-hall": { label: "Borough Hall", color: "#7c3aed" },
+  "council": { label: "Council Office", color: "#0891b2" },
   "community-board": { label: "Community Board", color: "#059669" },
-  "state":           { label: "State Office",    color: "#d97706" },
-  "federal":         { label: "Federal Office",  color: "#dc2626" },
-  "courthouse":      { label: "Courthouse",      color: "#6b7280" },
+  "state": { label: "State Office", color: "#d97706" },
+  "federal": { label: "Federal Office", color: "#dc2626" },
+  "courthouse": { label: "Courthouse", color: "#6b7280" },
 };
 
 const INITIAL_BOUNDARY_LAYERS: BoundaryLayer[] = [
-  { id: "nyc-council",  label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.",             govLevel: "City",    color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/boundaries-districts.geojson", enabled: true },
-// codeforgermany/click_that_hood (GitHub, MIT license) - original data: NYC Open Data Borough Boundaries (DCP)
-  { id: "boroughs",     label: "NYC Boroughs",          description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.",                govLevel: "City",    color: "#7c3aed", weight: 2,   opacity: 0.7, url: "/boundaries-boroughs.geojson", enabled: false },
-// # Neighborhoods — NYC DCP Neighborhood Tabulation Areas via Socrata
-  { id: "neighborhoods", label: "NYC Neighborhoods",    description: "195 Neighborhood Tabulation Areas (NTAs) defined by NYC Planning. These are aggregations of census tracts that approximate well-known neighborhood names — useful for understanding local character and community context within council districts.", govLevel: "City", color: "#db2777", weight: 1, opacity: 0.4, url: "/boundaries-neighborhoods.geojson", enabled: false },
-// # Congressional Districts — official NYS ITS GIS (all 26 NY districts)
-  { id: "congressional",label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.",                                                     govLevel: "Federal", color: "#dc2626", weight: 2,   opacity: 0.6, url: "/boundaries-congressional.geojson", enabled: true },
-// # NYS Senate Districts — official NYS ITS GIS (all 63 statewide)
-  { id: "nys-senate",   label: "NYS Senate Districts",  description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.",                                            govLevel: "State",   color: "#d97706", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-senate.geojson", enabled: true },
-// # NYS Assembly Districts — official NYS ITS GIS (all 150 statewide)
-  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.",                                     govLevel: "State",   color: "#059669", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-assembly.geojson", enabled: false },
+  { id: "nyc-council", label: "NYC Council Districts", description: "51 local legislative districts for the NYC City Council. Determines your council member — who votes on city budgets, zoning, and local laws. The most granular level of elected NYC government.", govLevel: "City", color: "#2563eb", weight: 1.5, opacity: 0.6, url: "/boundaries-districts.geojson", enabled: true },
+  // codeforgermany/click_that_hood (GitHub, MIT license) - original data: NYC Open Data Borough Boundaries (DCP)
+  { id: "boroughs", label: "NYC Boroughs", description: "The 5 boroughs of New York City (Manhattan, Brooklyn, Queens, the Bronx, Staten Island). Each has a Borough President with advisory and land-use review powers over city planning decisions.", govLevel: "City", color: "#7c3aed", weight: 2, opacity: 0.7, url: "/boundaries-boroughs.geojson", enabled: false },
+  // # Neighborhoods — NYC DCP Neighborhood Tabulation Areas via Socrata
+  { id: "neighborhoods", label: "NYC Neighborhoods", description: "195 Neighborhood Tabulation Areas (NTAs) defined by NYC Planning. These are aggregations of census tracts that approximate well-known neighborhood names — useful for understanding local character and community context within council districts.", govLevel: "City", color: "#db2777", weight: 1, opacity: 0.4, url: "/boundaries-neighborhoods.geojson", enabled: false },
+  // # Congressional Districts — official NYS ITS GIS (all 26 NY districts)
+  { id: "congressional", label: "Congressional Districts", description: "New York's 26 US Congressional districts, each electing a member of the US House of Representatives — your direct federal legislative representative.", govLevel: "Federal", color: "#dc2626", weight: 2, opacity: 0.6, url: "/boundaries-congressional.geojson", enabled: true },
+  // # NYS Senate Districts — official NYS ITS GIS (all 63 statewide)
+  { id: "nys-senate", label: "NYS Senate Districts", description: "63 State Senate districts across New York. State Senators serve in the upper chamber of the NYS Legislature, voting on the state budget, taxes, and legislation.", govLevel: "State", color: "#d97706", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-senate.geojson", enabled: true },
+  // # NYS Assembly Districts — official NYS ITS GIS (all 150 statewide)
+  { id: "nys-assembly", label: "NYS Assembly Districts", description: "150 State Assembly districts. Assembly members serve in the lower chamber of the State Legislature, voting on housing, education, public health, and the state budget.", govLevel: "State", color: "#059669", weight: 1.5, opacity: 0.5, url: "/boundaries-nys-assembly.geojson", enabled: false },
 ];
 
 const BOUNDARY_GOV_COLORS: Record<string, string> = {
-  City:    "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800/60",
-  County:  "bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-300 dark:ring-cyan-800/60",
-  State:   "bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-800/60",
+  City: "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-800/60",
+  County: "bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-300 dark:ring-cyan-800/60",
+  State: "bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-800/60",
   Federal: "bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-800/60",
 };
 
@@ -343,11 +345,11 @@ function RepCardItem({ card }: { card: RepCard }) {
         <div className="flex items-center gap-2 min-w-0">
           {/* <div className="shrink-0" style={{ color: card.accentColor }}>{card.icon}</div> */}
           <div className="min-w-0">
-          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none"
+            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider opacity-60 leading-none"
               style={{ color: card.accentColor }}>
-            <span className="shrink-0">{card.icon}</span>
-            <span>{card.level}</span>
-          </div>
+              <span className="shrink-0">{card.icon}</span>
+              <span>{card.level}</span>
+            </div>
             <p className="text-xs font-semibold text-slate-700 dark:text-[#d8e6f2]">{card.name}</p>
           </div>
         </div>
@@ -374,9 +376,9 @@ function RepCardItem({ card }: { card: RepCard }) {
             {card.website && (
               <a href={card.website} target="_blank" rel="noopener noreferrer"
                 className="shrink-0 p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors opacity-50 hover:opacity-100">
-                  <span className="mt-1 mb-1 flex items-center justify-center gap-1 text-xs leading-relaxed">
-                    Visit  <ExternalLink className="h-3.5 w-3.5" style={{ color: card.accentColor }} />
-                  </span>
+                <span className="mt-1 mb-1 flex items-center justify-center gap-1 text-xs leading-relaxed">
+                  Visit  <ExternalLink className="h-3.5 w-3.5" style={{ color: card.accentColor }} />
+                </span>
               </a>
             )}
           </div>
@@ -442,6 +444,7 @@ function CivicEventsMap() {
   const [boundaryLayers, setBoundaryLayers] = useState<BoundaryLayer[]>(INITIAL_BOUNDARY_LAYERS);
   const [mapReady, setMapReady] = useState(false);
   const [expandedBoundary, setExpandedBoundary] = useState<string | null>(null);
+  const [isExplanationOpen, setIsExplanationOpen] = useState(false);
 
   const visiblePins = useMemo(() => CIVIC_PINS.filter((p) => activePinCats.has(p.category)), [activePinCats]);
 
@@ -488,7 +491,7 @@ function CivicEventsMap() {
         attribution: "© OpenStreetMap © CARTO",
         subdomains: "abcd",
         maxZoom: 19,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }).addTo(map as any);
       tileLayerRef.current = tl;
       setMapReady(true);
@@ -543,51 +546,51 @@ function CivicEventsMap() {
     });
   }, [visiblePins, mapReady, resolvedTheme]);
 
-    // store fetched GeoJSON per layer id (fetch once, reuse)
-    const geoJsonCacheRef = useRef<Record<string, unknown>>({});
+  // store fetched GeoJSON per layer id (fetch once, reuse)
+  const geoJsonCacheRef = useRef<Record<string, unknown>>({});
 
-    // fetch GeoJSON for each layer once on mount
-    useEffect(() => {
-      if (!mapReady || !mapInstanceRef.current) return;
-      import("leaflet").then(async (L) => {
-        for (const bl of INITIAL_BOUNDARY_LAYERS) {
-          if (geoJsonCacheRef.current[bl.id]) continue; // already fetched
-          try {
-            const res = await fetch(bl.url);
-            const raw = await res.json();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let geoJson: any = raw;
-            if (raw.type === "Topology") {
-              const topo = await import("topojson-client");
-              const key = Object.keys(raw.objects)[0];
-              geoJson = topo.feature(raw, raw.objects[key]);
-            }
-            geoJsonCacheRef.current[bl.id] = geoJson;
-            // create the layer but don't add to map yet
-            const layer = L.geoJSON(geoJson as Parameters<typeof L.geoJSON>[0], {
-              style: { color: bl.color, weight: bl.weight, fillOpacity: 0.04, opacity: bl.opacity },
-            });
-            layerGroupsRef.current[bl.id] = layer;
-            // add if enabled by default
-            if (bl.enabled) layer.addTo(mapInstanceRef.current);
-          } catch { /* skip on error */ }
-        }
-      });
-    }, [mapReady]); // run once when map is ready
-
-    // show/hide layers based on toggle state - no fetching
-    useEffect(() => {
-      if (!mapReady || !mapInstanceRef.current) return;
-      for (const bl of boundaryLayers) {
-        const layer = layerGroupsRef.current[bl.id];
-        if (!layer) continue; // not yet fetched
-        if (bl.enabled && !mapInstanceRef.current.hasLayer(layer)) {
-          layer.addTo(mapInstanceRef.current);
-        } else if (!bl.enabled && mapInstanceRef.current.hasLayer(layer)) {
-          mapInstanceRef.current.removeLayer(layer);
-        }
+  // fetch GeoJSON for each layer once on mount
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current) return;
+    import("leaflet").then(async (L) => {
+      for (const bl of INITIAL_BOUNDARY_LAYERS) {
+        if (geoJsonCacheRef.current[bl.id]) continue; // already fetched
+        try {
+          const res = await fetch(bl.url);
+          const raw = await res.json();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let geoJson: any = raw;
+          if (raw.type === "Topology") {
+            const topo = await import("topojson-client");
+            const key = Object.keys(raw.objects)[0];
+            geoJson = topo.feature(raw, raw.objects[key]);
+          }
+          geoJsonCacheRef.current[bl.id] = geoJson;
+          // create the layer but don't add to map yet
+          const layer = L.geoJSON(geoJson as Parameters<typeof L.geoJSON>[0], {
+            style: { color: bl.color, weight: bl.weight, fillOpacity: 0.04, opacity: bl.opacity },
+          });
+          layerGroupsRef.current[bl.id] = layer;
+          // add if enabled by default
+          if (bl.enabled) layer.addTo(mapInstanceRef.current);
+        } catch { /* skip on error */ }
       }
-    }, [boundaryLayers, mapReady]);
+    });
+  }, [mapReady]); // run once when map is ready
+
+  // show/hide layers based on toggle state - no fetching
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current) return;
+    for (const bl of boundaryLayers) {
+      const layer = layerGroupsRef.current[bl.id];
+      if (!layer) continue; // not yet fetched
+      if (bl.enabled && !mapInstanceRef.current.hasLayer(layer)) {
+        layer.addTo(mapInstanceRef.current);
+      } else if (!bl.enabled && mapInstanceRef.current.hasLayer(layer)) {
+        mapInstanceRef.current.removeLayer(layer);
+      }
+    }
+  }, [boundaryLayers, mapReady]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   const togglePin = (cat: PinCategory) => setActivePinCats((p) => { const n = new Set(p); n.has(cat) ? n.delete(cat) : n.add(cat); return n; });
@@ -614,24 +617,36 @@ function CivicEventsMap() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-4 space-y-5">
           {/* location toggles */}
-          <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-3">Location Types</p>
-            <div className="space-y-1.5">
+          <div className="bg-white/80 dark:bg-(--surface-card)/90 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-4">Location Types</p>
+            <div className="space-y-2">
               {(Object.entries(PIN_META) as [PinCategory, { label: string; color: string }][]).map(([cat, meta]) => {
                 const active = activePinCats.has(cat);
                 const count = CIVIC_PINS.filter((p) => p.category === cat).length;
                 return (
-                  <button key={cat} onClick={() => togglePin(cat)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${active ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-(--surface-elevated) dark:border-(--border) dark:text-foreground" : "bg-white border-slate-100 text-slate-400 dark:bg-(--surface-card) dark:border-(--border) dark:text-(--muted)"}`}>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-slate-700 shadow-sm shrink-0" style={{ backgroundColor: active ? meta.color : "#cbd5e1" }} />
+                  <button
+                    key={cat}
+                    onClick={() => togglePin(cat)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-100 dark:border-(--border) bg-white dark:bg-(--surface-card) transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] group text-xs text-slate-700 dark:text-foreground"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-2 w-2 rounded-full shrink-0 transition-transform duration-250 group-hover:scale-125" style={{ backgroundColor: meta.color }} />
                       <span className="font-semibold">{meta.label}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-(--muted) font-bold">{count}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400 dark:text-(--muted)">{count}</span>
-                      {active ? <Eye className="h-3 w-3 text-slate-400 dark:text-[var(--icon-cyan)]" /> : <EyeOff className="h-3 w-3 text-slate-300 dark:text-[var(--icon-violet)]" />}
+
+                    <div className="flex items-center gap-2">
+                      {active ? (
+                        <Eye className="h-3.5 w-3.5 text-slate-400 dark:text-[var(--icon-cyan)]" />
+                      ) : (
+                        <EyeOff className="h-3.5 w-3.5 text-slate-300 dark:text-[var(--icon-violet)]" />
+                      )}
+
+                      <div className={`relative w-8 h-4.5 rounded-full transition-colors duration-250 p-0.5 ${active ? "" : "bg-slate-200 dark:bg-slate-800"}`} style={{ backgroundColor: active ? meta.color : undefined }}>
+                        <div className={`h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-250 ${active ? "translate-x-3.5" : "translate-x-0"}`} />
+                      </div>
                     </div>
                   </button>
                 );
@@ -640,19 +655,29 @@ function CivicEventsMap() {
           </div>
 
           {/* boundary toggles */}
-          <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-3">Boundary Lines - City, State, Federal</p>
-            <div className="space-y-1.5">
+          <div className="bg-white/80 dark:bg-(--surface-card)/90 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-(--border) p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) mb-4">Boundary Lines - City, State, Federal</p>
+            <div className="space-y-2">
               {boundaryLayers.map((bl) => (
-                <button key={bl.id} onClick={() => toggleBoundary(bl.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-xs ${bl.enabled ? "bg-slate-50 border-slate-200 text-slate-700 dark:bg-(--surface-elevated) dark:border-(--border) dark:text-foreground" : "bg-white border-slate-100 text-slate-400 dark:bg-(--surface-card) dark:border-(--border) dark:text-(--muted)"}`}>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-2.5 w-6 rounded-full shrink-0" style={{ backgroundColor: bl.enabled ? bl.color : "#e2e8f0" }} />
+                <button
+                  key={bl.id}
+                  onClick={() => toggleBoundary(bl.id)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-100 dark:border-(--border) bg-white dark:bg-(--surface-card) transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] group text-xs text-slate-700 dark:text-foreground"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-1.5 w-4 rounded-full shrink-0 transition-all duration-250 group-hover:w-5" style={{ backgroundColor: bl.color }} />
                     <span className="font-semibold truncate">{bl.label}</span>
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ring-1 ring-inset shrink-0 ml-1 ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>
-                    {bl.govLevel}
-                  </span>
+
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>
+                      {bl.govLevel}
+                    </span>
+
+                    <div className={`relative w-8 h-4.5 rounded-full transition-colors duration-250 p-0.5 ${bl.enabled ? "" : "bg-slate-200 dark:bg-slate-800"}`} style={{ backgroundColor: bl.enabled ? bl.color : undefined }}>
+                      <div className={`h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-250 ${bl.enabled ? "translate-x-3.5" : "translate-x-0"}`} />
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -661,39 +686,79 @@ function CivicEventsMap() {
       </div>
 
       {/* boundary explanations */}
-      <div className="bg-white dark:bg-(--surface-card) rounded-4xl border border-slate-200 dark:border-(--border) p-6 shadow-sm">
-        <h4 className="text-sm font-bold text-slate-800 dark:text-foreground mb-1 flex items-center gap-2">
-          <Layers className="h-4 w-4 text-slate-400 dark:text-[var(--icon-mint)]" />
-          Understanding Boundary Lines &amp; Levels of Government
-        </h4>
-        <p className="text-xs text-slate-400 dark:text-(--foreground-secondary) mb-5 leading-relaxed max-w-2xl">
-          Each boundary on the map represents a different jurisdiction with its own elected officials. Your address typically falls inside multiple overlapping districts simultaneously — each with a different representative who makes decisions affecting your life.
-        </p>
-        <div className="space-y-2">
-          {INITIAL_BOUNDARY_LAYERS.map((bl) => (
-            <div key={bl.id} className="rounded-2xl border border-slate-100 dark:border-(--border) overflow-hidden">
-              <button onClick={() => setExpandedBoundary(expandedBoundary === bl.id ? null : bl.id)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-(--surface-elevated) transition-colors text-left">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-6 rounded-full shrink-0" style={{ backgroundColor: bl.color, opacity: 0.8 }} />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-foreground">{bl.label}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>{bl.govLevel}</span>
-                </div>
-                {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" />}
-              </button>
-              <AnimatePresence>
-                {expandedBoundary === bl.id && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-                    <p className="px-4 pb-4 text-xs text-slate-500 dark:text-[#b8c8dc] leading-relaxed border-t border-slate-100 dark:border-(--border) pt-3">{bl.description}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      <div className="mt-8 overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 dark:border-(--border) dark:bg-(--surface-elevated) dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_40px_-16px_rgba(0,0,0,0.45)]">
+        <button
+          onClick={() => setIsExplanationOpen(!isExplanationOpen)}
+          className={`w-full bg-slate-50 px-8 flex items-center justify-between hover:bg-slate-100/50 transition-all dark:bg-(--surface-card) dark:hover:bg-(--surface-glass)/80 ${isExplanationOpen ? "py-6 border-b border-slate-100 dark:border-(--border)" : "py-4"}`}
+        >
+          <div className="text-left flex items-center gap-3">
+            <Layers className="h-5 w-5 text-slate-400 dark:text-[var(--icon-mint)]" />
+            <div>
+              <h2 className={`${isExplanationOpen ? "text-lg" : "text-sm"} font-bold text-slate-800 transition-all dark:text-foreground`}>
+                Understanding Boundary Lines &amp; Levels of Government
+              </h2>
+              {isExplanationOpen && (
+                <p className="mt-1 text-xs text-slate-400 dark:text-(--foreground-secondary)">
+                  Each boundary represents a different jurisdiction. Your address falls inside multiple overlapping districts.
+                </p>
+              )}
             </div>
-          ))}
-        </div>
-        <p className="mt-5 pt-5 border-t border-slate-100 dark:border-(--border) text-[11px] text-slate-400 dark:text-(--foreground-secondary) leading-relaxed">
-          <span className="font-bold text-slate-500 dark:text-(--muted)">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
-        </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-emerald-600 md:flex dark:bg-emerald-500/15 dark:text-emerald-300">
+              <span className="animate-pulse">●</span>
+              Districts
+            </div>
+            {isExplanationOpen ? (
+              <ChevronUp className="h-5 w-5 text-slate-400 dark:text-[var(--icon-violet)]" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-slate-400 dark:text-[var(--icon-violet)]" />
+            )}
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {isExplanationOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="p-8 space-y-4">
+                <p className="text-xs text-slate-400 dark:text-(--foreground-secondary) leading-relaxed">
+                  Each boundary on the map represents a different jurisdiction with its own elected officials. Your address typically falls inside multiple overlapping districts simultaneously — each with a different representative who makes decisions affecting your life.
+                </p>
+                <div className="space-y-2">
+                  {INITIAL_BOUNDARY_LAYERS.map((bl) => (
+                    <div key={bl.id} className="rounded-2xl border border-slate-100 dark:border-(--border) overflow-hidden bg-slate-50/30 dark:bg-slate-900/10">
+                      <button onClick={() => setExpandedBoundary(expandedBoundary === bl.id ? null : bl.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-(--surface-elevated) transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="h-3 w-6 rounded-full shrink-0" style={{ backgroundColor: bl.color, opacity: 0.8 }} />
+                          <span className="text-sm font-semibold text-slate-700 dark:text-foreground">{bl.label}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ring-inset ${BOUNDARY_GOV_COLORS[bl.govLevel] ?? ""}`}>{bl.govLevel}</span>
+                        </div>
+                        {expandedBoundary === bl.id ? <ChevronUp className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 dark:text-[var(--icon-violet)] shrink-0" />}
+                      </button>
+                      <AnimatePresence>
+                        {expandedBoundary === bl.id && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                            <p className="px-4 pb-4 text-xs text-slate-500 dark:text-[#b8c8dc] leading-relaxed border-t border-slate-100 dark:border-(--border) pt-3">{bl.description}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
+                <p className="pt-4 border-t border-slate-100 dark:border-(--border) text-[11px] text-slate-400 dark:text-(--foreground-secondary) leading-relaxed">
+                  <span className="font-bold text-slate-500 dark:text-(--muted)">Note:</span> NYC Council Districts load from the CiviQ backend and are always available. Other boundary layers fetch from public GIS APIs and may vary based on external availability.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
     </div>
@@ -712,15 +777,15 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   const [activeTab, setActiveTab] = useState<Tab>("nyc");
 
   /* shared map data */
-  const [districts, setDistricts]   = useState<District[]>([]);
-  const [geoData, setGeoData]       = useState<unknown>(null);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [geoData, setGeoData] = useState<unknown>(null);
   const [mapLoading, setMapLoading] = useState(false);
-  const [mapLoaded, setMapLoaded]   = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   /* NYC explorer state */
-  const [hoveredId, setHoveredId]   = useState<number | null>(null);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [repCards, setRepCards]     = useState<RepCard[]>([]);
+  const [repCards, setRepCards] = useState<RepCard[]>([]);
   const [searchMode, setSearchMode] = useState<"idle" | "loading" | "found" | "error">("idle");
   const [geocodeResult, setGeocodeResult] = useState<GeoResult | null>(null);
 
@@ -830,10 +895,10 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
   }, [resourceFilter]);
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "nys",       label: "NYS Explorer", icon: <Layers className="h-3.5 w-3.5" /> },
-    { id: "nyc",       label: "NYC Explorer", icon: <MapIcon className="h-3.5 w-3.5" /> },
-    { id: "events",    label: "Civic Hub", icon: <Calendar className="h-3.5 w-3.5" /> },
-    { id: "resources", label: "Resources",    icon: <Info className="h-3.5 w-3.5" /> },
+    { id: "nys", label: "NYS Explorer", icon: <Layers className="h-3.5 w-3.5" /> },
+    { id: "nyc", label: "NYC Explorer", icon: <MapIcon className="h-3.5 w-3.5" /> },
+    { id: "events", label: "Civic Hub", icon: <Calendar className="h-3.5 w-3.5" /> },
+    { id: "resources", label: "Resources", icon: <Info className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -860,11 +925,10 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
       <div className="flex items-stretch w-full mb-8 border-b border-slate-200 dark:border-(--border)">
         {TABS.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all border-b-2 ${
-              activeTab === tab.id
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === tab.id
                 ? "border-(--accent) text-(--accent)"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 dark:text-(--foreground-secondary) dark:hover:text-foreground dark:hover:border-(--border)"
-            }`}>
+              }`}>
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
             <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
@@ -958,7 +1022,7 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                             onMouseLeave={() => setHoveredId(null)}
                             style={{
                               default: { fill: fillDefault, stroke: strokeDefault, strokeWidth: isActive ? 1.5 : 0.5, outline: "none", transition: "all 200ms" },
-                              hover:   { fill: fillHover, stroke: "var(--accent)", strokeWidth: 1, outline: "none", cursor: "pointer" },
+                              hover: { fill: fillHover, stroke: "var(--accent)", strokeWidth: 1, outline: "none", cursor: "pointer" },
                               pressed: { fill: "var(--accent-soft)", outline: "none" },
                             }}
                           />
@@ -1065,11 +1129,11 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
                 {selectedDistrict && searchMode === "found" ? (
                   <motion.div key={selectedDistrict.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-2">
                     {/* all rep levels */}
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) px-1 mb-2">
-                      Local Representatives
-                    </p>
-                  </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-(--foreground-secondary) px-1 mb-2">
+                        Local Representatives
+                      </p>
+                    </div>
                     {repCards.filter((c) => !c.compact).map((card) => (
                       <RepCardItem key={card.level} card={card} />
                     ))}
