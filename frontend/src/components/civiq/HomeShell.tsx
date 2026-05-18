@@ -2,87 +2,73 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Header } from "@/components/civiq/Header";
-import { RecentUpdates } from "@/components/civiq/RecentUpdates";
-import { ProfileActivitySection } from "@/components/civiq/ProfileActivitySection";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { SettingsModal } from "@/components/civiq/SettingsModal";
 import { useProfile } from "@/lib/useProfile";
-import {
-  checkHealth,
-  sendChat,
-  type PolicyResponse,
-} from "@/lib/api";
+import { checkHealth, sendChat, type PolicyResponse } from "@/lib/api";
 import { buildGeneralizedBriefingFromPolicies } from "@/lib/generalized-briefing";
 import { useRecentPoliciesSnapshot } from "@/lib/useRecentPoliciesSnapshot";
-import { useProfileActivityFeed } from "@/lib/useProfileActivityFeed";
 
 const DashboardFilters = dynamic(
-  () =>
-    import("@/components/civiq/DashboardFilters").then((mod) => mod.DashboardFilters),
+  () => import("@/components/civiq/DashboardFilters").then((m) => m.DashboardFilters),
+  { ssr: false, loading: () => <div className="w-full h-[88px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/80" /> },
+);
+
+const LegislativeActivityMap = dynamic(
+  () => import("@/components/civiq/LegislativeActivityMap").then((m) => m.LegislativeActivityMap),
   {
-    ssr: false,
-    loading: () => (
-      <div className="w-full mb-2 sm:mb-4" aria-hidden>
-        <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/80" />
+    ssr: false, loading: () => (
+      <div className="space-y-3">
+        <div className="h-8 w-64 animate-pulse rounded-xl bg-slate-200/60 dark:bg-[var(--surface-elevated)]/60" />
+        <div className="h-12 w-full animate-pulse rounded-xl bg-slate-200/40 dark:bg-[var(--surface-elevated)]/40" />
+        <div className="h-[420px] w-full animate-pulse rounded-[1.5rem] bg-slate-200/50 dark:bg-[var(--surface-elevated)]/50" />
       </div>
-    ),
+    )
   },
 );
 
 const Hero = dynamic(
-  () => import("@/components/civiq/Hero").then((mod) => mod.Hero),
+  () => import("@/components/civiq/Hero").then((m) => m.Hero),
   {
-    ssr: false,
-    loading: () => (
-      <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28" aria-hidden>
-        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
-          <div>
-            <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24 dark:bg-[var(--surface-elevated)]/90" />
-            <div className="mt-6 h-6 w-3/4 animate-pulse rounded-lg bg-slate-200/80 sm:h-7 dark:bg-[var(--surface-card)]/80" />
-            <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl border border-[var(--border)] bg-white/65 sm:h-24 dark:bg-[var(--surface-card)]/70" />
-          </div>
+    ssr: false, loading: () => (
+      <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mt-5 h-20 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 dark:bg-[var(--surface-elevated)]/90" />
+          <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl bg-white/65 dark:bg-[var(--surface-card)]/70" />
         </div>
       </section>
-    ),
+    )
   },
 );
 
-/** Client-only: avoids RSC/cache drift vs live bundle (hydration mismatches on empty/loading markup). */
 const PolicyBriefingPanel = dynamic(
-  () =>
-    import("@/components/civiq/PolicyBriefingPanel").then((mod) => mod.PolicyBriefingPanel),
+  () => import("@/components/civiq/PolicyBriefingPanel").then((m) => m.PolicyBriefingPanel),
   {
-    ssr: false,
-    loading: () => (
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-hidden>
-        <div className="mt-10 h-11 w-64 max-w-[80%] animate-pulse rounded-xl bg-slate-200/90 dark:bg-[var(--surface-elevated)]/85" />
-        <div className="mt-10 overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
-          <div className="min-h-[280px] animate-pulse rounded-2xl bg-slate-100/90 dark:bg-[var(--surface-elevated)]/80" />
-        </div>
-      </section>
-    ),
+    ssr: false, loading: () => (
+      <div className="overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white shadow-xl dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
+        <div className="min-h-[260px] animate-pulse rounded-2xl bg-slate-100/90 dark:bg-[var(--surface-elevated)]/80 m-6" />
+      </div>
+    )
   },
 );
-
-
 
 export function HomeShell() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<PolicyResponse | null>(null);
-  const [lastBriefingQuery, setLastBriefingQuery] = useState("");
-  
-  // Dashboard Filters State
+  const [lastQuery, setLastQuery] = useState("");
+
   const [selectedArea, setSelectedArea] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All NYC");
   const [selectedTime, setSelectedTime] = useState("Last 30 Days");
   const [isPersonalized, setIsPersonalized] = useState(true);
+  const [mapMode, setMapMode] = useState<"vector" | "satellite">("vector");
 
   useEffect(() => {
     if (selectedTime === "Current Session") setSelectedTime("Last 30 Days");
-  }, [selectedTime, setSelectedTime]);
+  }, [selectedTime]);
 
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -90,64 +76,30 @@ export function HomeShell() {
   const [profileSkipped, setProfileSkipped] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !isLoaded) return;
-    if (profile) {
-      localStorage.removeItem("civic_profile_skipped");
-      setProfileSkipped(false);
-    } else {
-      setProfileSkipped(Boolean(localStorage.getItem("civic_profile_skipped")));
-    }
+    if (!isLoaded || typeof window === "undefined") return;
+    if (profile) { localStorage.removeItem("civic_profile_skipped"); setProfileSkipped(false); }
+    else { setProfileSkipped(Boolean(localStorage.getItem("civic_profile_skipped"))); }
   }, [isLoaded, profile]);
 
-  const profileActivity = useProfileActivityFeed({
-    isProfileLoaded: isLoaded,
-    profile,
-    isPersonalized,
-    selectedTime,
-  });
 
-  const { policies: snapshotPolicies, snapshotLoading, snapshotError } = useRecentPoliciesSnapshot(
-    selectedArea,
-    selectedLocation,
-    selectedTime,
-    isPersonalized,
-    profile,
-    isLoaded,
-  );
+  const { policies: snapshotPolicies, snapshotLoading, snapshotError } =
+    useRecentPoliciesSnapshot(selectedArea, selectedLocation, selectedTime, isPersonalized, profile, isLoaded);
 
   const filterSummary = useMemo(
-    () =>
-      [selectedLocation, selectedArea === "All" ? "All policy areas" : selectedArea, selectedTime].join(
-        " · ",
-      ),
+    () => [selectedLocation, selectedArea === "All" ? "All policy areas" : selectedArea, selectedTime].join(" · "),
     [selectedArea, selectedLocation, selectedTime],
   );
 
   const generalizedBriefing = useMemo((): PolicyResponse | null => {
-    if (response) return null;
-    if (snapshotLoading || snapshotError) return null;
-    if (!snapshotPolicies.length) return null;
+    if (response || snapshotLoading || snapshotError || !snapshotPolicies.length) return null;
     return buildGeneralizedBriefingFromPolicies(snapshotPolicies, {
-      selectedArea,
-      locationLabel: selectedLocation,
-      timeLabel: selectedTime,
+      selectedArea, locationLabel: selectedLocation, timeLabel: selectedTime,
     });
-  }, [
-    response,
-    snapshotPolicies,
-    snapshotLoading,
-    snapshotError,
-    selectedArea,
-    selectedLocation,
-    selectedTime,
-  ]);
+  }, [response, snapshotPolicies, snapshotLoading, snapshotError, selectedArea, selectedLocation, selectedTime]);
 
-  // Show onboarding on first load if profile doesn't exist
   useEffect(() => {
     if (isLoaded && !profile && !showOnboarding) {
-      if (typeof window !== "undefined" && !localStorage.getItem("civic_profile_skipped")) {
-        setShowOnboarding(true);
-      }
+      if (typeof window !== "undefined" && !localStorage.getItem("civic_profile_skipped")) setShowOnboarding(true);
     }
   }, [isLoaded, profile, showOnboarding]);
 
@@ -155,68 +107,38 @@ export function HomeShell() {
     const q = searchQuery.trim();
     if (!q) return;
 
-    const buildEffectiveFilters = () => {
-      const effectiveBorough =
-        selectedLocation !== "All NYC"
-          ? selectedLocation
-          : isPersonalized && profile?.borough
-            ? profile.borough
-            : undefined;
+    const effectiveBorough = selectedLocation !== "All NYC" ? selectedLocation
+      : isPersonalized && profile?.borough ? profile.borough : undefined;
 
-      return {
-        borough: effectiveBorough,
-        issue_area: selectedArea !== "All" ? selectedArea : undefined,
-        timeframe: selectedTime !== "All Time" ? selectedTime : undefined,
-        location_scope: selectedLocation !== "All NYC" ? selectedLocation : undefined,
-        profile_active: isPersonalized ? "true" : "false",
-      };
-    };
-
-    const buildAugmentedQuery = (baseQuery: string) => {
-      const parts = [baseQuery.trim()];
-      const zMatch = baseQuery.match(/\b\d{5}\b/);
-      if (zMatch) parts.push(`location: ZIP code ${zMatch[0]}`);
-
-      if (selectedArea !== "All") parts.push(`focus area: ${selectedArea}`);
-      if (selectedLocation !== "All NYC") parts.push(`jurisdiction: ${selectedLocation}`);
-      if (selectedTime !== "All Time") parts.push(`period: ${selectedTime}`);
-      
-      if (isPersonalized && profile) {
-        if (profile.borough && selectedLocation === "All NYC") parts.push(`user borough: ${profile.borough}`);
-        if (profile.issues?.length) parts.push(`user interests: ${profile.issues.join(", ")}`);
-      }
-
-      return parts.join(" | ");
-    };
+    const parts = [q];
+    const zMatch = q.match(/\b\d{5}\b/);
+    if (zMatch) parts.push(`location: ZIP code ${zMatch[0]}`);
+    if (selectedArea !== "All") parts.push(`focus area: ${selectedArea}`);
+    if (selectedLocation !== "All NYC") parts.push(`jurisdiction: ${selectedLocation}`);
+    if (selectedTime !== "All Time") parts.push(`period: ${selectedTime}`);
+    if (isPersonalized && profile) {
+      if (profile.borough && selectedLocation === "All NYC") parts.push(`user borough: ${profile.borough}`);
+      if (profile.issues?.length) parts.push(`user interests: ${profile.issues.join(", ")}`);
+    }
 
     setLoading(true);
     setError(null);
 
     try {
       await checkHealth();
-
-      const filters = buildEffectiveFilters();
-      const augmentedQuery = buildAugmentedQuery(q);
-      
-      // Extract ZIP for direct filter if present
-      const zipMatch = q.match(/\b\d{5}\b/);
-
-      const data = await sendChat(augmentedQuery, {
-        borough: filters.borough,
-        zip: zipMatch ? zipMatch[0] : undefined,
-        issue_area: filters.issue_area,
-        timeframe: filters.timeframe,
-        location_scope: filters.location_scope,
-        profile_active: filters.profile_active,
+      const data = await sendChat(parts.join(" | "), {
+        borough: effectiveBorough,
+        zip: zMatch ? zMatch[0] : undefined,
+        issue_area: selectedArea !== "All" ? selectedArea : undefined,
+        timeframe: selectedTime !== "All Time" ? selectedTime : undefined,
+        location_scope: selectedLocation !== "All NYC" ? selectedLocation : undefined,
+        profile_active: isPersonalized ? "true" : "false",
       });
-
       console.log("CHAT RESPONSE", data);
       setResponse(data);
-      setLastBriefingQuery(q);
-      
-      // Smooth scroll to results
+      setLastQuery(q);
       setTimeout(() => {
-        document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("briefing")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     } catch (e) {
       console.error("Briefing request failed:", e);
@@ -226,111 +148,96 @@ export function HomeShell() {
     }
   }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile]);
 
-  const lastBriefingQueryRef = useRef(lastBriefingQuery);
-  lastBriefingQueryRef.current = lastBriefingQuery;
+  // Re-run last briefing on filter changes — ref+fingerprint prevents infinite loop
+  const lastQueryRef = useRef(lastQuery);
+  useEffect(() => { lastQueryRef.current = lastQuery; }, [lastQuery]);
 
-  // Re-run the last successful briefing when dashboard filters / profile change — not when the hero search box text changes
+  const filterKey = useMemo(
+    () => JSON.stringify({ selectedArea, selectedLocation, selectedTime, isPersonalized, borough: profile?.borough, issues: profile?.issues }),
+    [selectedArea, selectedLocation, selectedTime, isPersonalized, profile],
+  );
+  const prevFilterKey = useRef<string | null>(null);
   useEffect(() => {
-    const q = lastBriefingQueryRef.current.trim();
+    if (prevFilterKey.current === null) { prevFilterKey.current = filterKey; return; }
+    if (prevFilterKey.current === filterKey) return;
+    prevFilterKey.current = filterKey;
+    const q = lastQueryRef.current.trim();
     if (!q) return;
     void handleSearch(q);
-  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile, handleSearch]);
+  }, [filterKey, handleSearch]);
+
+  const hasBriefing = Boolean(lastQuery.trim() || response || loading || error);
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
-      <div
-        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(90,110,140,0.15)]"
-        aria-hidden
-      />
-      <div
-        className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)] dark:bg-[rgba(60,75,98,0.12)]"
-        aria-hidden
-      />
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        initialProfile={profile}
+      <div className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(90,110,140,0.15)]" aria-hidden />
+      <div className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)] dark:bg-[rgba(60,75,98,0.12)]" aria-hidden />
+
+      <OnboardingModal isOpen={showOnboarding} initialProfile={profile}
         onSave={(data) => {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("civic_profile_skipped");
-          }
-          setProfileSkipped(false);
-          saveProfile(data);
-          setShowOnboarding(false);
+          if (typeof window !== "undefined") localStorage.removeItem("civic_profile_skipped");
+          setProfileSkipped(false); saveProfile(data); setShowOnboarding(false);
         }}
         onSkip={() => {
           localStorage.setItem("civic_profile_skipped", "true");
-          setProfileSkipped(true);
-          setShowOnboarding(false);
-        }}
-      />
+          setProfileSkipped(true); setShowOnboarding(false);
+        }} />
 
       <Header />
+
       <main className="relative z-10 mt-10 flex-1">
-        <Hero
-          query={query}
-          onQueryChange={setQuery}
-          loading={loading}
-          onSearch={() => handleSearch(query)}
-        />
 
-        <div className="mx-auto mt-2 max-w-7xl px-4 sm:mt-4 sm:px-6 lg:px-8">
+        {/* hero search */}
+        <Hero query={query} onQueryChange={setQuery} loading={loading} onSearch={() => handleSearch(query)} />
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-8 pb-16">
+
+          {/* <h2 className="font-work-sans text-xl sm:text-2xl font-bold tracking-tight text-[rgba(20,31,45,0.92)] dark:text-[var(--foreground)] truncate">
+            What's Happening in Your Community
+          </h2> */}
+
+          {/* context filters: Location · Timeframe · Perspective (Singular Command Panel) */}
           <DashboardFilters
-            selectedArea={selectedArea}
-            setSelectedArea={setSelectedArea}
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            selectedTime={selectedTime}
-            setSelectedTime={setSelectedTime}
-            isPersonalized={isPersonalized}
-            setIsPersonalized={setIsPersonalized}
+            selectedLocation={selectedLocation} setSelectedLocation={setSelectedLocation}
+            selectedTime={selectedTime} setSelectedTime={setSelectedTime}
+            isPersonalized={isPersonalized} setIsPersonalized={setIsPersonalized}
             onEditProfile={() => setShowEditProfile(true)}
+            selectedArea={selectedArea} setSelectedArea={setSelectedArea}
+            mapMode={mapMode} setMapMode={setMapMode}
+            profile={profile}
           />
-        </div>
 
-        <SettingsModal
-          isOpen={showEditProfile}
-          onClose={() => setShowEditProfile(false)}
-        />
+          {/* Heatmap & Policy Briefing */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
 
-        {/* 1. Policy Briefing (Search Results) */}
-        <div id="results" className="scroll-mt-20 mt-6 sm:mt-8">
-          <PolicyBriefingPanel
-            loading={loading}
-            error={error}
-            response={response}
-            briefingQuery={lastBriefingQuery}
-            snapshotLoading={snapshotLoading}
-            snapshotError={snapshotError}
-            generalizedBriefing={generalizedBriefing}
-            filterSummary={filterSummary}
-          />
-        </div>
+            {/* Heatmap */}
+            <div className="lg:col-span-5 space-y-3">
+              <LegislativeActivityMap
+                isPersonalized={isPersonalized}
+                profile={profile} policies={snapshotPolicies}
+                selectedArea={selectedArea} setSelectedArea={setSelectedArea}
+                selectedLocation={selectedLocation} onSearch={handleSearch}
+                hasBriefing={hasBriefing}
+                mapMode={mapMode} setMapMode={setMapMode}
+              />
+            </div>
 
-        <ProfileActivitySection
-          isProfileLoaded={isLoaded}
-          profile={profile}
-          profileSkipped={profileSkipped}
-          items={profileActivity.items}
-          loading={profileActivity.loading}
-          error={profileActivity.error}
-          mode={profileActivity.mode}
-          mappedAreas={profileActivity.mappedAreas}
-          profileBorough={profileActivity.profileBorough}
-          onSetupProfile={() => setShowOnboarding(true)}
-          onEditProfile={() => setShowEditProfile(true)}
-        />
+            {/* Policy Briefing / Intel Readout */}
+            <div id="briefing" className="lg:col-span-7 scroll-mt-4">
+              <PolicyBriefingPanel
+                loading={loading} error={error}
+                response={response} briefingQuery={lastQuery}
+                snapshotLoading={snapshotLoading} snapshotError={snapshotError}
+                generalizedBriefing={generalizedBriefing} filterSummary={filterSummary}
+              />
+            </div>
 
-        {/* 2. Dashboard feed */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
-          <div id="updates">
-            <RecentUpdates
-              policies={snapshotPolicies}
-              policiesLoading={snapshotLoading}
-              policiesError={snapshotError}
-            />
           </div>
+
         </div>
       </main>
+
+      <SettingsModal isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
       <SiteFooter />
     </div>
   );
