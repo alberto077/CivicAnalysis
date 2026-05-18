@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, ExternalLink, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -13,8 +13,7 @@ import {
   type FloatingChatTurn,
   type FloatingRetrievalSource,
 } from "@/lib/api";
-import { floatingFabDark, floatingFabIconLight, floatingFabLight } from "@/lib/floating-fab-styles";
-import { useFooterAwareBottom } from "@/lib/useFooterAwareBottom";
+
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -22,6 +21,8 @@ type ChatMessage = {
   markdown?: string;
   retrieval_sources?: FloatingRetrievalSource[];
 };
+
+// build API message history
 
 function buildFloatingApiMessages(
   prior: ChatMessage[],
@@ -41,20 +42,35 @@ function buildFloatingApiMessages(
   return out;
 }
 
-const floatingMarkdownComponents: Components = {
-  p: ({ children }) => <p className="mb-2.5 last:mb-0 text-[15px] leading-relaxed text-slate-900">{children}</p>,
+const mdComponents: Components = {
+  p: ({ children }) => (
+    <p className="mb-2 last:mb-0 text-[14px] leading-relaxed text-slate-800 dark:text-slate-200">
+      {children}
+    </p>
+  ),
   ul: ({ children }) => (
-    <ul className="mb-2.5 list-disc space-y-1 pl-4 text-[15px] leading-relaxed text-slate-900 last:mb-0">{children}</ul>
+    <ul className="mb-2 space-y-1 pl-4 last:mb-0 text-[14px] leading-relaxed text-slate-800 dark:text-slate-200">
+      {children}
+    </ul>
   ),
   ol: ({ children }) => (
-    <ol className="mb-2.5 list-decimal space-y-1 pl-4 text-[15px] leading-relaxed text-slate-900 last:mb-0">{children}</ol>
+    <ol className="mb-2 list-decimal space-y-1 pl-4 last:mb-0 text-[14px] leading-relaxed text-slate-800 dark:text-slate-200">
+      {children}
+    </ol>
   ),
-  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-  strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
+  li: ({ children }) => (
+    <li className="leading-relaxed flex gap-2">
+      <span className="shrink-0 mt-1 h-1.5 w-1.5 rounded-full bg-[var(--accent)]/60 inline-block" />
+      <span>{children}</span>
+    </li>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-slate-900 dark:text-white">{children}</strong>
+  ),
   a: ({ href, children }) => (
     <a
       href={href}
-      className="font-medium text-[var(--accent)] underline decoration-[var(--accent)]/35 underline-offset-2"
+      className="font-medium text-[var(--accent)] underline decoration-[var(--accent)]/30 underline-offset-2 hover:decoration-[var(--accent)]"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -62,377 +78,390 @@ const floatingMarkdownComponents: Components = {
     </a>
   ),
   code: ({ className, children }) => {
-    const isBlock = typeof className === "string" && className.includes("language-");
+    const isBlock =
+      typeof className === "string" && className.includes("language-");
     if (isBlock) {
       return (
-        <code className="my-2 block overflow-x-auto rounded-lg border border-slate-200/80 bg-slate-100/80 p-3 font-mono text-[13px] leading-relaxed text-slate-800">
+        <code className="my-2 block overflow-x-auto rounded-lg bg-slate-100 dark:bg-slate-800 p-3 font-mono text-[12px] leading-relaxed text-slate-800 dark:text-slate-200">
           {children}
         </code>
       );
     }
     return (
-      <code className="rounded border border-slate-200/70 bg-slate-100/90 px-1.5 py-0.5 font-mono text-[13px] text-slate-800">
+      <code className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[12px] text-slate-800 dark:text-slate-200">
         {children}
       </code>
     );
   },
   blockquote: ({ children }) => (
-    <blockquote className="my-2 border-l-2 border-slate-300 pl-3 text-[15px] leading-relaxed text-slate-600">
+    <blockquote className="my-2 border-l-2 border-[var(--accent)]/40 pl-3 text-[13px] italic text-slate-600 dark:text-slate-400">
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-3 border-slate-200" />,
   h1: ({ children }) => (
-    <h3 className="mb-2 mt-3 font-work-sans text-[11px] font-bold uppercase tracking-widest text-slate-500 first:mt-0">
+    <h3 className="mb-1.5 mt-3 font-work-sans text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 first:mt-0">
       {children}
     </h3>
   ),
   h2: ({ children }) => (
-    <h3 className="mb-2 mt-3 font-work-sans text-[11px] font-bold uppercase tracking-widest text-slate-500 first:mt-0">
+    <h3 className="mb-1.5 mt-3 font-work-sans text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 first:mt-0">
       {children}
     </h3>
   ),
   h3: ({ children }) => (
-    <h3 className="mb-2 mt-3 font-work-sans text-[11px] font-bold uppercase tracking-widest text-slate-500 first:mt-0">
+    <h3 className="mb-1.5 mt-3 font-work-sans text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 first:mt-0">
       {children}
     </h3>
   ),
 };
 
-const panelEase = [0.22, 1, 0.36, 1] as const;
+function SourceRow({ src }: { src: FloatingRetrievalSource }) {
+  return (
+    <a
+      href={src.source_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-start gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 transition hover:border-[var(--accent)]/30 hover:bg-white dark:hover:bg-slate-800"
+    >
+      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-[var(--accent)] opacity-60 group-hover:opacity-100" />
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 leading-snug group-hover:text-[var(--accent)] line-clamp-2">
+          {src.title}
+        </p>
+        {src.source_type && (
+          <p className="font-work-sans mt-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+            {src.source_type}
+            {src.published_date
+              ? ` · ${new Date(src.published_date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
+              : ""}
+          </p>
+        )}
+      </div>
+    </a>
+  );
+}
 
-/** Scales with viewport height (min 600px, up to ~86vh, cap 920px) so large screens feel balanced, never past the screen. */
-const askSpiegelPanelHeight = "min(calc(100dvh - 2rem), min(920px, max(600px, 86vh)))";
+// default user suggested prompts
+const SUGGESTED = [
+  "What NYC bills passed this month?",
+  "Explain the Good Cause Eviction law",
+  "Any new transit funding from Albany?",
+  "What federal housing aid affects NYC?",
+];
+
+
 
 export function FloatingChatBot() {
   const pathname = usePathname();
-  const footerAwareBottom = useFooterAwareBottom(24, 32, 12, 52);
-
-  /** Avoid FAB SSR/client DOM mismatch (e.g. motion/compiler wrappers vs native button). */
-  const [launcherMounted, setLauncherMounted] = useState(false);
-  useEffect(() => {
-    setLauncherMounted(true);
-  }, []);
-
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    setMounted(true);
+  }, []);
 
+  // scroll to bottom on new messages
+  useEffect(() => {
+    if (isOpen) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, loading, isOpen]);
+
+  // focus input when panel opens
   useEffect(() => {
     if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    const t = window.setTimeout(() => inputRef.current?.focus(), 150);
+    return () => window.clearTimeout(t);
   }, [isOpen]);
 
+  // keyboard escape to close
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsOpen(false);
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const t = window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 200);
-    return () => window.clearTimeout(t);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [isOpen]);
 
   async function handleSend(customPrompt?: string) {
     const question = (customPrompt ?? input).trim();
-
     if (!question || loading) return;
 
     setInput("");
     setError("");
     setLoading(true);
 
-    setMessages((current) => [
-      ...current,
-      {
-        role: "user",
-        text: question,
-      },
-    ]);
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
 
     try {
       const currentPath =
         typeof window !== "undefined" ? window.location.pathname : pathname || "/";
 
       const apiMessages = buildFloatingApiMessages(messages, question);
-
       const result = await postFloatingChatOrchestrated({
         messages: apiMessages,
         currentPath,
       });
 
-      setMessages((current) => [
-        ...current,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
           markdown: result.markdown,
           retrieval_sources:
-            result.retrieval_sources.length > 0 ? result.retrieval_sources : undefined,
+            result.retrieval_sources.length > 0
+              ? result.retrieval_sources
+              : undefined,
         },
       ]);
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
-          : "Unable to get a chatbot response right now.",
+          : "Unable to get a response right now.",
       );
     } finally {
       setLoading(false);
     }
   }
 
-  const hideFloatingChat = pathname === "/chat";
+  // don't show on /chat page
+  if (pathname === "/chat") return null;
+  if (!mounted) return null;
 
-  if (hideFloatingChat) {
-    return null;
-  }
+  const panelEase = [0.22, 1, 0.36, 1] as const;
 
   return (
     <>
-      <AnimatePresence initial={false}>
-        {isOpen ? (
-          <>
-            <motion.button
-              key="ask-spiegel-backdrop"
-              type="button"
-              aria-label="Close Ask Spiegel"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="fixed inset-0 z-[190] bg-slate-900/[0.22] backdrop-blur-[3px]"
-              onClick={() => setIsOpen(false)}
-            />
-
-            <motion.div
-              key="ask-spiegel-panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Ask Spiegel"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ duration: 0.4, ease: panelEase }}
-              style={{
-                height: askSpiegelPanelHeight,
-                top: `calc((100dvh - ${askSpiegelPanelHeight}) / 2)`,
-              }}
-              className="fixed right-2 z-[200] flex w-[min(100%,max(19rem,38vw))] max-w-[calc(100vw_-_0.5rem)] flex-col overflow-hidden rounded-2xl border border-white/45 bg-gradient-to-b from-white/[0.52] via-white/[0.38] to-white/[0.28] shadow-[0_24px_80px_-28px_rgba(15,23,42,0.45),inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-2xl backdrop-saturate-150 sm:right-4 sm:rounded-3xl"
-            >
-              <header className="relative flex shrink-0 items-start justify-between gap-4 px-5 pb-3 pt-5 sm:gap-6 sm:px-7 sm:pb-4 sm:pt-6">
-                <div className="min-w-0 pr-12">
-                  <h2 className="font-limelight text-2xl font-medium tracking-tight text-slate-900 sm:text-[1.65rem]">
+      {/* PERSISTENT side panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.aside
+            key="spiegel-panel"
+            role="complementary"
+            aria-label="Ask Spiegel — NYC policy assistant"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.35, ease: panelEase }}
+            className="fixed right-0 top-0 bottom-0 z-[120] flex w-[min(100vw,380px)] flex-col border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] shadow-2xl"
+          >
+            {/* Header */}
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)]/10">
+                  <Sparkles
+                    className="h-3.5 w-3.5 text-[var(--accent)]"
+                    strokeWidth={1.75}
+                  />
+                </span>
+                <div>
+                  <h2 className="font-limelight text-base font-medium tracking-tight text-slate-900 dark:text-white leading-none">
                     Ask Spiegel
                   </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="absolute right-4 top-4 z-[22] flex h-10 w-10 items-center justify-center rounded-xl border border-white/50 bg-white/55 text-slate-700 shadow-sm backdrop-blur-sm transition hover:bg-white/75 hover:text-slate-900 sm:right-5 sm:top-5"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" strokeWidth={2} />
-                </button>
-              </header>
-
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7 sm:py-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="space-y-7">
-                  {messages.map((message, index) => {
-                    const isUser = message.role === "user";
-
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.28, ease: panelEase }}
-                        className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={
-                            isUser
-                              ? "max-w-[min(92%,24rem)] rounded-xl border border-white/55 bg-white/80 px-5 py-3 text-right shadow-[0_2px_12px_-4px_rgba(15,23,42,0.12)] backdrop-blur-sm"
-                              : "max-w-[min(96%,100%)] rounded-[14px] border border-white/35 bg-white/35 px-4 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.55)] backdrop-blur-sm"
-                          }
-                        >
-                          <div
-                            className={`text-[15px] leading-relaxed text-slate-900 ${isUser ? "text-right" : "text-left"}`}
-                          >
-                            {message.text ? (
-                              <p className={`whitespace-pre-wrap ${isUser ? "text-right" : ""}`}>{message.text}</p>
-                            ) : null}
-
-                            {message.markdown ? (
-                              <div
-                                className={`break-words [&_a]:font-medium [&_a]:text-[var(--accent)] ${isUser ? "text-right" : "text-left"}`}
-                              >
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={floatingMarkdownComponents}
-                                >
-                                  {message.markdown}
-                                </ReactMarkdown>
-                              </div>
-                            ) : null}
-
-                            {message.retrieval_sources && message.retrieval_sources.length > 0 ? (
-                              <div className="mt-4 border-t border-slate-200/60 pt-4 text-left">
-                                <p className="font-work-sans mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                                  References
-                                </p>
-                                <ul className="space-y-2">
-                                  {message.retrieval_sources.map((src) => (
-                                    <li key={src.source_url} className="leading-snug">
-                                      <a
-                                        href={src.source_url}
-                                        className="text-[12px] font-semibold text-[var(--accent)] underline decoration-[var(--accent)]/30 underline-offset-2 hover:decoration-[var(--accent)]"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        {src.title}
-                                      </a>
-                                      {src.source_type ? (
-                                        <span className="font-work-sans mt-0.5 block text-[10px] uppercase tracking-wide text-slate-500">
-                                          {src.source_type}
-                                        </span>
-                                      ) : null}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-
-                  {loading ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex w-full justify-start"
-                    >
-                      <div className="max-w-[min(96%,100%)] rounded-[14px] border border-white/35 bg-white/35 px-4 py-3 backdrop-blur-sm">
-                        <span
-                          className="inline-block h-1 w-12 animate-pulse rounded-full bg-slate-300/90"
-                          aria-hidden
-                        />
-                      </div>
-                    </motion.div>
-                  ) : null}
-
-                  {error ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl border border-red-200/80 bg-red-50/95 px-5 py-3 text-[13px] leading-relaxed text-red-900"
-                    >
-                      {error}
-                    </motion.div>
-                  ) : null}
-
-                  <div ref={bottomRef} />
+                  <p className="font-work-sans text-[9px] font-semibold uppercase tracking-widest text-slate-400 mt-0.5">
+                    NYC · NY State · Federal
+                  </p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                aria-label="Close"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={2} />
+              </button>
+            </header>
 
-              <footer className="shrink-0 border-t border-white/25 bg-white/[0.08] px-5 py-5 backdrop-blur-md sm:px-7 sm:py-6">
-                <form
-                  className="mx-auto w-full min-w-0"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void handleSend();
-                  }}
-                >
-                  <label htmlFor="ask-spiegel-input" className="font-work-sans sr-only">
-                    Ask Spiegel — ask about NYC policy...
-                  </label>
-                  <div className="glass-card search-shell command-shell group mx-auto flex h-14 w-full min-w-0 max-w-full items-center gap-2 rounded-[23px] border border-white/40 bg-gradient-to-br from-white/70 to-white/45 py-0 pl-[clamp(0.75rem,2vw,1.125rem)] pr-[clamp(0.85rem,2.3vw,1.25rem)] leading-[25px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.75),0_12px_36px_-18px_rgba(15,23,42,0.2)] backdrop-blur-md sm:h-[3.625rem] sm:gap-3 md:h-[61px] md:gap-[clamp(0.5rem,1.5vw,0.75rem)]">
-                    <span className="flex shrink-0 text-[var(--muted)]" aria-hidden>
-                      <Sparkles
-                        className="h-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] w-[clamp(1.05rem,min(1.35rem,38cqh),1.5rem)] shrink-0 opacity-75 transition-transform duration-300 group-focus-within:scale-105"
-                        strokeWidth={1.65}
-                      />
-                    </span>
-                    <input
-                      ref={inputRef}
-                      id="ask-spiegel-input"
-                      type="search"
-                      name="ask-spiegel"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      autoComplete="off"
-                      placeholder="Ask about NYC policy..."
-                      disabled={loading}
-                      className="font-work-sans min-w-0 flex-1 border-0 bg-transparent pb-0 pt-0 text-[clamp(15px,2.8cqw,18px)] font-medium tracking-[0.04em] text-slate-900 placeholder:text-[0.95rem] placeholder:text-slate-500/90 placeholder:font-normal focus:outline-none focus:ring-0 enabled:cursor-text disabled:opacity-60"
-                    />
-                    <button
-                      type="submit"
-                      disabled={loading || !input.trim()}
-                      aria-label={loading ? "Sending" : "Run query"}
-                      className="command-submit box-border flex aspect-square h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center rounded-[1.05rem] bg-[var(--accent-mid)] p-1 text-slate-50 shadow-[0_14px_24px_-14px_rgba(230,57,70,0.7)] transition-all duration-300 ease-out hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/85 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--accent-mid)] disabled:pointer-events-none disabled:opacity-50 sm:p-1.5 sm:rounded-[1.1rem] md:rounded-[1.15rem]"
-                    >
-                      <span className="sr-only">{loading ? "Sending…" : "Run query"}</span>
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="block h-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] w-[clamp(0.8rem,calc(0.26 * 100cqh - 4px),1.05rem)] shrink-0"
-                        aria-hidden
+            {/* MESSAGES */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {/* empty state */}
+              {messages.length === 0 && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Ask about NYC legislation, NY State bills, or federal policy affecting the city. I'll cite my sources.
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {SUGGESTED.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => void handleSend(prompt)}
+                        className="group flex items-center gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 px-3 py-2 text-left text-[12px] text-slate-600 dark:text-slate-400 transition hover:border-[var(--accent)]/30 hover:bg-white dark:hover:bg-slate-800 hover:text-[var(--accent)]"
                       >
-                        <path d="M5 12h13" strokeLinecap="round" />
-                        <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
+                        <ChevronRight className="h-3 w-3 shrink-0 text-slate-300 group-hover:text-[var(--accent)] transition-colors" />
+                        {prompt}
+                      </button>
+                    ))}
                   </div>
-                </form>
-              </footer>
-            </motion.div>
-          </>
-        ) : null}
+                </div>
+              )}
+
+              {/* messages history */}
+              {messages.map((msg, idx) => {
+                const isUser = msg.role === "user";
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={
+                        isUser
+                          ? "max-w-[85%] rounded-2xl rounded-br-md bg-[var(--accent)] px-4 py-2.5 text-[13px] font-medium text-white shadow-sm"
+                          : "w-full rounded-2xl rounded-bl-md border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-4 py-3"
+                      }
+                    >
+                      {isUser ? (
+                        <p className="whitespace-pre-wrap leading-relaxed">
+                          {msg.text}
+                        </p>
+                      ) : (
+                        <div className="min-w-0">
+                          {msg.markdown && (
+                            <div className="break-words">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={mdComponents}
+                              >
+                                {msg.markdown}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+
+                          {/* sources/citations */}
+                          {msg.retrieval_sources &&
+                            msg.retrieval_sources.length > 0 && (
+                              <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <p className="font-work-sans mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                                  Sources
+                                </p>
+                                <div className="flex flex-col gap-1.5">
+                                  {msg.retrieval_sources.map((src, si) => (
+                                    <SourceRow key={si} src={src} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {/* loading bubble */}
+              {loading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-start"
+                >
+                  <div className="rounded-2xl rounded-bl-md border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* error */}
+              {error && (
+                <div className="rounded-xl border border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-[12px] text-red-700 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
+
+            {/* input footer */}
+            <footer className="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] px-4 py-3">
+              <form
+                className="flex items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleSend();
+                }}
+              >
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about NYC or NY State policy…"
+                  disabled={loading}
+                  className="font-work-sans min-w-0 flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/20 disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !input.trim()}
+                  aria-label="Send"
+                  className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white shadow-sm transition hover:brightness-110 disabled:opacity-40 disabled:pointer-events-none active:scale-95"
+                >
+                  {loading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4"
+                      aria-hidden
+                    >
+                      <path d="M5 12h13" strokeLinecap="round" />
+                      <path
+                        d="m13 6 6 6-6 6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </form>
+              <p className="mt-1.5 text-center font-work-sans text-[9px] text-slate-400">
+                Covers NYC Council, NY State Legislature &amp; federal policy
+              </p>
+            </footer>
+          </motion.aside>
+        )}
       </AnimatePresence>
 
-      {launcherMounted && !isOpen ? (
-        <div
-          className="fixed right-5 z-[120] transition-[bottom] duration-200 ease-out sm:right-8"
-          style={{ bottom: `${footerAwareBottom}px` }}
-        >
+      {/* FAB launcher (floating action button)*/}
+      {!isOpen && (
+        <div className="fixed bottom-6 right-5 z-[120] sm:right-8 sm:bottom-8">
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className={`flex items-center gap-2.5 rounded-full border-2 py-3 pl-5 pr-5 text-white backdrop-blur-md transition-[padding,box-shadow,transform,border-color] duration-300 ease-out hover:scale-[1.045] hover:px-7 active:scale-[0.98] ${floatingFabLight} ${floatingFabDark}`}
+            className="group flex items-center gap-2 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)] py-3 pl-4 pr-5 text-white shadow-lg shadow-[var(--accent)]/25 transition-all duration-200 hover:shadow-xl hover:shadow-[var(--accent)]/30 hover:scale-[1.04] active:scale-[0.97]"
             aria-label="Open Ask Spiegel"
           >
             <Sparkles
-              className={`h-5 w-5 shrink-0 text-white ${floatingFabIconLight}`}
+              className="h-4 w-4 shrink-0"
               strokeWidth={1.75}
               aria-hidden
             />
-            <span className="font-work-sans text-sm font-semibold tracking-wide text-white">Ask Spiegel</span>
+            <span className="font-work-sans text-[13px] font-semibold tracking-wide">
+              Ask Spiegel
+            </span>
           </button>
         </div>
-      ) : null}
+      )}
     </>
   );
 }
