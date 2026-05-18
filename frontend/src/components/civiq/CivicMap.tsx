@@ -3,7 +3,6 @@
 import {
   MapPin, Users, Layers, Search, Map as MapIcon, ExternalLink, Info,
   ChevronRight, Building2, Flag, AlertCircle,
-  // Landmark,
   Loader2, X, Maximize2, Calendar, Eye, EyeOff, ChevronDown, ChevronUp,
   Phone, Mail, Plus, Minus
 } from "lucide-react";
@@ -929,8 +928,8 @@ export function CivicMap({ title = "NY Explorer", subtitle = "", hideHeader = fa
         {TABS.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === tab.id
-                ? "border-(--accent) text-(--accent)"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 dark:text-(--foreground-secondary) dark:hover:text-foreground dark:hover:border-(--border)"
+              ? "border-(--accent) text-(--accent)"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200 dark:text-(--foreground-secondary) dark:hover:text-foreground dark:hover:border-(--border)"
               }`}>
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
