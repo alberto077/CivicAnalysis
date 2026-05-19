@@ -81,7 +81,7 @@ export function ThemeToggle() {
               className="relative z-[1] flex items-center justify-center"
             >
               <Moon
-                className="size-4 text-[#d8c4ff] drop-shadow-[0_0_12px_rgba(200,160,255,0.55),0_0_20px_rgba(72,230,255,0.35)]"
+                className="size-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45),0_0_14px_rgba(186,220,255,0.28)]"
                 strokeWidth={2}
                 aria-hidden
               />
@@ -95,7 +95,11 @@ export function ThemeToggle() {
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className="relative z-[1] flex items-center justify-center"
             >
-              <Sun className="size-4 text-[#c9956a]" strokeWidth={2} aria-hidden />
+              <Sun
+                className="size-4 text-[#12355b] drop-shadow-[0_0_6px_rgba(18,53,91,0.2)]"
+                strokeWidth={2}
+                aria-hidden
+              />
             </motion.span>
           )}
         </AnimatePresence>
