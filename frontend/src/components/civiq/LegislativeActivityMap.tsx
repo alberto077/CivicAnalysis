@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Sparkles, MapPin, Map as MapIcon, Layers, ChevronUp, ChevronDown, Mail, Phone, ExternalLink, Info, CheckCircle2, Plus, Minus } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  ExternalLink,
+  CheckCircle2,
+  Plus,
+  Minus,
+  MapPin,
+  FileText,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 import { type PolicyBriefing, getDistrictsMap, getDistricts, type District } from "@/lib/api";
 import { type CivicProfile } from "@/lib/useProfile";
@@ -14,7 +25,7 @@ import dynamic from "next/dynamic";
 const LeafletMapWrapper = dynamic(() => import("./LeafletMapWrapper"), {
   ssr: false,
   loading: () => (
-    <div className="h-[420px] flex w-full items-center justify-center bg-slate-50 dark:bg-[#111827]">
+    <div className="flex h-full w-full items-center justify-center bg-slate-50 dark:bg-[#111827]">
       <div className="flex flex-col items-center gap-3">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]" />
         <p className="text-[11px] text-[var(--muted)]">Loading satellite view…</p>
@@ -57,11 +68,257 @@ function profileScore(p: PolicyBriefing, profile: CivicProfile | null): number {
     const kws = getPolicyAreaMetadata(issue).keywords;
     if (kws.some((k) => hay.includes(k))) s += 2;
   }
-  for (const demo of profile.demographics ?? []) { if (hay.includes(demo.toLowerCase())) s += 1; }
-  const hkws: Record<string, string[]> = { rent: ["tenant", "rent", "landlord"], own: ["homeowner", "coop", "condo"], "public housing": ["nycha", "public housing"] };
-  if ((hkws[profile.housing?.toLowerCase() ?? ""] ?? []).some((k) => hay.includes(k))) s += 2;
+  for (const demo of profile.demographics ?? []) {
+    if (hay.includes(demo.toLowerCase())) s += 1;
+  }
   return s;
 }
+
+
+const SRC_COLORS: Record<string, string> = {
+  Legislation: "#3b82f6",
+  Transcript: "#8b5cf6",
+  Resolution: "#10b981",
+  Notice: "#f59e0b",
+  Report: "#ec4899",
+  Rule: "#ef4444",
+  Hearing: "#0ea5e9",
+};
+function srcColor(t: string) { return SRC_COLORS[t] ?? "#64748b"; }
+
+
+function DistrictPopout({
+  districtId,
+  feature,
+  districtObj,
+  districtPolicies,
+  activeArea,
+  baseColor,
+  onClose,
+  onSearch,
+}: {
+  districtId: number;
+  feature: any;
+  districtObj: District | undefined;
+  districtPolicies: PolicyBriefing[];
+  activeArea: { label: string; color: string; id: string };
+  baseColor: string;
+  onClose: () => void;
+  onSearch?: (q: string) => void;
+}) {
+  const boroughName = feature.properties?.boro_name ?? "";
+  const districtName = feature.properties?.name ?? `District ${districtId}`;
+
+  // group policies by source type for the summary bar
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    districtPolicies.forEach((p) => {
+      const t = p.source_type || "Other";
+      counts[t] = (counts[t] ?? 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [districtPolicies]);
+
+  const totalPolicies = districtPolicies.length;
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* popout header */}
+      <div
+        className="shrink-0 px-4 py-3 flex items-center justify-between gap-3"
+        style={{ borderBottom: `2px solid ${baseColor}30` }}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest"
+              style={{ background: `${baseColor}15`, color: baseColor }}
+            >
+              <MapPin className="h-2 w-2" />
+              {boroughName}
+            </span>
+          </div>
+          <h3 className="font-limelight text-sm font-bold text-slate-800 dark:text-white truncate leading-tight">
+            {districtName}
+          </h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+          aria-label="Close district panel"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        {/* mini representative card */}
+        {districtObj && (
+          <div className="rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-elevated)] p-3 flex flex-col gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="h-9 w-9 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 ring-2 ring-white dark:ring-slate-700"
+                style={{ background: `linear-gradient(135deg, ${baseColor}cc, ${baseColor})` }}
+              >
+                {districtObj.rep ? districtObj.rep.slice(0, 2).toUpperCase() : "CM"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">
+                  Council Member
+                </p>
+                <p className="font-limelight text-[13px] font-bold text-slate-800 dark:text-white truncate leading-tight">
+                  {districtObj.rep || "Council Member"}
+                </p>
+                {districtObj.political_stance && districtObj.political_stance !== "N/A" && (
+                  <p className="text-[9px] text-slate-500 font-medium mt-0.5">
+                    {districtObj.political_stance}
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* contact info */}
+            {(districtObj.phone || districtObj.email || districtObj.website) && (
+              <div className="flex gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                {districtObj.phone && (
+                  <a href={`tel:${districtObj.phone}`}
+                    className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <Phone className="h-2.5 w-2.5" /> Call
+                  </a>
+                )}
+                {districtObj.email && (
+                  <a href={`mailto:${districtObj.email}`}
+                    className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <Mail className="h-2.5 w-2.5" /> Email
+                  </a>
+                )}
+                {districtObj.website && districtObj.website !== "N/A" && (
+                  <a href={districtObj.website} target="_blank" rel="noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <ExternalLink className="h-2.5 w-2.5" /> Web
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* activity summary */}
+        <div className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-3 w-3 shrink-0" style={{ color: baseColor }} />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Recent Activity
+              </span>
+            </div>
+            <span className="text-[11px] font-black" style={{ color: baseColor }}>
+              {totalPolicies} record{totalPolicies !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* activity bar */}
+          <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden mb-2">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(100, Math.max(8, totalPolicies * 12))}%`,
+                background: baseColor,
+                boxShadow: `0 0 6px ${baseColor}80`,
+              }}
+            />
+          </div>
+
+          {/* type breakdown pills */}
+          {typeCounts.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {typeCounts.slice(0, 4).map(([type, count]) => (
+                <span
+                  key={type}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold border"
+                  style={{
+                    color: srcColor(type),
+                    background: `${srcColor(type)}12`,
+                    borderColor: `${srcColor(type)}30`,
+                  }}
+                >
+                  {type} · {count}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {activeArea.id !== "All" && (
+            <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+              Filtered to <span className="font-semibold" style={{ color: baseColor }}>{activeArea.label}</span>
+            </p>
+          )}
+        </div>
+
+        {/* policy records */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <FileText className="h-3 w-3 shrink-0 text-slate-400" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Policy Records
+            </span>
+          </div>
+
+          {totalPolicies === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+              <CheckCircle2 className="h-5 w-5 text-slate-300 dark:text-slate-700 mb-1.5" />
+              <p className="text-[10px] font-semibold text-slate-400 text-center">
+                No recent activity in this category.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {districtPolicies.map((policy, idx) => {
+                const color = srcColor(policy.source_type);
+                return (
+                  <div
+                    key={policy.id || idx}
+                    className="group relative rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] p-2.5 hover:border-slate-200 dark:hover:border-slate-700 transition-all"
+                  >
+                    <div className="absolute left-0 inset-y-2 w-[2.5px] rounded-full" style={{ background: color }} />
+                    <div className="pl-2.5">
+                      <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug mb-1.5">
+                        {policy.title}
+                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className="text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide border"
+                          style={{ color, background: `${color}12`, borderColor: `${color}30` }}
+                        >
+                          {policy.source_type || "Record"}
+                        </span>
+                        {policy.published_date && (
+                          <span className="text-[8px] text-slate-400 tabular-nums">
+                            {new Date(policy.published_date).toLocaleDateString(undefined, {
+                              month: "short", day: "numeric"
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {totalPolicies > 0 && onSearch && (
+          <div className="pt-1 pb-2">
+            <p className="text-[10px] text-slate-400 text-center">
+              ↓ Full briefing updates below
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 export function LegislativeActivityMap({
   isPersonalized, profile, policies,
@@ -76,9 +333,11 @@ export function LegislativeActivityMap({
   const [hoveredDistrictId, setHoveredDistrictId] = useState<number | null>(null);
   const [geoData, setGeoData] = useState<any>(null);
   const geoJsonRef = useRef<any>(null);
-
   const [districts, setDistricts] = useState<District[]>([]);
-  const [vectorPos, setVectorPos] = useState({ coordinates: [-73.94, 40.712] as [number, number], zoom: 1 });
+  const [vectorPos, setVectorPos] = useState({
+    coordinates: [-73.94, 40.712] as [number, number],
+    zoom: 1,
+  });
 
   useEffect(() => { getDistrictsMap().then(setGeoData); }, []);
   useEffect(() => { getDistricts().then(setDistricts).catch(console.error); }, []);
@@ -136,7 +395,6 @@ export function LegislativeActivityMap({
         opacity: 1,
       });
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDistrictId, districtActivity, baseColor, isDark]);
 
   useEffect(() => {
@@ -145,34 +403,21 @@ export function LegislativeActivityMap({
     }
   }, [filteredDistrictIds, selectedDistrictId]);
 
-  // When a district is clicked, update selected district state locally
-  const handleDistrictClick = (districtId: number, feature: any) => {
+  const handleDistrictClick = (districtId: number) => {
     setSelectedDistrictId((prev) => prev === districtId ? null : districtId);
   };
 
-  const profileAreaIds = useMemo(() => {
-    if (!isPersonalized || !profile?.issues?.length) return new Set<string>();
-    return new Set(
-      POLICY_AREAS.filter((a) =>
-        profile.issues.some((issue) => {
-          const kws = getPolicyAreaMetadata(a.id).keywords;
-          return issue === a.id || kws.some((k: string) => issue.toLowerCase().includes(k));
-        }),
-      ).map((a) => a.id),
-    );
-  }, [isPersonalized, profile]);
-
   const activeBoroughLabel = LOCATION_TO_BORO[selectedLocation] ?? null;
 
-  // Selected district label for map overlay
   const selectedFeature = useMemo(() => {
     if (!selectedDistrictId || !geoData?.features) return null;
     return geoData.features.find((f: any) => parseInt(f.properties.coun_dist) === selectedDistrictId);
   }, [selectedDistrictId, geoData]);
 
-  const selectedDistrictObj = useMemo(() => {
-    return districts.find((d) => d.id === selectedDistrictId);
-  }, [districts, selectedDistrictId]);
+  const selectedDistrictObj = useMemo(() =>
+    districts.find((d) => d.id === selectedDistrictId),
+    [districts, selectedDistrictId]
+  );
 
   const districtPolicies = useMemo(() => {
     if (!selectedDistrictId) return [];
@@ -183,328 +428,174 @@ export function LegislativeActivityMap({
     });
   }, [policies, selectedDistrictId, selectedArea]);
 
-  const tileLightUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const tileDarkUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const tileLightUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const tileUrl = isDark ? tileDarkUrl : tileLightUrl;
 
-  const showBottomPanel = Boolean(selectedDistrictId);
+  const MAP_HEIGHT = 520;
 
   return (
     <MotionReveal>
-      <section className="space-y-4">
-        {/* ── Map container (always full-width) ── */}
-        <div className="relative rounded-[1.5rem] overflow-hidden border border-[var(--border)] shadow-md bg-white dark:bg-[var(--surface-card)] flex flex-col glass-card" style={{ minHeight: 420 }}>
-          {/* Top-left badge */}
-          <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-bold uppercase tracking-wider shadow-sm pointer-events-none">
-            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: baseColor }} />
-            <span className="text-[var(--muted)]" style={{ fontFamily: "var(--font-display)" }}>{activeBoroughLabel ? `${activeBoroughLabel} · ` : "All NYC · "}</span>
-            <span style={{ color: baseColor }}>{activeArea.label}</span>
-          </div>
-
-          {/* Selected district overlay */}
-          {selectedDistrictId && selectedFeature && (
-            <div className="absolute top-3 right-3 z-[1000] flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm border pointer-events-none"
-              style={{ background: `${baseColor}15`, borderColor: `${baseColor}40` }}>
-              <div className="h-1.5 w-1.5 rounded-full" style={{ background: baseColor }} />
-              <span className="text-[10px] font-bold" style={{ color: baseColor }}>
-                {selectedFeature.properties?.name ?? `District ${selectedDistrictId}`}
+      <section className="space-y-0">
+        {/* map container */}
+        <div
+          className="relative flex rounded-[1.5rem] overflow-hidden border border-[var(--border)] shadow-md bg-white dark:bg-[var(--surface-card)]"
+          style={{ minHeight: MAP_HEIGHT }}
+        >
+          {/* map */}
+          <div
+            className="relative flex-1 min-w-0 transition-all duration-300"
+            style={{ minHeight: MAP_HEIGHT }}
+          >
+            {/* top-left badge */}
+            <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-bold uppercase tracking-wider shadow-sm pointer-events-none">
+              <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: baseColor }} />
+              <span className="text-[var(--muted)]">
+                {activeBoroughLabel ? `${activeBoroughLabel} · ` : "All NYC · "}
               </span>
-              <span className="text-[9px] text-[var(--muted)]">· {selectedFeature.properties?.boro_name}</span>
+              <span style={{ color: baseColor }}>{activeArea.label}</span>
             </div>
-          )}
 
-          {!geoData ? (
-            <div className="h-[420px] flex items-center justify-center bg-slate-50 dark:bg-[var(--surface-elevated)] flex-1">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]" />
-                <p className="text-[11px] text-[var(--muted)]">Loading map…</p>
+            {!geoData ? (
+              <div className="flex h-full items-center justify-center bg-slate-50 dark:bg-[var(--surface-elevated)]" style={{ minHeight: MAP_HEIGHT }}>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]" />
+                  <p className="text-[11px] text-[var(--muted)]">Loading map…</p>
+                </div>
               </div>
-            </div>
-          ) : mapMode === "vector" ? (
-            /* ── Vector / SVG map ─────────────────────────────────────────── */
-            <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden" style={{ height: 420 }}>
-              <div className="absolute bottom-3 right-3 z-[1000] flex flex-col shadow-md rounded-lg overflow-hidden border border-[var(--border)] bg-white/95 dark:bg-[var(--surface-elevated)]/95 backdrop-blur-md">
-                <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors border-b border-[var(--border)]" aria-label="Zoom in">
-                  <Plus className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-                <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }))} className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors" aria-label="Zoom out">
-                  <Minus className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-              </div>
-              <ComposableMap
-                projection="geoMercator"
-                projectionConfig={{ scale: 40000, center: [-73.94, 40.712] }}
-                style={{ width: "100%", height: "100%" }}
-              >
-                <ZoomableGroup
-                  center={vectorPos.coordinates}
-                  zoom={vectorPos.zoom}
-                  minZoom={1}
-                  maxZoom={8}
-                  translateExtent={[[0, 0], [800, 600]]}
-                  onMoveEnd={setVectorPos}
-                  // Explicitly allow trackpad pinch (wheel with ctrlKey) and standard touch/mouse events
-                  filterZoomEvent={(e: any) => {
-                    if (e.type === "wheel") return true;
-                    return !e.button;
-                  }}
+            ) : mapMode === "vector" ? (
+              <div className="w-full relative flex items-center justify-center overflow-hidden" style={{ height: MAP_HEIGHT }}>
+                {/* zoom controls */}
+                <div className="absolute bottom-3 right-3 z-[1000] flex flex-col shadow-md rounded-lg overflow-hidden border border-[var(--border)] bg-white/95 dark:bg-[var(--surface-elevated)]/95 backdrop-blur-md">
+                  <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) }))}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors border-b border-[var(--border)]" aria-label="Zoom in">
+                    <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                  <button type="button" onClick={() => setVectorPos(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }))}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-[var(--surface-card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors" aria-label="Zoom out">
+                    <Minus className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                </div>
+                <ComposableMap
+                  projection="geoMercator"
+                  projectionConfig={{ scale: 40000, center: [-73.94, 40.712] }}
+                  style={{ width: "100%", height: "100%" }}
                 >
-                  <Geographies geography={geoData}>
-                    {({ geographies }) =>
-                      geographies.map((geo) => {
-                        const id = parseInt(geo.properties.coun_dist);
-                        const activity = districtActivity[id] ?? 0;
-                        const isSelected = selectedDistrictId === id;
-                        const isHovered = hoveredDistrictId === id;
-                        return (
-                          <Geography
-                            key={geo.rsmKey}
-                            geography={geo}
-                            onMouseEnter={() => setHoveredDistrictId(id)}
-                            onMouseLeave={() => setHoveredDistrictId(null)}
-                            onClick={() => handleDistrictClick(id, geo)}
-                            style={{
-                              default: {
-                                fill: getColor(activity),
-                                stroke: isSelected ? baseColor : "rgba(255,255,255,0.8)",
-                                strokeWidth: isSelected ? 1.5 : 0.4,
-                                outline: "none",
-                                transition: "all 150ms ease",
-                              },
-                              hover: {
-                                fill: isSelected ? getColor(activity) : `${baseColor}90`,
-                                stroke: baseColor,
-                                strokeWidth: 1.5,
-                                outline: "none",
-                                cursor: "pointer",
-                              },
-                              pressed: { fill: baseColor, outline: "none" },
-                            }}
-                          />
-                        );
-                      })
-                    }
-                  </Geographies>
-                </ZoomableGroup>
-              </ComposableMap>
-            </div>
-          ) : (
-            /* ── Leaflet / satellite map ──────────────────────────────────── */
-            <div className="flex-1 relative w-full h-[420px]">
-              <LeafletMapWrapper
-                isDark={isDark}
-                tileUrl={tileUrl}
-                geoData={geoData}
-                districtActivity={districtActivity}
-                selectedDistrictId={selectedDistrictId}
-                getColor={getColor}
-                baseColor={baseColor}
-                handleDistrictClick={handleDistrictClick}
-              />
-            </div>
-          )}
+                  <ZoomableGroup
+                    center={vectorPos.coordinates}
+                    zoom={vectorPos.zoom}
+                    minZoom={1} maxZoom={8}
+                    translateExtent={[[0, 0], [800, 600]]}
+                    onMoveEnd={setVectorPos}
+                    filterZoomEvent={(e: any) => {
+                      if (e.type === "wheel") return true;
+                      return !e.button;
+                    }}
+                  >
+                    <Geographies geography={geoData}>
+                      {({ geographies }) =>
+                        geographies.map((geo) => {
+                          const id = parseInt(geo.properties.coun_dist);
+                          const activity = districtActivity[id] ?? 0;
+                          const isSelected = selectedDistrictId === id;
+                          return (
+                            <Geography
+                              key={geo.rsmKey}
+                              geography={geo}
+                              onMouseEnter={() => setHoveredDistrictId(id)}
+                              onMouseLeave={() => setHoveredDistrictId(null)}
+                              onClick={() => handleDistrictClick(id)}
+                              style={{
+                                default: {
+                                  fill: getColor(activity),
+                                  stroke: isSelected ? baseColor : "rgba(255,255,255,0.8)",
+                                  strokeWidth: isSelected ? 1.5 : 0.4,
+                                  outline: "none",
+                                  transition: "all 150ms ease",
+                                },
+                                hover: {
+                                  fill: isSelected ? getColor(activity) : `${baseColor}90`,
+                                  stroke: baseColor,
+                                  strokeWidth: 1.5,
+                                  outline: "none",
+                                  cursor: "pointer",
+                                },
+                                pressed: { fill: baseColor, outline: "none" },
+                              }}
+                            />
+                          );
+                        })
+                      }
+                    </Geographies>
+                  </ZoomableGroup>
+                </ComposableMap>
+              </div>
+            ) : (
+              <div className="relative w-full" style={{ height: MAP_HEIGHT }}>
+                <LeafletMapWrapper
+                  isDark={isDark}
+                  tileUrl={tileUrl}
+                  geoData={geoData}
+                  districtActivity={districtActivity}
+                  selectedDistrictId={selectedDistrictId}
+                  getColor={getColor}
+                  baseColor={baseColor}
+                  handleDistrictClick={handleDistrictClick}
+                  ref={geoJsonRef}
+                />
+              </div>
+            )}
 
-          {/* Activity legend */}
-          <div className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] shadow-sm pointer-events-none">
-            <span>Low</span>
-            <div className="flex h-1.5 w-14 rounded-full overflow-hidden">
-              <div className="h-full flex-1" style={{ background: `${baseColor}28` }} />
-              <div className="h-full flex-1" style={{ background: `${baseColor}58` }} />
-              <div className="h-full flex-1" style={{ background: `${baseColor}90` }} />
-              <div className="h-full flex-1" style={{ background: baseColor }} />
+            {/* legend */}
+            <div className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] shadow-sm pointer-events-none">
+              <span>Low</span>
+              <div className="flex h-1.5 w-14 rounded-full overflow-hidden">
+                <div className="h-full flex-1" style={{ background: `${baseColor}28` }} />
+                <div className="h-full flex-1" style={{ background: `${baseColor}58` }} />
+                <div className="h-full flex-1" style={{ background: `${baseColor}90` }} />
+                <div className="h-full flex-1" style={{ background: baseColor }} />
+              </div>
+              <span>High</span>
             </div>
-            <span>High activity</span>
+
+            {/* click hint when nothing selected */}
+            {!selectedDistrictId && (
+              <div className="absolute bottom-3 right-3 z-[1000] px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-medium text-[var(--muted)] shadow-sm pointer-events-none">
+                Click a district to inspect
+              </div>
+            )}
           </div>
 
-          {/* Click hint */}
-          {!selectedDistrictId && (
-            <div className="absolute bottom-3 right-3 z-[1000] px-2.5 py-1 rounded-full bg-white/92 dark:bg-[var(--surface-elevated)]/92 backdrop-blur-md border border-[var(--border)] text-[9px] font-medium text-[var(--muted)] shadow-sm pointer-events-none">
-              Click a district to inspect details & policies changed
+          {/* side popout panel */}
+          {selectedDistrictId && selectedFeature && (
+            <div
+              className="shrink-0 border-l border-[var(--border)] bg-white/98 dark:bg-[var(--surface-card)]/98 overflow-hidden"
+              style={{
+                width: 260,
+                height: MAP_HEIGHT,
+                animation: "slideInRight 0.22s ease-out",
+              }}
+            >
+              <DistrictPopout
+                districtId={selectedDistrictId}
+                feature={selectedFeature}
+                districtObj={selectedDistrictObj}
+                districtPolicies={districtPolicies}
+                activeArea={activeArea}
+                baseColor={baseColor}
+                onClose={() => setSelectedDistrictId(null)}
+                onSearch={onSearch}
+              />
             </div>
           )}
         </div>
 
-        {/* ── Bottom Panel: District Intel (appears below the map) ── */}
-        {showBottomPanel && selectedFeature && (
-          <div className="bg-white/80 dark:bg-[var(--surface-card)]/90 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-lg">
-
-            {/* Header row with close */}
-            <div className="flex justify-between items-center pb-3 mb-4 border-b border-slate-150 dark:border-slate-800">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
-                  {selectedFeature.properties?.boro_name || "NYC"}
-                </span>
-                <h3 className="font-limelight text-base font-black text-[rgba(20,31,45,0.92)] dark:text-white truncate">
-                  {selectedFeature.properties?.name || `District ${selectedDistrictId}`}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedDistrictId(null)}
-                className="h-6 w-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors shrink-0"
-                aria-label="Close panel"
-              >
-                <span className="text-lg leading-none">×</span>
-              </button>
-            </div>
-
-            {/* Compact content layout */}
-            <div className="flex flex-col gap-3">
-
-              {/* Top row: Profile & Metric */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-
-                {/* Col 1: Councilmember Profile */}
-                <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-elevated)] shadow-sm flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-600 shadow-md flex items-center justify-center text-xs font-black text-white shrink-0 ring-2 ring-white dark:ring-slate-700">
-                      {selectedDistrictObj?.rep ? selectedDistrictObj.rep.slice(0, 2).toUpperCase() : "CM"}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">District Representative</p>
-                      <p className="font-limelight text-sm font-black text-slate-800 dark:text-white truncate leading-tight">
-                        {selectedDistrictObj?.rep || "Council Member"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 dark:text-[var(--muted)] font-medium truncate mt-0.5">
-                        {selectedDistrictObj?.office || "City Council"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedDistrictObj?.political_stance && selectedDistrictObj.political_stance !== "N/A" && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 self-start">
-                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
-                      <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">
-                        Stance: {selectedDistrictObj.political_stance}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Direct Action Contacts */}
-                  {selectedDistrictObj && (selectedDistrictObj.email || selectedDistrictObj.phone || selectedDistrictObj.website) && (
-                    <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                      {selectedDistrictObj.phone && (
-                        <a
-                          href={`tel:${selectedDistrictObj.phone}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                          title={`Call ${selectedDistrictObj.rep}`}
-                        >
-                          <Phone className="h-3 w-3" /> Call
-                        </a>
-                      )}
-                      {selectedDistrictObj.email && (
-                        <a
-                          href={`mailto:${selectedDistrictObj.email}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                          title={`Email ${selectedDistrictObj.rep}`}
-                        >
-                          <Mail className="h-3 w-3" /> Email
-                        </a>
-                      )}
-                      {selectedDistrictObj.website && selectedDistrictObj.website !== "N/A" && (
-                        <a
-                          href={selectedDistrictObj.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors text-[10px] font-bold text-slate-600 dark:text-slate-300"
-                          title="Website"
-                        >
-                          <ExternalLink className="h-3 w-3" /> Web
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Col 2: Activity Metric + CTA */}
-                <div className="flex flex-col gap-3">
-                  <div className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col gap-2 flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Info className="h-3.5 w-3.5 shrink-0" style={{ color: baseColor }} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Activity Metric</span>
-                      </div>
-                      <span className="text-xs font-black text-slate-700 dark:text-slate-300">
-                        {districtPolicies.length} Active
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                      Recent policy changes regarding <strong style={{ color: baseColor }}>{activeArea.label}</strong>
-                    </p>
-                    {/* Glowing activity visual track */}
-                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1 relative">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          background: baseColor,
-                          width: `${Math.min(100, Math.max(10, districtPolicies.length * 15))}%`,
-                          boxShadow: `0 0 8px ${baseColor}`
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* CTA Button */}
-                  <button
-                    onClick={() => {
-                      const name = selectedFeature.properties?.name ?? `Council District ${selectedDistrictId}`;
-                      const borough = selectedFeature.properties?.boro_name ?? "";
-                      const areaStr = selectedArea !== "All" ? ` ${activeArea.label}` : "";
-                      onSearch?.(`${name} ${borough}${areaStr}`.trim());
-                    }}
-                    className="w-full py-3 rounded-2xl text-white font-extrabold text-xs shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                    style={{
-                      background: `linear-gradient(135deg, ${baseColor}, ${baseColor}dd)`,
-                      boxShadow: `0 4px 12px -2px ${baseColor}50`
-                    }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                    Get Briefing
-                  </button>
-                </div>
-
-                {/* Col 3: Recent Policy Changes */}
-                <div className="flex flex-col min-h-0 space-y-2">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recent Policy Changes</h4>
-                  <div className="overflow-y-auto pr-1 space-y-2 scrollbar-none max-h-[200px]">
-                    {districtPolicies.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center">
-                        <CheckCircle2 className="h-5 w-5 text-slate-300 dark:text-slate-700 mb-1" />
-                        <p className="text-[10px] font-bold text-slate-400">No recent activity recorded in this category.</p>
-                      </div>
-                    ) : (
-                      districtPolicies.map((policy, idx) => (
-                        <div
-                          key={policy.id || idx}
-                          className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-[var(--surface-card)] hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col gap-1"
-                        >
-                          <p className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight">
-                            {policy.title}
-                          </p>
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-300 font-bold uppercase tracking-wide">
-                              {policy.source_type || "Legislation"}
-                            </span>
-                            {policy.id && (
-                              <a
-                                href={`/representatives#${policy.id}`}
-                                className="text-[9px] font-bold inline-flex items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                              >
-                                Details <ExternalLink className="h-2 w-2" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
+        <style>{`
+          @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+        `}</style>
       </section>
     </MotionReveal>
   );
