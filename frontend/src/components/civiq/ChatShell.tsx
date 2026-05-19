@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { Header } from "@/components/civiq/Header";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
+import { CHAT_SHELL_SYSTEM_PROMPT } from "@/lib/prompts";
 import {
   sendOpenAiChat,
   type OpenAiChatMessage,
@@ -124,7 +125,7 @@ export function ChatShell() {
 
     try {
       const assistantReply = await sendOpenAiChat([
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: CHAT_SHELL_SYSTEM_PROMPT },
         ...nextMessages,
       ]);
 
@@ -171,11 +172,10 @@ export function ChatShell() {
                   .map((msg, idx) => (
                     <div
                       key={`${msg.role}-${idx}`}
-                      className={`max-w-[90%] min-w-0 rounded-xl px-4 py-3 text-sm leading-relaxed ${
-                        msg.role === "user"
-                          ? "ml-auto bg-[var(--accent)] text-white"
-                          : "bg-white/80 text-[var(--foreground)] [&_a]:text-[var(--accent)]"
-                      }`}
+                      className={`max-w-[90%] min-w-0 rounded-xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
+                        ? "ml-auto bg-[var(--accent)] text-white"
+                        : "bg-white/80 text-[var(--foreground)] [&_a]:text-[var(--accent)]"
+                        }`}
                     >
                       {msg.role === "user" ? (
                         msg.content
