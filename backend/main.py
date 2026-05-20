@@ -1,3 +1,10 @@
+"""
+/api/policies — restores borough + area filtering, maps council districts from ZIP codes
+/api/chat — passes richer profile context (issues, housing, demographics) to LLM
+district mapping uses zip_codes from District table to populate p.districts on PolicyDocument
+"""
+
+import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -42,6 +49,144 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 llm = LLMEngine()
+
+# basic keyword mappings from frontend area strings to keywords searched in title + source_type
+AREA_KEYWORDS: Dict[str, List[str]] = {
+    "Housing": ["housing", "rent", "tenant", "landlord", "hpd", "nycha", "zoning", "afford", "eviction", "dwelling"],
+    "Education": ["school", "education", "student", "teacher", "doe", "curriculum", "literacy", "college"],
+    "Policing": ["police", "nypd", "crime", "safety", "enforcement", "officer", "prison", "fire"],
+    "Transit": ["transit", "mta", "bus", "subway", "street", "traffic", "parking", "bike", "ferry", "dot"],
+    "Environment": ["environment", "climate", "green", "pollution", "emission", "waste", "park", "tree", "dep", "solar", "energy"],
+    "Health": ["health", "medical", "hospital", "covid", "care", "mental", "wellness", "dohmh", "medicaid"],
+    "Immigration": ["immigrant", "immigration", "visa", "asylum", "citizenship", "migrant"],
+    "Taxation": ["tax", "levy", "assessment", "exemption", "abatement", "revenue", "fiscal"],
+    "Labor": ["labor", "worker", "wage", "employment", "union", "job", "hire", "workplace"],
+    "Housing and Community Development": ["housing", "rent", "tenant", "landlord", "hpd", "nycha", "zoning", "afford"],
+    "Transportation and Public Works": ["transit", "mta", "bus", "subway", "street", "traffic", "dot"],
+    "Environmental Protection": ["environment", "climate", "green", "pollution", "dep"],
+    "Crime and Law Enforcement": ["police", "nypd", "crime", "safety", "enforcement"],
+    "Economics and Public Finance": ["budget", "economy", "finance", "spending", "bond", "fiscal"],
+    "Government Operations and Politics": ["council", "mayor", "agency", "government", "election"],
+    "Civil Rights and Liberties, Minority Issues": ["civil rights", "discrimination", "equity", "minority"],
+    "Science, Technology, Communications": ["tech", "digital", "data", "broadband", "cyber", "ai"],
+    "Social Welfare": ["welfare", "social service", "benefit", "snap", "medicaid", "voucher", "hra"],
+    "Families": ["famil", "child", "parent", "domestic", "foster", "elder", "senior", "youth"],
+    "Agriculture and Food": ["food", "agriculture", "farm", "restaurant", "nutrition", "grocery"],
+    "Energy": ["energy", "solar", "utility", "electric", "grid", "power", "fuel"],
+    "Arts, Culture, Religion": ["arts", "culture", "religion", "museum", "library", "heritage"],
+}
+
+# borough name normalization
+BOROUGH_ALIASES: Dict[str, str] = {
+    "manhattan": "Manhattan",
+    "brooklyn": "Brooklyn",
+    "queens": "Queens",
+    "bronx": "Bronx",
+    "the bronx": "Bronx",
+    "staten island": "Staten Island",
+    "si": "Staten Island",
+    "bk": "Brooklyn",
+    "bx": "Bronx",
+    "qns": "Queens",
+    "mn": "Manhattan",
+}
+
+def normalize_borough(raw: Optional[str]) -> Optional[str]:
+    if not raw:
+        return None
+    return BOROUGH_ALIASES.get(raw.strip().lower(), raw.strip())
+
+
+# district ZIP cache (loaded once per process)
+_district_zip_cache: Optional[Dict[str, List[int]]] = None  # zip -> [district_ids]
+_district_borough_cache: Optional[Dict[int, str]] = None    # district_id -> borough
+
+
+def _load_district_caches(session: Session) -> None:
+    global _district_zip_cache, _district_borough_cache
+    if _district_zip_cache is not None:
+        return
+    _district_zip_cache = {}
+    _district_borough_cache = {}
+    try:
+        districts = session.exec(
+            select(District).where(District.jurisdiction == "NYC Council")
+        ).all()
+        for d in districts:
+            if not d.district_number or not d.district_number.isdigit():
+                continue
+            did = int(d.district_number)
+            if d.borough:
+                _district_borough_cache[did] = d.borough
+            for z in (d.zip_codes or []):
+                if z:
+                    _district_zip_cache.setdefault(z, []).append(did)
+    except Exception as e:
+        logger.warning("District cache load failed: %s", e)
+
+
+def zip_to_district_ids(session: Session, zip_code: str) -> List[int]:
+    _load_district_caches(session)
+    return (_district_zip_cache or {}).get(zip_code.strip(), [])
+
+
+def borough_to_district_ids(session: Session, borough: str) -> List[int]:
+    _load_district_caches(session)
+    normed = normalize_borough(borough)
+    return [
+        did for did, boro in (_district_borough_cache or {}).items()
+        if boro == normed
+    ]
+
+
+def doc_to_district_ids(session: Session, doc: PolicyDocument) -> List[int]:
+    """
+    Infer council district IDs for a PolicyDocument by cross-referencing
+    ZIP codes and borough found in its metadata_tags.
+    Returns [] if nothing can be inferred (not an error — just unmapped).
+    """
+    meta = doc.metadata_tags or {}
+    ids: Set[int] = set()
+
+    # try explicit district fields first
+    for key in ("council_district", "council_districts", "districts", "district"):
+        val = meta.get(key)
+        if val is None:
+            continue
+        if isinstance(val, int):
+            ids.add(val)
+        elif isinstance(val, list):
+            for v in val:
+                try:
+                    ids.add(int(v))
+                except (TypeError, ValueError):
+                    pass
+        elif isinstance(val, str):
+            for part in re.split(r"[,\s]+", val):
+                try:
+                    ids.add(int(part.strip()))
+                except (TypeError, ValueError):
+                    pass
+
+    if ids:
+        return sorted(ids)
+
+    # derive from zip
+    for key in ("zip", "zip_code", "zipcode", "postal_code"):
+        z = str(meta.get(key) or "").strip()
+        if z and z.isdigit() and len(z) == 5:
+            ids.update(zip_to_district_ids(session, z))
+
+    if ids:
+        return sorted(ids)
+
+    # derive from borough (broader — many districts per borough)
+    borough = str(meta.get("borough") or "").strip()
+    if borough:
+        ids.update(borough_to_district_ids(session, borough))
+
+    return sorted(ids)
+
 
 
 class ChatMessagePayload(BaseModel):
@@ -542,17 +687,64 @@ def filter_key_numbers_to_context(reply: Dict, context_chunks: List[Dict]) -> No
     reply["key_numbers"] = kept
 
 
+# build demographics string for the LLM
+def build_profile_context(demographics: Dict[str, Optional[str]]) -> str:
+    """
+    Convert the flat demographics dict the frontend sends into a plain-English
+    paragraph the LLM can use to personalize its response.
+
+    Frontend sends keys like: borough, zip, issue_area, timeframe,
+    location_scope, profile_active, housing, issues (comma-separated),
+    demographics (comma-separated tags like 'renter,senior').
+    """
+    if not demographics:
+        return "(no profile information provided)"
+
+    parts: List[str] = []
+
+    borough = (demographics.get("borough") or "").strip()
+    zip_code = (demographics.get("zip") or "").strip()
+    if borough and zip_code:
+        parts.append(f"The user lives in **{borough}** (ZIP {zip_code}).")
+    elif borough:
+        parts.append(f"The user lives in **{borough}**.")
+    elif zip_code:
+        parts.append(f"The user's ZIP code is **{zip_code}**.")
+
+    housing = (demographics.get("housing") or "").strip()
+    if housing:
+        parts.append(f"Housing situation: **{housing}**.")
+
+    issues_raw = (demographics.get("issues") or demographics.get("issue_area") or "").strip()
+    if issues_raw:
+        issue_list = [i.strip() for i in issues_raw.split(",") if i.strip()]
+        if issue_list:
+            parts.append(f"Policy interests: **{', '.join(issue_list)}**.")
+
+    demo_tags = (demographics.get("demographics") or "").strip()
+    if demo_tags:
+        tags = [t.strip() for t in demo_tags.split(",") if t.strip()]
+        if tags:
+            parts.append(f"User describes themselves as: **{', '.join(tags)}**.")
+
+    profile_active = (demographics.get("profile_active") or "").strip().lower()
+    if profile_active == "true":
+        parts.append("The user has a personalized profile active — tailor implications to their specific situation.")
+    else:
+        parts.append("Showing city-wide generalized view.")
+
+    timeframe = (demographics.get("timeframe") or "").strip()
+    if timeframe and timeframe != "All Time":
+        parts.append(f"Timeframe filter: {timeframe}.")
+
+    return " ".join(parts) if parts else "(no profile information provided)"
+
+
+
+
 @app.post("/api/chat")
 @limiter.limit("10/minute")
 async def chat_endpoint(request: Request, payload: ChatRequest):
-    """
-    Core RAG endpoint.
-    1. Runs pgvector similarity search against Neon.
-    2. Sends context + demographics + query to LLM.
-
-    Optional `messages` (user/assistant turns) enables multi-turn; optional
-    `session_preamble` is merged into the system prompt for plain responses.
-    """
     msg_list = _normalize_chat_messages(payload.messages)
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
@@ -561,9 +753,13 @@ async def chat_endpoint(request: Request, payload: ChatRequest):
         )
 
     retrieval_q = _retrieval_query_from_request(payload)
+
+    # enrich demographics with any issue_area from the query context
+    enriched_demo = dict(payload.demographics or {})
+
     try:
         context_chunks, retrieval_tier = get_db_context(
-            retrieval_q, demographics=payload.demographics
+            retrieval_q, demographics=enriched_demo
         )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
@@ -575,11 +771,15 @@ async def chat_endpoint(request: Request, payload: ChatRequest):
         len(msg_list) if msg_list else 0,
     )
 
+    profile_context = build_profile_context(enriched_demo)
+    enriched_demo["_profile_context"] = profile_context
+
     style = (payload.response_style or "structured").strip().lower()
     preamble = (payload.session_preamble or "").strip() or None
+
     response = llm.generate_response(
         query=payload.query,
-        demographics=payload.demographics,
+        demographics=enriched_demo,
         context_chunks=context_chunks,
         response_style=style,
         messages=msg_list,
@@ -640,19 +840,14 @@ async def get_records_metrics():
                 next_month_start = datetime(now_utc.year, now_utc.month + 1, 1, tzinfo=timezone.utc)
             new_records_this_month = session.exec(
                 select(func.count(PolicyDocument.id))
-                .where(
-                    or_(
-                        (
-                            (PolicyDocument.scraped_at >= month_start)
-                            & (PolicyDocument.scraped_at < next_month_start)
-                        ),
-                        (
-                            (PolicyDocument.published_date.is_not(None))
-                            & (PolicyDocument.published_date >= month_start)
-                            & (PolicyDocument.published_date < next_month_start)
-                        ),
-                    )
-                )
+                .where(or_(
+                    ((PolicyDocument.scraped_at >= month_start) & (PolicyDocument.scraped_at < next_month_start)),
+                    (
+                        (PolicyDocument.published_date.is_not(None))
+                        & (PolicyDocument.published_date >= month_start)
+                        & (PolicyDocument.published_date < next_month_start)
+                    ),
+                ))
             ).one()
 
         return {
@@ -674,12 +869,9 @@ async def get_politicians(
 ):
     def infer_stance(party: Optional[str]) -> str:
         normalized = (party or "").strip().lower()
-        if normalized in {"democrat", "working families"}:
-            return "Progressive"
-        if normalized in {"republican", "conservative"}:
-            return "Conservative"
-        if normalized in {"independent", "no party"}:
-            return "Independent"
+        if normalized in {"democrat", "working families"}: return "Progressive"
+        if normalized in {"republican", "conservative"}: return "Conservative"
+        if normalized in {"independent", "no party"}: return "Independent"
         return "Moderate"
 
     # Map politician role -> District.jurisdiction so we can join geography in.
@@ -692,15 +884,7 @@ async def get_politicians(
 
     try:
         with Session(engine) as session:
-            selected_cols = [
-                "id",
-                "full_name",
-                "party",
-                "role",
-                "location_borough",
-                "district_number",
-                "bio_url",
-            ]
+            selected_cols = ["id", "full_name", "party", "role", "location_borough", "district_number", "bio_url"]
             query = select(*[getattr(Politician, c) for c in selected_cols])
             normalized_borough = (borough or "").strip().lower()
             normalized_stance = (stance or "").strip().lower()
@@ -728,37 +912,20 @@ async def get_politicians(
                     if (row.get("district_number") and jurisdiction)
                     else None
                 )
-
-                payload.append(
-                    {
-                        "id": row.get("id"),
-                        "name": row.get("full_name"),
-                        "office": row.get("role") or "Representative",
-                        "borough": row.get("location_borough") or "Unknown",
-                        "district": row.get("district_number"),
-                        "party": row.get("party") or "Unknown",
-                        "political_stance": computed_stance,
-                        "bio_url": row.get("bio_url"),
-                        "zip_codes": district.zip_codes if district else [],
-                        "neighborhoods": district.neighborhoods if district else [],
-                        "data_source": "live_database",
-                    }
-                )
-
-            return {
-                "politicians": payload,
-                "available_fields": [
-                    "name",
-                    "office",
-                    "borough",
-                    "district",
-                    "party",
-                    "political_stance",
-                    "bio_url",
-                    "zip_codes",
-                    "neighborhoods",
-                ],
-            }
+                payload.append({
+                    "id": row.get("id"),
+                    "name": row.get("full_name"),
+                    "office": row.get("role") or "Representative",
+                    "borough": row.get("location_borough") or "Unknown",
+                    "district": row.get("district_number"),
+                    "party": row.get("party") or "Unknown",
+                    "political_stance": computed_stance,
+                    "bio_url": row.get("bio_url"),
+                    "zip_codes": district.zip_codes if district else [],
+                    "neighborhoods": district.neighborhoods if district else [],
+                    "data_source": "live_database",
+                })
+            return {"politicians": payload, "available_fields": ["name","office","borough","district","party","political_stance","bio_url","zip_codes","neighborhoods"]}
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Unable to load politicians: {e}")
 
@@ -767,28 +934,72 @@ async def get_politicians(
 async def get_recent_policies(
     borough: Optional[str] = None,
     area: Optional[str] = None,
-    limit: int = 10
+    limit: int = 20,
 ):
+    """
+    Returns recent PolicyDocuments with:
+    - Borough filtering (matches metadata_tags.borough or title/source_type keywords)
+    - Area/issue filtering (keyword match on title + source_type)
+    - District IDs inferred from metadata ZIP/borough fields
+
+    Previously this had filtering commented out. Now restored.
+    """
     try:
         with Session(engine) as session:
+            # pre-load district caches for ZIP->district mapping
+            _load_district_caches(session)
+
             statement = select(PolicyDocument).order_by(PolicyDocument.published_date.desc())
-            
-            # Temporary: remove filtering to isolate the connection issue
-            results = session.exec(statement.limit(limit)).all()
-            
-            return {
-                "policies": [
-                    {
-                        "id": p.id,
-                        "title": p.title,
-                        "source_url": p.source_url,
-                        "source_type": p.source_type,
-                        "published_date": p.published_date.isoformat() if p.published_date else None,
-                        "metadata": p.metadata_tags
-                    }
-                    for p in results
-                ]
-            }
+
+            # borough filter
+            normed_borough = normalize_borough(borough)
+            if normed_borough:
+                statement = statement.where(
+                    or_(
+                        func.lower(
+                            func.cast(PolicyDocument.metadata_tags["borough"].astext, type_=func.String)
+                        ) == normed_borough.lower(),
+                        PolicyDocument.title.ilike(f"%{normed_borough}%"),
+                    )
+                )
+
+            results = session.exec(statement.limit(limit * 3)).all()  # fetch more, then filter+trim
+
+            # area keyword filtering in Python (more flexible than SQL ILIKE on JSON)
+            area_keywords = AREA_KEYWORDS.get(area or "", []) if area and area != "All" else []
+
+            filtered = []
+            for p in results:
+                if area_keywords:
+                    searchable = f"{p.title or ''} {p.source_type or ''}".lower()
+                    meta = p.metadata_tags or {}
+                    searchable += " " + " ".join(str(v) for v in meta.values() if isinstance(v, str)).lower()
+                    if not any(kw in searchable for kw in area_keywords):
+                        continue
+
+                # infer district IDs
+                district_ids = doc_to_district_ids(session, p)
+
+                meta = p.metadata_tags or {}
+                filtered.append({
+                    "id": str(p.id),
+                    "title": p.title or "Untitled Record",
+                    "source_url": p.source_url or "#",
+                    "source_type": p.source_type or "Record",
+                    "published_date": p.published_date.isoformat() if p.published_date else None,
+                    "impact": meta.get("impact") or meta.get("summary") or "",
+                    "affects": meta.get("affects") or meta.get("affected_groups") or "",
+                    "topic_tags": meta.get("tags") or meta.get("topic_tags") or [],
+                    # districts populated from ZIP/borough inference
+                    "districts": district_ids,
+                    "zips": meta.get("zip_codes") or meta.get("zips") or [],
+                })
+
+                if len(filtered) >= limit:
+                    break
+
+            return {"policies": filtered}
+
     except Exception as e:
         logger.error(f"Error fetching recent policies: {e}")
         return {"policies": [], "error": str(e)}
@@ -798,33 +1009,20 @@ async def get_recent_policies(
 async def get_politician_filters():
     def infer_stance(party: Optional[str]) -> str:
         normalized = (party or "").strip().lower()
-        if normalized in {"democrat", "working families"}:
-            return "Progressive"
-        if normalized in {"republican", "conservative"}:
-            return "Conservative"
-        if normalized in {"independent", "no party"}:
-            return "Independent"
+        if normalized in {"democrat", "working families"}: return "Progressive"
+        if normalized in {"republican", "conservative"}: return "Conservative"
+        if normalized in {"independent", "no party"}: return "Independent"
         return "Moderate"
 
     try:
         with Session(engine) as session:
-            rows = session.exec(
-                select(Politician.location_borough, Politician.party)
-            ).all()
-            boroughs = sorted(
-                {
-                    location_borough.strip()
-                    for location_borough, _party in rows
-                    if location_borough and location_borough.strip()
-                }
-            )
-            stances = sorted({infer_stance(party) for _location_borough, party in rows})
-            return {
-                "boroughs": boroughs,
-                "stances": stances,
-            }
+            rows = session.exec(select(Politician.location_borough, Politician.party)).all()
+            boroughs = sorted({b.strip() for b, _ in rows if b and b.strip()})
+            stances = sorted({infer_stance(p) for _, p in rows})
+            return {"boroughs": boroughs, "stances": stances}
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Unable to load politician filters: {e}")
+
 
 @app.get("/districts")
 async def get_districts():
@@ -841,9 +1039,7 @@ async def get_districts():
                 ).where(Politician.role == "Council Member")
             ).all()
             rep_by_district = {
-                district_number: (full_name, location_borough)
-                for full_name, location_borough, district_number in reps
-                if district_number
+                dn: (fn, lb) for fn, lb, dn in reps if dn
             }
 
             out: List[Dict] = []
