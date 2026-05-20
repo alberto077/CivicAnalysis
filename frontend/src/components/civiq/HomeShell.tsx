@@ -107,7 +107,7 @@ function PerspectiveToggle({
           <span role="tooltip"
             className="pointer-events-none invisible absolute left-1/2 bottom-full z-[80] mb-2 w-52 -translate-x-1/2 rounded-xl border border-[var(--border)] bg-white/98 dark:bg-[var(--surface-card)]/98 px-3 py-2 text-[10px] leading-relaxed text-[var(--foreground)] shadow-lg opacity-0 transition-[opacity,visibility] duration-150 group-hover:visible group-hover:opacity-100">
             <strong>For Me</strong> filters by your saved profile.{" "}
-            <strong>City-wide</strong> shows all records.
+            <strong>Everyone</strong> shows all records.
           </span>
         </div>
       </div>
@@ -119,7 +119,7 @@ function PerspectiveToggle({
           </button>
           <button type="button" onClick={() => setIsPersonalized(false)}
             className={`flex flex-1 items-center justify-center gap-1 px-2 rounded-md text-[10px] font-bold transition-all h-full ${!isPersonalized ? "bg-white dark:bg-[var(--surface-card)] text-[var(--foreground)] shadow-sm border border-[var(--border)]/10" : "text-[var(--muted)] hover:text-[var(--foreground)]"}`}>
-            <Users className="h-2.5 w-2.5 shrink-0" />City-wide
+            <Users className="h-2.5 w-2.5 shrink-0" />Everyone
           </button>
         </div>
         <button type="button" onClick={onEditProfile}

@@ -153,7 +153,7 @@ export function ProfileActivitySection({
     <MotionReveal>
       <section>
         <SectionHeader
-          eyebrow={mode === "personalized" ? "Personalized" : mode === "citywide" ? "City-wide" : "Activity"}
+          eyebrow={mode === "personalized" ? "Personalized" : mode === "everyone" ? "Everyone" : "Activity"}
           title="Your Civic Feed"
           badge={contextLabel || undefined}
         />
