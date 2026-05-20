@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { getRecentPolicies, type PolicyBriefing } from "@/lib/api";
 import type { CivicProfile } from "@/lib/useProfile";
-import { filterPoliciesByTimeframe } from "@/lib/generalized-briefing";
 
-/** Match `HomeShell` / `handleSearch` borough resolution for `getRecentPolicies`. */
 export function effectiveBoroughForPolicies(
   selectedLocation: string,
   isPersonalized: boolean,
@@ -14,6 +12,14 @@ export function effectiveBoroughForPolicies(
   if (selectedLocation !== "All NYC") return selectedLocation;
   if (isPersonalized && profile?.borough) return profile.borough;
   return undefined;
+}
+
+function timeframeToDays(selectedTime: string): number | undefined {
+  if (selectedTime === "Last 30 Days") return 30;
+  if (selectedTime === "Last 6 Months") return 180;
+  if (selectedTime === "Last 90 Days") return 90;
+  if (selectedTime === "Last Year") return 365;
+  return undefined; // "All Time"
 }
 
 export function useRecentPoliciesSnapshot(
@@ -40,10 +46,11 @@ export function useRecentPoliciesSnapshot(
       try {
         const borough = effectiveBoroughForPolicies(selectedLocation, isPersonalized, profile);
         const area = selectedArea !== "All" ? selectedArea : undefined;
-        const data = await getRecentPolicies(borough, area);
+        const days = timeframeToDays(selectedTime);
+
+        const data = await getRecentPolicies(borough, area, days);
         if (cancelled) return;
-        const filtered = filterPoliciesByTimeframe(data.policies, selectedTime);
-        setPolicies(filtered);
+        setPolicies(data.policies);
       } catch (e) {
         if (cancelled) return;
         setPolicies([]);
@@ -58,7 +65,5 @@ export function useRecentPoliciesSnapshot(
     };
   }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile, isProfileLoaded]);
 
-  const snapshotLoading = !isProfileLoaded || loading;
-
-  return { policies, snapshotLoading, snapshotError: error };
+  return { policies, snapshotLoading: !isProfileLoaded || loading, snapshotError: error };
 }

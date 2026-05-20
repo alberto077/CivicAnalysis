@@ -1,10 +1,5 @@
-"""
-/api/policies — restores borough + area filtering, maps council districts from ZIP codes
-/api/chat — passes richer profile context (issues, housing, demographics) to LLM
-district mapping uses zip_codes from District table to populate p.districts on PolicyDocument
-"""
-
 import os
+import re
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,8 +9,7 @@ from slowapi.util import get_remote_address
 from typing import Dict, List, Optional, Set, Tuple
 import logging
 import math
-import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
@@ -35,7 +29,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://civic-spiegel.vercel.app",
-        "http://localhost:3000"
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -49,32 +43,6 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 llm = LLMEngine()
-
-# basic keyword mappings from frontend area strings to keywords searched in title + source_type
-AREA_KEYWORDS: Dict[str, List[str]] = {
-    "Housing": ["housing", "rent", "tenant", "landlord", "hpd", "nycha", "zoning", "afford", "eviction", "dwelling"],
-    "Education": ["school", "education", "student", "teacher", "doe", "curriculum", "literacy", "college"],
-    "Policing": ["police", "nypd", "crime", "safety", "enforcement", "officer", "prison", "fire"],
-    "Transit": ["transit", "mta", "bus", "subway", "street", "traffic", "parking", "bike", "ferry", "dot"],
-    "Environment": ["environment", "climate", "green", "pollution", "emission", "waste", "park", "tree", "dep", "solar", "energy"],
-    "Health": ["health", "medical", "hospital", "covid", "care", "mental", "wellness", "dohmh", "medicaid"],
-    "Immigration": ["immigrant", "immigration", "visa", "asylum", "citizenship", "migrant"],
-    "Taxation": ["tax", "levy", "assessment", "exemption", "abatement", "revenue", "fiscal"],
-    "Labor": ["labor", "worker", "wage", "employment", "union", "job", "hire", "workplace"],
-    "Housing and Community Development": ["housing", "rent", "tenant", "landlord", "hpd", "nycha", "zoning", "afford"],
-    "Transportation and Public Works": ["transit", "mta", "bus", "subway", "street", "traffic", "dot"],
-    "Environmental Protection": ["environment", "climate", "green", "pollution", "dep"],
-    "Crime and Law Enforcement": ["police", "nypd", "crime", "safety", "enforcement"],
-    "Economics and Public Finance": ["budget", "economy", "finance", "spending", "bond", "fiscal"],
-    "Government Operations and Politics": ["council", "mayor", "agency", "government", "election"],
-    "Civil Rights and Liberties, Minority Issues": ["civil rights", "discrimination", "equity", "minority"],
-    "Science, Technology, Communications": ["tech", "digital", "data", "broadband", "cyber", "ai"],
-    "Social Welfare": ["welfare", "social service", "benefit", "snap", "medicaid", "voucher", "hra"],
-    "Families": ["famil", "child", "parent", "domestic", "foster", "elder", "senior", "youth"],
-    "Agriculture and Food": ["food", "agriculture", "farm", "restaurant", "nutrition", "grocery"],
-    "Energy": ["energy", "solar", "utility", "electric", "grid", "power", "fuel"],
-    "Arts, Culture, Religion": ["arts", "culture", "religion", "museum", "library", "heritage"],
-}
 
 # borough name normalization
 BOROUGH_ALIASES: Dict[str, str] = {
@@ -91,23 +59,87 @@ BOROUGH_ALIASES: Dict[str, str] = {
     "mn": "Manhattan",
 }
 
+# legistar district number patterns
+_DISTRICT_RE = re.compile(
+    r"\b(?:council\s+district|district|cd)\s*(\d{1,2})\b", re.I
+)
+
+# borough name pattern
+_BOROUGH_RE = re.compile(
+    r"\b(manhattan|brooklyn|queens|the\s+bronx|bronx|staten\s+island)\b", re.I
+)
+
+# nyc council url patterns
+_LEGISTAR_RE = re.compile(r"legistar\.council\.nyc\.gov", re.I)
+_COUNCIL_RE = re.compile(r"council\.nyc\.gov", re.I)
+_NYCC_RE = re.compile(r"nycc|nyc\s*council|new\s*york\s*city\s*council", re.I)
+
+
 def normalize_borough(raw: Optional[str]) -> Optional[str]:
     if not raw:
         return None
-    return BOROUGH_ALIASES.get(raw.strip().lower(), raw.strip())
+    cleaned = raw.strip().lower()
+    return BOROUGH_ALIASES.get(cleaned, raw.strip())
+
+# area keyword map
+AREA_KEYWORDS: Dict[str, List[str]] = {
+    "Housing": ["housing", "rent", "tenant", "landlord", "hpd", "nycha", "zoning",
+                "afford", "eviction", "dwelling", "lease", "stabiliz"],
+    "Education": ["school", "education", "student", "teacher", "doe", "curriculum",
+                  "literacy", "college", "chancellor", "classroom"],
+    "Policing": ["police", "nypd", "crime", "safety", "enforcement", "officer",
+                 "prison", "jail", "fire", "ems", "correctional"],
+    "Transit": ["transit", "mta", "bus", "subway", "train", "street", "traffic",
+                "parking", "bike", "ferry", "dot", "commut", "crosswalk"],
+    "Environment": ["environment", "climate", "green", "pollution", "emission",
+                    "waste", "park", "tree", "dep", "solar", "energy", "carbon"],
+    "Health": ["health", "medical", "hospital", "covid", "care", "mental",
+               "wellness", "dohmh", "medicaid", "vaccine", "clinic", "opioid"],
+    "Immigration": ["immigrant", "immigration", "visa", "asylum", "citizenship",
+                    "migrant", "undocumented", "dhs", "ice"],
+    "Taxation": ["tax", "levy", "assessment", "exemption", "abatement", "revenue",
+                 "fiscal", "property tax"],
+    "Labor": ["labor", "worker", "wage", "employment", "union", "job", "hire",
+              "workplace", "minimum wage", "overtime"],
+    "Housing and Community Development": ["housing", "rent", "tenant", "landlord",
+                                          "hpd", "nycha", "zoning", "afford"],
+    "Transportation and Public Works": ["transit", "mta", "bus", "subway", "street",
+                                         "traffic", "dot"],
+    "Environmental Protection": ["environment", "climate", "green", "pollution", "dep"],
+    "Crime and Law Enforcement": ["police", "nypd", "crime", "safety", "enforcement"],
+    "Economics and Public Finance": ["budget", "economy", "finance", "spending",
+                                      "bond", "fiscal", "comptroller"],
+    "Government Operations and Politics": ["council", "mayor", "agency",
+                                            "government", "election", "hearing"],
+    "Civil Rights and Liberties, Minority Issues": ["civil rights", "discrimination",
+                                                     "equity", "minority", "bias"],
+    "Science, Technology, Communications": ["tech", "digital", "data", "broadband",
+                                             "cyber", "ai", "internet"],
+    "Social Welfare": ["welfare", "social service", "benefit", "snap", "medicaid",
+                       "voucher", "hra", "cash assist"],
+    "Families": ["famil", "child", "parent", "domestic", "foster", "elder",
+                 "senior", "youth", "acs", "aging"],
+    "Agriculture and Food": ["food", "agriculture", "farm", "restaurant",
+                              "nutrition", "grocery", "food bank"],
+    "Energy": ["energy", "solar", "utility", "electric", "grid", "power", "fuel",
+               "con ed", "coned"],
+    "Arts, Culture, Religion": ["arts", "culture", "religion", "museum",
+                                 "library", "heritage", "festival"],
+}
+
+# title/url based location inference
+_borough_to_dids: Optional[Dict[str, List[int]]] = None
+_zip_to_dids: Optional[Dict[str, List[int]]] = None
+_all_district_ids: Optional[List[int]] = None
 
 
-# district ZIP cache (loaded once per process)
-_district_zip_cache: Optional[Dict[str, List[int]]] = None  # zip -> [district_ids]
-_district_borough_cache: Optional[Dict[int, str]] = None    # district_id -> borough
-
-
-def _load_district_caches(session: Session) -> None:
-    global _district_zip_cache, _district_borough_cache
-    if _district_zip_cache is not None:
+def _ensure_district_cache(session: Session) -> None:
+    global _borough_to_dids, _zip_to_dids, _all_district_ids
+    if _borough_to_dids is not None:
         return
-    _district_zip_cache = {}
-    _district_borough_cache = {}
+    _borough_to_dids = {}
+    _zip_to_dids = {}
+    _all_district_ids = []
     try:
         districts = session.exec(
             select(District).where(District.jurisdiction == "NYC Council")
@@ -116,39 +148,50 @@ def _load_district_caches(session: Session) -> None:
             if not d.district_number or not d.district_number.isdigit():
                 continue
             did = int(d.district_number)
+            _all_district_ids.append(did)
             if d.borough:
-                _district_borough_cache[did] = d.borough
+                _borough_to_dids.setdefault(d.borough, []).append(did)
             for z in (d.zip_codes or []):
                 if z:
-                    _district_zip_cache.setdefault(z, []).append(did)
+                    _zip_to_dids.setdefault(z.strip(), []).append(did)
+        logger.info(
+            "District cache loaded: %d districts, %d boroughs, %d ZIPs",
+            len(_all_district_ids),
+            len(_borough_to_dids),
+            len(_zip_to_dids),
+        )
     except Exception as e:
         logger.warning("District cache load failed: %s", e)
 
 
-def zip_to_district_ids(session: Session, zip_code: str) -> List[int]:
-    _load_district_caches(session)
-    return (_district_zip_cache or {}).get(zip_code.strip(), [])
-
-
-def borough_to_district_ids(session: Session, borough: str) -> List[int]:
-    _load_district_caches(session)
-    normed = normalize_borough(borough)
-    return [
-        did for did, boro in (_district_borough_cache or {}).items()
-        if boro == normed
-    ]
-
-
-def doc_to_district_ids(session: Session, doc: PolicyDocument) -> List[int]:
+def infer_districts_from_text(
+    session: Session,
+    title: str,
+    source_url: str,
+    meta: Dict,
+) -> List[int]:
     """
-    Infer council district IDs for a PolicyDocument by cross-referencing
-    ZIP codes and borough found in its metadata_tags.
-    Returns [] if nothing can be inferred (not an error — just unmapped).
+    Infer council district IDs for a PolicyDocument using all available signals,
+    since metadata_tags is unstructured and usually empty of location data.
+
+    Priority order:
+    1. Explicit district fields in metadata_tags
+    2. ZIP code in metadata_tags → District.zip_codes lookup
+    3. District number in title text ("District 5", "CD-12")
+    4. Borough in title text → all districts in that borough
+    5. NYC-wide source (legistar, council.nyc.gov) → all 51 districts
+    6. Nothing found → []
+
+    Note: levels 4 and 5 assign many districts, which means the heatmap
+    shows uniform color for city-wide docs. This is correct behavior —
+    a city-wide bill affects all districts equally.
     """
-    meta = doc.metadata_tags or {}
+    _ensure_district_cache(session)
+
     ids: Set[int] = set()
+    searchable = f"{title or ''} {source_url or ''}".lower()
 
-    # try explicit district fields first
+    # try explicit district in metadata fields first
     for key in ("council_district", "council_districts", "districts", "district"):
         val = meta.get(key)
         if val is None:
@@ -171,21 +214,48 @@ def doc_to_district_ids(session: Session, doc: PolicyDocument) -> List[int]:
     if ids:
         return sorted(ids)
 
-    # derive from zip
+    # zip in metadata
     for key in ("zip", "zip_code", "zipcode", "postal_code"):
         z = str(meta.get(key) or "").strip()
         if z and z.isdigit() and len(z) == 5:
-            ids.update(zip_to_district_ids(session, z))
-
+            ids.update((_zip_to_dids or {}).get(z, []))
     if ids:
         return sorted(ids)
 
-    # derive from borough (broader — many districts per borough)
-    borough = str(meta.get("borough") or "").strip()
-    if borough:
-        ids.update(borough_to_district_ids(session, borough))
+    # district number mentioned in title
+    m = _DISTRICT_RE.search(title or "")
+    if m:
+        try:
+            did = int(m.group(1))
+            if 1 <= did <= 51:
+                ids.add(did)
+        except ValueError:
+            pass
+    if ids:
+        return sorted(ids)
 
-    return sorted(ids)
+    # borough mentioned in title
+    bm = _BOROUGH_RE.search(title or "")
+    if bm:
+        raw_boro = bm.group(1).replace("the ", "").strip().title()
+        normed = normalize_borough(raw_boro)
+        if normed and _borough_to_dids:
+            ids.update(_borough_to_dids.get(normed, []))
+    if ids:
+        return sorted(ids)
+
+    # nyc-wide source → assign all 51 council districts
+    if _LEGISTAR_RE.search(source_url or "") or _COUNCIL_RE.search(source_url or ""):
+        return sorted(_all_district_ids or [])
+
+    # source type hints city-wide nyc content
+    source_type_lower = str(meta.get("source_type") or "").lower()
+    if any(kw in source_type_lower for kw in ("nycc", "nyc legislation", "nyc council",
+                                               "legistar", "transcript", "hearing")):
+        return sorted(_all_district_ids or [])
+
+    return []
+
 
 
 
@@ -311,9 +381,7 @@ def _retrieval_query_from_request(request: ChatRequest) -> str:
 
 
 def _has_meaningful_text(value: Optional[str]) -> bool:
-    if not value:
-        return False
-    return bool(value.strip())
+    return bool(value and value.strip())
 
 
 def _expand_chunk_window(
@@ -353,7 +421,7 @@ def _expand_chunk_window(
 
 def _map_context(session: Session, results, top_k: int) -> List[Dict]:
     context: List[Dict] = []
-    seen_chunk_keys = set()
+    seen_chunk_keys: Set[Tuple] = set()
     for chunk, doc in results:
         key = (chunk.document_id, chunk.chunk_index)
         if key in seen_chunk_keys:
@@ -363,16 +431,14 @@ def _map_context(session: Session, results, top_k: int) -> List[Dict]:
         text, span_start, span_end = _expand_chunk_window(session, chunk, window_size=1)
         if not _has_meaningful_text(text):
             continue
-        context.append(
-            {
-                "title": doc.title,
-                "text_content": text,
-                "source_type": doc.source_type,
-                "source_url": doc.source_url,
-                "published_date": doc.published_date.isoformat() if doc.published_date else None,
-                "context_span": f"{span_start}-{span_end}",
-            }
-        )
+        context.append({
+            "title": doc.title,
+            "text_content": text,
+            "source_type": doc.source_type,
+            "source_url": doc.source_url,
+            "published_date": doc.published_date.isoformat() if doc.published_date else None,
+            "context_span": f"{span_start}-{span_end}",
+        })
         if len(context) >= top_k:
             break
     return context
@@ -409,11 +475,10 @@ def get_db_context(
                 location_terms = _expand_location_terms_with_zip(
                     session, location_terms, (demographics or {}).get("zip")
                 )
-                if location_terms:
-                    embed_query = f"{normalized_query} {' '.join(location_terms)}".strip()
-                    logger.info("Retrieval augmented terms=%s", len(location_terms))
-                else:
-                    embed_query = normalized_query
+                embed_query = (
+                    f"{normalized_query} {' '.join(location_terms)}".strip()
+                    if location_terms else normalized_query
+                )
 
                 query_embedding = get_query_embedding(embed_query)
                 embedding_dim = len(query_embedding) if isinstance(query_embedding, list) else 0
@@ -513,11 +578,7 @@ def get_db_context(
                 logger.warning("Final context is empty after all retrieval steps")
                 return [], "none"
         except OperationalError as e:
-            logger.warning(
-                "RAG database OperationalError (attempt %s): %s",
-                _attempt + 1,
-                e,
-            )
+            logger.warning("RAG database OperationalError (attempt %s): %s", _attempt + 1, e)
             if _attempt == 1:
                 raise
     raise RuntimeError("get_db_context: unexpected fall-through")
@@ -527,7 +588,7 @@ def build_retrieval_sources_payload(
     context_chunks: List[Dict], max_items: int = 8
 ) -> List[Dict]:
     """Deduplicated official URLs from retrieved chunks for client UI."""
-    seen = set()
+    seen: Set[str] = set()
     out: List[Dict] = []
     for ch in context_chunks:
         url = (ch.get("source_url") or "").strip()
@@ -596,8 +657,7 @@ def _money_amounts_in_text(t: str) -> List[float]:
 
 def _haystack_money_floats(hay_spaced: str, hay_compact: str) -> Set[float]:
     """All monetary values found in retrieved context (normalized + compact)."""
-    combined = f"{hay_spaced} {hay_compact}"
-    return set(_money_amounts_in_text(combined))
+    return set(_money_amounts_in_text(f"{hay_spaced} {hay_compact}"))
 
 
 def _money_amounts_close(a: float, b: float) -> bool:
@@ -715,6 +775,7 @@ def build_profile_context(demographics: Dict[str, Optional[str]]) -> str:
     if housing:
         parts.append(f"Housing situation: **{housing}**.")
 
+    # issues can come as a comma-separated string or as issue_area
     issues_raw = (demographics.get("issues") or demographics.get("issue_area") or "").strip()
     if issues_raw:
         issue_list = [i.strip() for i in issues_raw.split(",") if i.strip()]
@@ -729,9 +790,10 @@ def build_profile_context(demographics: Dict[str, Optional[str]]) -> str:
 
     profile_active = (demographics.get("profile_active") or "").strip().lower()
     if profile_active == "true":
-        parts.append("The user has a personalized profile active — tailor implications to their specific situation.")
-    else:
-        parts.append("Showing city-wide generalized view.")
+        parts.append(
+            "The user has a personalized profile active — tailor all implications "
+            "and next steps to their specific situation above."
+        )
 
     timeframe = (demographics.get("timeframe") or "").strip()
     if timeframe and timeframe != "All Time":
@@ -739,6 +801,23 @@ def build_profile_context(demographics: Dict[str, Optional[str]]) -> str:
 
     return " ".join(parts) if parts else "(no profile information provided)"
 
+
+
+def timeframe_to_days(timeframe: Optional[str]) -> Optional[int]:
+    """Convert frontend timeframe string to number of days, or None for all time."""
+    if not timeframe:
+        return None
+    t = timeframe.strip().lower()
+    if "30" in t:
+        return 30
+    if "6 month" in t or "180" in t:
+        return 180
+    if "year" in t or "365" in t:
+        return 365
+    if "90" in t or "3 month" in t:
+        return 90
+    # "all time" or anything unrecognized → no filter
+    return None
 
 
 
@@ -749,7 +828,7 @@ async def chat_endpoint(request: Request, payload: ChatRequest):
     if msg_list and msg_list[-1]["role"] != "user":
         raise HTTPException(
             status_code=400,
-            detail="When `messages` is provided, the last message must have role `user`.",
+            detail="Last message must have role `user`.",
         )
 
     retrieval_q = _retrieval_query_from_request(payload)
@@ -841,7 +920,10 @@ async def get_records_metrics():
             new_records_this_month = session.exec(
                 select(func.count(PolicyDocument.id))
                 .where(or_(
-                    ((PolicyDocument.scraped_at >= month_start) & (PolicyDocument.scraped_at < next_month_start)),
+                    (
+                        (PolicyDocument.scraped_at >= month_start)
+                        & (PolicyDocument.scraped_at < next_month_start)
+                    ),
                     (
                         (PolicyDocument.published_date.is_not(None))
                         & (PolicyDocument.published_date >= month_start)
@@ -934,53 +1016,87 @@ async def get_politicians(
 async def get_recent_policies(
     borough: Optional[str] = None,
     area: Optional[str] = None,
-    limit: int = 20,
+    timeframe: Optional[str] = None,
+    days: Optional[int] = None,
+    limit: int = 30,
 ):
     """
     Returns recent PolicyDocuments with:
-    - Borough filtering (matches metadata_tags.borough or title/source_type keywords)
-    - Area/issue filtering (keyword match on title + source_type)
-    - District IDs inferred from metadata ZIP/borough fields
+    - Timeframe filtering by published_date (uses `days` or `timeframe` string)
+    - Borough filtering (title keyword match since metadata is unstructured)
+    - Area/issue keyword filtering on title + source_type
+    - District IDs inferred from title/URL since metadata_tags lacks location fields
 
-    Previously this had filtering commented out. Now restored.
+    `timeframe` accepts: "Last 30 Days", "Last 6 Months", "All Time" (frontend values)
+    `days` accepts: integer number of days (alternative direct param)
     """
     try:
         with Session(engine) as session:
-            # pre-load district caches for ZIP->district mapping
-            _load_district_caches(session)
+            _ensure_district_cache(session)
 
-            statement = select(PolicyDocument).order_by(PolicyDocument.published_date.desc())
+            # resolve timeframe → cutoff date
+            effective_days = days or timeframe_to_days(timeframe)
+            cutoff: Optional[datetime] = None
+            if effective_days:
+                cutoff = datetime.now(timezone.utc) - timedelta(days=effective_days)
 
-            # borough filter
-            normed_borough = normalize_borough(borough)
-            if normed_borough:
-                statement = statement.where(
+            stmt = select(PolicyDocument).order_by(PolicyDocument.published_date.desc())
+
+            # apply published_date cutoff
+            if cutoff:
+                stmt = stmt.where(
                     or_(
-                        func.lower(
-                            func.cast(PolicyDocument.metadata_tags["borough"].astext, type_=func.String)
-                        ) == normed_borough.lower(),
-                        PolicyDocument.title.ilike(f"%{normed_borough}%"),
+                        PolicyDocument.published_date.is_(None),
+                        PolicyDocument.published_date >= cutoff,
                     )
                 )
 
-            results = session.exec(statement.limit(limit * 3)).all()  # fetch more, then filter+trim
+            # fetch more than needed so Python-side filtering has room to trim
+            results = session.exec(stmt.limit(limit * 6)).all()
 
-            # area keyword filtering in Python (more flexible than SQL ILIKE on JSON)
-            area_keywords = AREA_KEYWORDS.get(area or "", []) if area and area != "All" else []
+            # area keyword filtering in Python
+            area_keywords = (
+                AREA_KEYWORDS.get(area or "", [])
+                if area and area.strip().lower() not in ("all", "all issues", "")
+                else []
+            )
+
+            # borough filter (title-based since metadata_tags is unstructured)
+            normed_borough = normalize_borough(borough)
 
             filtered = []
             for p in results:
-                if area_keywords:
-                    searchable = f"{p.title or ''} {p.source_type or ''}".lower()
-                    meta = p.metadata_tags or {}
-                    searchable += " " + " ".join(str(v) for v in meta.values() if isinstance(v, str)).lower()
-                    if not any(kw in searchable for kw in area_keywords):
+                meta = p.metadata_tags or {}
+
+                # borough filter: check title and metadata
+                if normed_borough:
+                    searchable_boro = f"{p.title or ''} {p.source_url or ''}".lower()
+                    meta_borough = normalize_borough(
+                        str(meta.get("borough") or meta.get("boro") or "")
+                    )
+                    if (
+                        normed_borough.lower() not in searchable_boro
+                        and meta_borough != normed_borough
+                    ):
                         continue
 
-                # infer district IDs
-                district_ids = doc_to_district_ids(session, p)
+                # area keyword filter
+                if area_keywords:
+                    searchable_area = (
+                        f"{p.title or ''} {p.source_type or ''} "
+                        f"{' '.join(str(v) for v in meta.values() if isinstance(v, str))}"
+                    ).lower()
+                    if not any(kw in searchable_area for kw in area_keywords):
+                        continue
 
-                meta = p.metadata_tags or {}
+                # infer district IDs from title/URL since metadata has no location
+                district_ids = infer_districts_from_text(
+                    session,
+                    title=p.title or "",
+                    source_url=p.source_url or "",
+                    meta=meta,
+                )
+
                 filtered.append({
                     "id": str(p.id),
                     "title": p.title or "Untitled Record",
@@ -1001,7 +1117,7 @@ async def get_recent_policies(
             return {"policies": filtered}
 
     except Exception as e:
-        logger.error(f"Error fetching recent policies: {e}")
+        logger.error("Error fetching recent policies: %s", e)
         return {"policies": [], "error": str(e)}
 
 
@@ -1061,5 +1177,5 @@ async def get_districts():
                 })
             return {"districts": sorted(out, key=lambda x: x["id"])}
     except Exception as e:
-        logger.warning(f"/districts failed: {e}")
+        logger.warning("/districts failed: %s", e)
         return {"districts": []}

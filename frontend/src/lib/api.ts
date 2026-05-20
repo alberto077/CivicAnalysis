@@ -80,19 +80,34 @@ export async function getDistrictsMap(): Promise<unknown> {
   } catch (e) { console.warn("District map fetch failed", e); return null; }
 }
 
-export async function getRecentPolicies(borough?: string, area?: string): Promise<{ policies: PolicyBriefing[] }> {
+export async function getRecentPolicies(
+  borough?: string,
+  area?: string,
+  days?: number,
+): Promise<{ policies: PolicyBriefing[] }> {
   try {
     const params = new URLSearchParams();
     if (borough) params.append("borough", borough);
     if (area) params.append("area", area);
-    const res = await fetch(`${CIVIC_API}/policies${params.toString() ? `?${params}` : ""}`, { cache: "no-store" });
-    if (!res.ok) { console.warn("Policies endpoint unavailable, using fallback"); return fallback(); }
+    if (days) params.append("days", String(days));
+
+    const res = await fetch(
+      `${CIVIC_API}/policies${params.toString() ? `?${params}` : ""}`,
+      { cache: "no-store" },
+    );
+
+    if (!res.ok) {
+      console.warn("Policies endpoint unavailable, using fallback");
+      return fallback();
+    }
+
     const data = (await res.json()) as any;
     const raw: any[] = Array.isArray(data) ? data : (data?.policies ?? data?.items ?? []);
     if (!Array.isArray(raw)) return fallback();
+
     return {
       policies: raw.map((p: any) => {
-        const m = p.metadata || {};
+        const m = p.metadata || p.metadata_tags || {};
         return {
           id: p.id || p.source_url || Math.random().toString(),
           title: p.title || "Untitled Record",
@@ -102,8 +117,15 @@ export async function getRecentPolicies(borough?: string, area?: string): Promis
           impact: p.impact || m.impact || m.summary || "",
           affects: p.affects || m.affects || m.affected_groups || "",
           topic_tags: p.topic_tags || m.tags || [],
-          districts: (p.districts || m.council_districts || m.districts || (m.council_district ? [m.council_district] : []))
-            .map((d: any) => parseInt(d)).filter((d: any) => !isNaN(d)),
+          // districts now populated by backend inference from title/URL
+          districts: (
+            p.districts ||
+            m.council_districts ||
+            m.districts ||
+            (m.council_district ? [m.council_district] : [])
+          )
+            .map((d: any) => parseInt(d))
+            .filter((d: any) => !isNaN(d)),
           zips: p.zips || m.zip_codes || m.zips || (m.zip ? [m.zip] : []),
         };
       }),
