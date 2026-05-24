@@ -5,6 +5,7 @@ import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
 import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
 import { DevConsoleFilter } from "@/components/civiq/DevConsoleFilter";
 import { ThemeProvider } from "@/components/civiq/ThemeProvider";
+import { ACCESSIBLE_CONTENT_ID } from "@/lib/accessibility-content";
 
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
@@ -47,7 +48,12 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           <DevConsoleFilter />
-          {children}
+          <div
+            id={ACCESSIBLE_CONTENT_ID}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            {children}
+          </div>
           <FloatingChatBot />
           <AccessibilityWidget />
         </ThemeProvider>

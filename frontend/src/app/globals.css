@@ -826,13 +826,284 @@ svg.lucide {
 }
 
 /* Accessibility classes */
-/* Accessibility widget styles */
-html.access-large-text {
-  font-size: 125% !important;
+/* Larger text — scale root rem, remap px utilities, grow containers to fit copy inside */
+#civic-accessible-content.access-large-text {
+  --access-scale: 1.25;
+  font-size: calc(100% * var(--access-scale)) !important;
 }
 
-html.access-readable-font body,
-html.access-readable-font * {
+/* Tailwind arbitrary px sizes do not inherit root scaling — convert to rem (÷16) */
+#civic-accessible-content.access-large-text [class*="text-[10px"] {
+  font-size: 0.625rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[10.5px"] {
+  font-size: 0.65625rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[11px"] {
+  font-size: 0.6875rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[12px"] {
+  font-size: 0.75rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[13px"] {
+  font-size: 0.8125rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[14px"] {
+  font-size: 0.875rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[15px"] {
+  font-size: 0.9375rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[17px"] {
+  font-size: 1.0625rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[18px"] {
+  font-size: 1.125rem !important;
+}
+#civic-accessible-content.access-large-text [class*="text-[20px"] {
+  font-size: 1.25rem !important;
+}
+
+/* clamp()/fixed search inputs */
+#civic-accessible-content.access-large-text input[class*="clamp("],
+#civic-accessible-content.access-large-text [class*="text-[clamp("] {
+  font-size: 1.125rem !important;
+}
+
+#civic-accessible-content.access-large-text :is(
+  p,
+  span,
+  a,
+  li,
+  label,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  button,
+  input,
+  textarea,
+  select,
+  td,
+  th,
+  blockquote,
+  small,
+  strong,
+  em,
+  figcaption,
+  code,
+  pre
+) {
+  line-height: 1.55 !important;
+}
+
+/* Wrap long words inside UI chrome (keep content inside the box) */
+#civic-accessible-content.access-large-text :is(
+  button,
+  a,
+  label,
+  p,
+  span,
+  li,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  input,
+  textarea,
+  select,
+  td,
+  th
+) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Icons scale with adjacent text; stay aligned in flex rows */
+#civic-accessible-content.access-large-text :is(button, a, label) svg.lucide {
+  width: 1.125em !important;
+  height: 1.125em !important;
+  flex-shrink: 0;
+}
+
+#civic-accessible-content.access-large-text :is(button, a[role="button"], label).flex,
+#civic-accessible-content.access-large-text :is(button, a).inline-flex {
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  row-gap: 0.35rem !important;
+  column-gap: 0.5rem !important;
+}
+
+/* Allow wrapped lines instead of clipping (still contained by parent overflow) */
+#civic-accessible-content.access-large-text .truncate,
+#civic-accessible-content.access-large-text [class*="line-clamp"] {
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+}
+
+/* Buttons, pills, badges — grow padding and height with text */
+#civic-accessible-content.access-large-text
+  button:not(:is(.command-submit, .hero-droplet-submit)),
+#civic-accessible-content.access-large-text a[role="button"],
+#civic-accessible-content.access-large-text span[class*="rounded-md"],
+#civic-accessible-content.access-large-text span[class*="rounded-lg"],
+#civic-accessible-content.access-large-text span[class*="rounded-xl"],
+#civic-accessible-content.access-large-text span[class*="rounded-full"] {
+  min-height: fit-content !important;
+  height: auto !important;
+  min-width: fit-content !important;
+  max-width: 100%;
+  padding-block: max(0.45rem, 0.4em) !important;
+  padding-inline: max(0.55rem, 0.5em) !important;
+  line-height: 1.45 !important;
+}
+
+#civic-accessible-content.access-large-text a[class*="rounded-xl"],
+#civic-accessible-content.access-large-text a[class*="rounded-lg"] {
+  min-height: fit-content !important;
+  height: auto !important;
+  padding-block: max(0.45rem, 0.4em) !important;
+  padding-inline: max(0.55rem, 0.5em) !important;
+}
+
+#civic-accessible-content.access-large-text [class*="uppercase"][class*="tracking-"]:is(span, a, button) {
+  white-space: normal !important;
+  text-align: center;
+  max-width: 100%;
+}
+
+/* Square icon-only controls */
+#civic-accessible-content.access-large-text
+  button:is(.h-10, .h-14, [class*="h-10"], [class*="w-10"], [class*="h-14"], [class*="w-14"]) {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  width: auto !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  padding: 0.55rem !important;
+}
+
+/* Panels / cards — grow with content; scroll inside if needed */
+#civic-accessible-content.access-large-text :is(
+  .glass-card,
+  .surface-float,
+  .lift-card,
+  [class*="feature-border-glow"]
+) {
+  min-height: fit-content !important;
+  height: auto !important;
+  overflow: auto !important;
+}
+
+#civic-accessible-content.access-large-text :is(.glass-card, .surface-float, .lift-card) > * {
+  min-height: fit-content;
+}
+
+#civic-accessible-content.access-large-text :is(.hero-search-shell, .search-shell, .command-shell) {
+  min-height: calc(3.5rem * var(--access-scale)) !important;
+  height: auto !important;
+  padding-block: 0.75rem !important;
+  padding-inline: max(0.75rem, 1vw) !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  column-gap: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+#civic-accessible-content.access-large-text :is(.command-shell, .hero-search-shell) input {
+  min-width: 0;
+  flex: 1 1 8rem;
+}
+
+#civic-accessible-content.access-large-text :is(.command-shell, .hero-search-shell) .command-submit,
+#civic-accessible-content.access-large-text :is(.command-shell, .hero-search-shell) .hero-droplet-submit {
+  flex-shrink: 0;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+}
+
+/* Avoid global overflow overrides that can trap scrolling.
+   Let components opt into scrolling with their own overflow-* utilities. */
+
+#civic-accessible-content.access-large-text
+  .min-h-0:has(:is(p, span, h1, h2, h3, h4, h5, h6, li, label, a)) {
+  min-height: fit-content !important;
+}
+
+/* Accessibility menu (lives outside #civic-accessible-content) */
+.accessibility-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  max-height: min(85dvh, calc(100dvh - 6rem));
+}
+
+.accessibility-panel-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* Form fields */
+#civic-accessible-content.access-large-text :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  min-height: calc(2.75rem * var(--access-scale)) !important;
+  height: auto !important;
+  padding-block: 0.5rem !important;
+  padding-inline: 0.75rem !important;
+}
+
+#civic-accessible-content.access-large-text :is(button, input, select).h-14,
+#civic-accessible-content.access-large-text :is(button, input, select).h-12 {
+  min-height: calc(3rem * var(--access-scale)) !important;
+  height: auto !important;
+}
+
+/* Tight badge / chip rows */
+#civic-accessible-content.access-large-text .flex.flex-wrap:is(.gap-1, .gap-1\.5, .gap-2) {
+  gap: 0.5rem !important;
+}
+
+#civic-accessible-content.access-large-text .flex.flex-wrap.gap-2 {
+  gap: 0.625rem !important;
+}
+
+/* Compact briefing tiles widen slightly so headlines fit */
+#civic-accessible-content.access-large-text [class*="max-w-[11"] {
+  max-width: min(100%, 15rem) !important;
+}
+
+#civic-accessible-content.access-large-text [class*="max-w-[19rem"] {
+  max-width: min(100%, 24rem) !important;
+}
+
+/* Header / nav */
+#civic-accessible-content.access-large-text header .truncate {
+  white-space: normal !important;
+  max-width: min(100%, 14rem);
+}
+
+#civic-accessible-content.access-large-text nav.flex a,
+#civic-accessible-content.access-large-text nav.flex button {
+  padding-block: 0.45rem !important;
+  padding-inline: 0.35rem !important;
+}
+
+#civic-accessible-content.access-readable-font,
+#civic-accessible-content.access-readable-font * {
   font-family:
     Arial,
     Verdana,
@@ -843,70 +1114,68 @@ html.access-readable-font * {
     sans-serif !important;
 }
 
-html.access-high-contrast,
-html.access-high-contrast body {
+#civic-accessible-content.access-high-contrast {
   background: #020617 !important;
   color: #ffffff !important;
 }
 
-html.access-high-contrast body,
-html.access-high-contrast main,
-html.access-high-contrast section,
-html.access-high-contrast article,
-html.access-high-contrast div {
+#civic-accessible-content.access-high-contrast main,
+#civic-accessible-content.access-high-contrast section,
+#civic-accessible-content.access-high-contrast article,
+#civic-accessible-content.access-high-contrast div {
   background-color: #020617 !important;
   color: #ffffff !important;
 }
 
-html.access-high-contrast h1,
-html.access-high-contrast h2,
-html.access-high-contrast h3,
-html.access-high-contrast h4,
-html.access-high-contrast h5,
-html.access-high-contrast h6,
-html.access-high-contrast p,
-html.access-high-contrast span,
-html.access-high-contrast label,
-html.access-high-contrast li,
-html.access-high-contrast strong {
+#civic-accessible-content.access-high-contrast h1,
+#civic-accessible-content.access-high-contrast h2,
+#civic-accessible-content.access-high-contrast h3,
+#civic-accessible-content.access-high-contrast h4,
+#civic-accessible-content.access-high-contrast h5,
+#civic-accessible-content.access-high-contrast h6,
+#civic-accessible-content.access-high-contrast p,
+#civic-accessible-content.access-high-contrast span,
+#civic-accessible-content.access-high-contrast label,
+#civic-accessible-content.access-high-contrast li,
+#civic-accessible-content.access-high-contrast strong {
   color: #ffffff !important;
 }
 
-html.access-high-contrast a {
+#civic-accessible-content.access-high-contrast a {
   color: #facc15 !important;
 }
 
-html.access-high-contrast button {
+#civic-accessible-content.access-high-contrast button {
   border: 2px solid #facc15 !important;
 }
 
-html.access-high-contrast input,
-html.access-high-contrast select,
-html.access-high-contrast textarea {
+#civic-accessible-content.access-high-contrast input,
+#civic-accessible-content.access-high-contrast select,
+#civic-accessible-content.access-high-contrast textarea {
   background: #0f172a !important;
   color: #ffffff !important;
   border: 2px solid #facc15 !important;
 }
 
-html.access-high-contrast .glass-card,
-html.access-high-contrast [class*="bg-white"],
-html.access-high-contrast [class*="bg-slate"],
-html.access-high-contrast [class*="bg-gray"] {
+#civic-accessible-content.access-high-contrast .glass-card,
+#civic-accessible-content.access-high-contrast [class*="bg-white"],
+#civic-accessible-content.access-high-contrast [class*="bg-slate"],
+#civic-accessible-content.access-high-contrast [class*="bg-gray"] {
   background-color: #0f172a !important;
   color: #ffffff !important;
   border-color: #facc15 !important;
 }
 
-html.access-color-blind-friendly {
+#civic-accessible-content.access-color-blind-friendly {
   --accent: #005fcc;
 }
 
-html.access-color-blind-friendly a,
-html.access-color-blind-friendly button {
+#civic-accessible-content.access-color-blind-friendly a,
+#civic-accessible-content.access-color-blind-friendly button {
   text-decoration-thickness: 2px;
 }
 
-html.access-color-blind-friendly button[aria-pressed="true"] {
+#civic-accessible-content.access-color-blind-friendly button[aria-pressed="true"] {
   box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.35) !important;
 }
 
@@ -919,7 +1188,7 @@ html.access-reduce-motion *::after {
   transition-duration: 0.001ms !important;
 }
 
-html.access-underline-links a {
+#civic-accessible-content.access-underline-links a {
   text-decoration: underline !important;
   text-underline-offset: 4px;
   text-decoration-thickness: 2px;
