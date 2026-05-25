@@ -601,7 +601,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
   }, []);
 
   return (
-    <section className="mx-auto mt-10 max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="representatives-directory mx-auto mt-10 max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <MotionReveal>
         <div className="flex items-start justify-between">
           <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
