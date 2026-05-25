@@ -954,10 +954,10 @@ svg.lucide {
 #civic-accessible-content.access-large-text
   button:not(:is(.command-submit, .hero-droplet-submit)),
 #civic-accessible-content.access-large-text a[role="button"],
-#civic-accessible-content.access-large-text span[class*="rounded-md"],
-#civic-accessible-content.access-large-text span[class*="rounded-lg"],
-#civic-accessible-content.access-large-text span[class*="rounded-xl"],
-#civic-accessible-content.access-large-text span[class*="rounded-full"] {
+#civic-accessible-content.access-large-text span[class*="rounded-md"]:not([role="tooltip"]),
+#civic-accessible-content.access-large-text span[class*="rounded-lg"]:not([role="tooltip"]),
+#civic-accessible-content.access-large-text span[class*="rounded-xl"]:not([role="tooltip"]),
+#civic-accessible-content.access-large-text span[class*="rounded-full"]:not([role="tooltip"]) {
   min-height: fit-content !important;
   height: auto !important;
   min-width: fit-content !important;
