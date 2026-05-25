@@ -4,7 +4,6 @@
 import { Accessibility as AccessibilityIcon } from "lucide-react"; //used https://lucide.dev/icons/accessibility
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { getAccessibleContentRoot } from "@/lib/accessibility-content";
 import { floatingFabDark, floatingFabIconLight, floatingFabLight } from "@/lib/floating-fab-styles";
 import { useFooterAwareBottom } from "@/lib/useFooterAwareBottom";
 
@@ -21,6 +20,7 @@ type AccessibilitySettings = {
 type SettingKey = keyof AccessibilitySettings;
 
 const STORAGE_KEY = "civic_accessibility_settings";
+const ACCESSIBLE_CONTENT_ID = "civic-accessible-content";
 
 const DEFAULT_SETTINGS: AccessibilitySettings = {
   largeText: false,
@@ -31,6 +31,11 @@ const DEFAULT_SETTINGS: AccessibilitySettings = {
   focusMode: false,
   colorBlindFriendly: false,
 };
+
+function getAccessibleContentRoot(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  return document.getElementById(ACCESSIBLE_CONTENT_ID);
+}
 
 const SETTINGS: {
   key: SettingKey;
@@ -185,6 +190,7 @@ function SettingButton({
 }
 
 export function AccessibilityWidget() {
+  const widgetRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const hasLoadedSavedSettings = useRef(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -239,11 +245,27 @@ export function AccessibilityWidget() {
   useEffect(() => {
     if (!isOpen) return;
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    function onPointerDown(event: PointerEvent) {
+      const widget = widgetRef.current;
+      if (!widget || !(event.target instanceof Node)) return;
+
+      if (!widget.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
     };
   }, [isOpen]);
 
@@ -364,6 +386,7 @@ export function AccessibilityWidget() {
 
   return (
     <div
+      ref={widgetRef}
       className={`fixed left-5 flex flex-col items-start transition-[bottom] duration-200 ease-out sm:left-8 ${isOpen ? "z-[200]" : "z-50"}`}
       style={{ bottom: `${footerAwareBottom}px` }}
     >

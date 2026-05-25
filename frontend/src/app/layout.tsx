@@ -5,10 +5,11 @@ import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
 import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
 import { DevConsoleFilter } from "@/components/civiq/DevConsoleFilter";
 import { ThemeProvider } from "@/components/civiq/ThemeProvider";
-import { ACCESSIBLE_CONTENT_ID } from "@/lib/accessibility-content";
 
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
+
+const ACCESSIBLE_CONTENT_ID = "civic-accessible-content";
 
 const playfairDisplay = Playfair_Display({
   weight: ["400", "500", "600"],
