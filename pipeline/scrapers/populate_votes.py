@@ -3,7 +3,7 @@ Fetches NYC Council bill votes from the Legistar Web API and populates:
   - LegislationEvent  (one row per bill/matter)
   - VoteRecord        (one row per council member vote on each bill)
 
-Run:   python pipeline/scrapers/populate_votes.py [--limit 100]
+Run:   python pipeline/scrapers/populate_votes.py --limit 200
 """
 
 import os
@@ -189,6 +189,12 @@ def populate_votes(limit: int = 100, year_filter: Optional[int] = None) -> None:
             time.sleep(RATE_SLEEP)
             try:
                 vote_records = legistar_get(f"/Matters/{matter_id}/Votes")
+            except requests.exceptions.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    # 404 = no votes for this matter yet (still in committee or an admin/non-votable item) - skip
+                    continue
+                print(f"  ⚠  Votes fetch failed for matter {matter_id}: {e}")
+                continue
             except Exception as e:
                 print(f"  ⚠  Votes fetch failed for matter {matter_id}: {e}")
                 continue
