@@ -7,12 +7,12 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const borough = searchParams.get("borough");
-  const area = searchParams.get("area");
-
   const upstreamUrl = new URL(`${getBackendOrigin()}/api/policies`);
-  if (borough) upstreamUrl.searchParams.set("borough", borough);
-  if (area) upstreamUrl.searchParams.set("area", area);
+
+  // forward all params: borough, area, days, timeframe, limit
+  searchParams.forEach((value, key) => {
+    upstreamUrl.searchParams.set(key, value);
+  });
 
   let upstream: Response;
   try {

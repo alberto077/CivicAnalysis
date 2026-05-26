@@ -4,6 +4,7 @@ from scrapers.nyc_council_meetings import NYCCouncilMeetingsScraper
 from scrapers.nyc_council_legistar import NYCCouncilLegistarScraper
 from scrapers.nys_senate_bills import NYSSenateBillsScraper
 from scrapers.nys_senate_transcripts import NYSSenateTranscriptsScraper
+from scrapers.populate_votes import populate_votes
 
 
 def run_full_pipeline(use_json: bool = False):
@@ -38,6 +39,12 @@ def run_full_pipeline(use_json: bool = False):
             total += len(items)
         except Exception as e:
             print(f"Error running {scraper.__class__.__name__}: {e}")
+
+    print("\nRunning vote scraper (Legistar)")
+    try:
+        populate_votes(limit=200)
+    except Exception as e:
+        print(f"Error running populate_votes: {e}")
 
     print(f"\nPipeline Complete!")
     print(f"Total documents processed: {total}")
