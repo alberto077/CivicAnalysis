@@ -2,6 +2,8 @@
 Fetches NYC Council bill votes from the Legistar Web API and populates:
   - LegislationEvent  (one row per bill/matter)
   - VoteRecord        (one row per council member vote on each bill)
+
+Run:   python pipeline/scrapers/populate_votes.py [--limit 100]
 """
 
 import os
@@ -17,7 +19,15 @@ from sqlmodel import Session, select
 
 load_dotenv()
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+_THIS_DIR    = os.path.dirname(os.path.abspath(__file__))          # pipeline/scrapers/
+_PIPELINE_DIR = os.path.dirname(_THIS_DIR)                         # pipeline/
+_PROJECT_ROOT = os.path.dirname(_PIPELINE_DIR)                     # project root
+_BACKEND_DIR  = os.path.join(_PROJECT_ROOT, "backend")             # backend/
+
+for _p in (_BACKEND_DIR, _PROJECT_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from db import engine
 from schema import LegislationEvent, VoteRecord, Politician
 

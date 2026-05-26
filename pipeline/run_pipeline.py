@@ -1,4 +1,13 @@
 import sys
+import os
+
+_PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))   # pipeline/
+_PROJECT_ROOT = os.path.dirname(_PIPELINE_DIR)               # project root
+_BACKEND_DIR  = os.path.join(_PROJECT_ROOT, "backend")       # backend/
+
+for _p in (_BACKEND_DIR, _PROJECT_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from scrapers.nyc_council_meetings import NYCCouncilMeetingsScraper
 from scrapers.nyc_council_legistar import NYCCouncilLegistarScraper
