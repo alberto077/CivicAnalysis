@@ -155,7 +155,7 @@ function buildDemographics(extra?: ChatExtra): Record<string, string> {
   return d;
 }
 
-const TIMEOUT_MSG = "Policy backend did not respond in time. Start the FastAPI server (port 8000) or set API_INTERNAL_BASE_URL.";
+const TIMEOUT_MSG = "Policy backend did not respond in time. Start the FastAPI server (port 8000) or set BACKEND_PROD_URL.";
 
 export async function checkHealth(): Promise<HealthResponse> {
   let res: Response;

@@ -5,6 +5,10 @@ export const BACKEND_CHAT_FETCH_TIMEOUT_MS = 115_000;
 export const BACKEND_HEALTH_FETCH_TIMEOUT_MS = 90_000;
 
 export function getBackendOrigin(): string {
-  const url = process.env.BACKEND_PROD_URL?.trim() || "http://127.0.0.1:8000";
+  const url =
+    process.env.BACKEND_PROD_URL?.trim() ||
+    process.env.BACKEND_LOCAL_URL?.trim() ||
+    process.env.API_INTERNAL_BASE_URL?.trim() ||
+    "http://127.0.0.1:8000";
   return url.replace(/\/$/, "");
 }

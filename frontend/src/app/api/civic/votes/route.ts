@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
                 error: isTimeout ? "Votes request timed out" : "Backend unreachable",
                 detail: isTimeout
                     ? "The backend took too long to respond."
-                    : `${msg}. Checklist: (1) Is main.py deployed with /api/votes? (2) Has populate_votes.py been run? (3) Is API_INTERNAL_BASE_URL set correctly?`,
+                    : `${msg}. Checklist: (1) Is main.py deployed with /api/votes? (2) Has populate_votes.py been run? (3) Is BACKEND_PROD_URL set correctly?`,
                 events: [],
                 total: 0,
             },
