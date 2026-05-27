@@ -497,11 +497,11 @@ export function VoteTracker({ profile, isPersonalized }: Props) {
                 {!loading && !hasVoteData && events.length > 0 && (
                     <div className="rounded-xl border border-amber-200/80 dark:border-amber-800/40 bg-amber-50/80 dark:bg-amber-950/20 px-4 py-3">
                         <p className="text-[11.5px] font-semibold text-amber-800 dark:text-amber-200">
-                            Vote records not yet populated.
+                            Per-member vote breakdowns unavailable.
                         </p>
                         <p className="text-[10.5px] text-amber-700/80 dark:text-amber-300/70 mt-0.5 leading-relaxed">
-                            Run <code className="bg-amber-100 dark:bg-amber-900/50 px-1 py-0.5 rounded text-[10px]">python scrapers/populate_votes.py</code> to
-                            fetch council member votes from the Legistar API. Bill records are shown below.
+                            The NYC Council Legistar API does not expose individual member votes.
+                            Bill outcomes (Passed / Failed) are shown below.
                         </p>
                     </div>
                 )}
@@ -603,7 +603,7 @@ export function VoteTracker({ profile, isPersonalized }: Props) {
                         </p>
                         <p className="text-[11px] text-[var(--muted)] max-w-[220px] leading-relaxed">
                             {events.length === 0
-                                ? "Run populate_votes.py to fetch NYC Council vote data from Legistar."
+                                ? "No legislation records yet. The pipeline will populate these nightly."
                                 : "Try adjusting the search or filters above."
                             }
                         </p>

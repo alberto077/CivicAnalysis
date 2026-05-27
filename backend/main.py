@@ -769,32 +769,37 @@ async def get_votes(
     offset: int = 0,
 ):
     """
-    Returns recent LegislationEvents with their vote breakdowns.
-    Includes council member vote records for the Vote Tracker page.
+    Returns recent LegislationEvents with their outcomes.
+    Per-member VoteRecords are included when available but the Legistar NYC API
+    does not expose them, so vote_breakdown will be zeroed and total_votes = 0.
+    VoteTracker.tsx gracefully degrades in this case.
     """
     try:
         with Session(engine) as session:
             stmt = select(LegislationEvent).order_by(LegislationEvent.event_date.desc())
-
-            # Area filter on title
+ 
+            # Area filter on title using keyword fallback
             if area and area.strip().lower() not in ("all", ""):
                 kws = AREA_KEYWORDS.get(area, [])
                 if kws:
                     title_filters = [LegislationEvent.title.ilike(f"%{kw}%") for kw in kws[:4]]
                     stmt = stmt.where(or_(*title_filters))
-
-            total = session.exec(select(func.count(LegislationEvent.id))).one()
+ 
+            total_count = session.exec(
+                select(func.count(LegislationEvent.id))
+            ).one()
+ 
             events = session.exec(stmt.offset(offset).limit(limit)).all()
-
+ 
             results = []
             for event in events:
-                # Fetch votes for this event
+                # Fetch per-member votes if they exist (will be empty for now)
                 votes = session.exec(
                     select(VoteRecord, Politician)
                     .join(Politician, VoteRecord.politician_id == Politician.id)
                     .where(VoteRecord.legislation_event_id == event.id)
                 ).all()
-
+ 
                 vote_breakdown = {"Yea": 0, "Nay": 0, "Abstain": 0, "Absent": 0}
                 vote_records = []
                 for vr, pol in votes:
@@ -807,36 +812,47 @@ async def get_votes(
                         "party":           pol.party,
                         "vote":            vr.vote_cast,
                     })
-
-                # Determine outcome
-                yeas = vote_breakdown["Yea"]
-                nays = vote_breakdown["Nay"]
-                total_votes = yeas + nays + vote_breakdown["Abstain"]
-                if total_votes == 0:
-                    outcome = "Pending"
-                elif yeas > nays:
-                    outcome = "Passed"
-                elif nays > yeas:
-                    outcome = "Failed"
+ 
+                total_votes = sum(vote_breakdown.values())
+ 
+                # Outcome: use status field populated by populate_votes.py.
+                # Fall back to computing from vote counts if VoteRecords exist.
+                status = (event.status or "Pending").strip()
+                if total_votes > 0:
+                    yeas = vote_breakdown["Yea"]
+                    nays = vote_breakdown["Nay"]
+                    if yeas > nays:
+                        outcome = "Passed"
+                    elif nays > yeas:
+                        outcome = "Failed"
+                    else:
+                        outcome = "Tied"
+                elif status in ("Passed", "Failed", "Tied"):
+                    outcome = status
                 else:
-                    outcome = "Tied"
-
+                    outcome = "Pending"
+ 
                 results.append({
-                    "id":           event.id,
-                    "title":        event.title,
-                    "description":  event.description,
-                    "jurisdiction": event.jurisdiction,
-                    "status":       event.status,
-                    "event_date":   event.event_date.isoformat() if event.event_date else None,
-                    "event_url":    event.event_url,
-                    "outcome":      outcome,
+                    "id":             event.id,
+                    "title":          event.title,
+                    "description":    event.description,
+                    "jurisdiction":   event.jurisdiction,
+                    "status":         event.status,
+                    "event_date":     event.event_date.isoformat() if event.event_date else None,
+                    "event_url":      event.event_url,
+                    "outcome":        outcome,
                     "vote_breakdown": vote_breakdown,
-                    "total_votes":  total_votes,
-                    "votes":        vote_records,
+                    "total_votes":    total_votes,
+                    "votes":          vote_records,
                 })
-
-            return {"events": results, "total": total, "offset": offset, "limit": limit}
-
+ 
+            return {
+                "events": results,
+                "total":  total_count,
+                "offset": offset,
+                "limit":  limit,
+            }
+ 
     except Exception as e:
         logger.error("Error fetching votes: %s", e)
         return {"events": [], "total": 0, "error": str(e)}

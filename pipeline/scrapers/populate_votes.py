@@ -1,7 +1,10 @@
 """
-Fetches NYC Council bill votes from the Legistar Web API and populates:
-  - LegislationEvent  (one row per bill/matter)
-  - VoteRecord        (one row per council member vote on each bill)
+Fetches NYC Council legislation from the Legistar Web API and populates:
+  - LegislationEvent  (one row per enacted/adopted/approved/failed matter)
+
+NOTE: The Legistar NYC API does not expose per-member vote records via /Matters/{id}/Votes (returns 404 for all matters). 
+We instead populate LegislationEvents with outcome data only (Passed/Failed/Pending) and leave VoteRecord empty. 
+Idempotent — safe to re-run as a nightly cron job.
 
 Run:   python pipeline/scrapers/populate_votes.py --limit 200
 """
@@ -19,29 +22,40 @@ from sqlmodel import Session, select
 
 load_dotenv()
 
-_THIS_DIR    = os.path.dirname(os.path.abspath(__file__))          # pipeline/scrapers/
-_PIPELINE_DIR = os.path.dirname(_THIS_DIR)                         # pipeline/
-_PROJECT_ROOT = os.path.dirname(_PIPELINE_DIR)                     # project root
-_BACKEND_DIR  = os.path.join(_PROJECT_ROOT, "backend")             # backend/
+_THIS_DIR     = os.path.dirname(os.path.abspath(__file__))   # pipeline/scrapers/
+_PIPELINE_DIR = os.path.dirname(_THIS_DIR)                   # pipeline/
+_PROJECT_ROOT = os.path.dirname(_PIPELINE_DIR)               # project root
+_BACKEND_DIR  = os.path.join(_PROJECT_ROOT, "backend")       # backend/
 
 for _p in (_BACKEND_DIR, _PROJECT_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 from db import engine
-from schema import LegislationEvent, VoteRecord, Politician
+from schema import LegislationEvent
 
-API_KEY   = os.getenv("NYC_COUNCIL_API_KEY", "")
-BASE      = "https://webapi.legistar.com/v1/nyc"
-UA        = {"User-Agent": "CivicSpiegel/0.1; civic research bot"}
-RATE_SLEEP = 0.25   # seconds between requests — Legistar is generous but not unlimited
+API_KEY    = os.getenv("NYC_COUNCIL_API_KEY", "")
+BASE       = "https://webapi.legistar.com/v1/nyc"
+UA         = {"User-Agent": "CivicSpiegel/0.1; civic research bot"}
+RATE_SLEEP = 0.15
 
+# Legistar status values that represent a completed floor vote
+VOTED_STATUSES = ["Enacted", "Adopted", "Approved", "Failed", "Vetoed", "Withdrawn"]
+
+# Map Legistar status → our outcome field
+STATUS_TO_OUTCOME = {
+    "Enacted":   "Passed",
+    "Adopted":   "Passed",
+    "Approved":  "Passed",
+    "Failed":    "Failed",
+    "Vetoed":    "Failed",
+    "Withdrawn": "Failed",
+}
 
 
 def legistar_get(path: str, params: Optional[dict] = None) -> list | dict:
     p = {"token": API_KEY, **(params or {})}
-    url = f"{BASE}{path}"
-    r = requests.get(url, params=p, headers=UA, timeout=20)
+    r = requests.get(f"{BASE}{path}", params=p, headers=UA, timeout=20)
     r.raise_for_status()
     return r.json()
 
@@ -57,194 +71,88 @@ def parse_date(raw: Optional[str]) -> Optional[date]:
     return None
 
 
-# politician lookup (council member name → Politician.id)
-def build_politician_map(session: Session) -> dict[str, int]:
-    """
-    Return a dict of  normalized_name → politician.id  for all council members.
-    We match Legistar voter names against this map.
-    """
-    rows = session.exec(
-        select(Politician).where(Politician.role == "Council Member")
-    ).all()
-    m: dict[str, int] = {}
-    for p in rows:
-        key = p.full_name.strip().lower() if p.full_name else ""
-        if key and p.id:
-            m[key] = p.id
-    return m
-
-
-def fuzzy_match_politician(
-    voter_name: str,
-    pol_map: dict[str, int],
-) -> Optional[int]:
-    """
-    Try exact, then last-name, match between a Legistar voter name and our
-    Politician table. Returns politician.id or None.
-    """
-    key = voter_name.strip().lower()
-    if key in pol_map:
-        return pol_map[key]
-    # last-name fallback
-    last = key.split()[-1] if key.split() else ""
-    for name, pid in pol_map.items():
-        if name.split()[-1] == last:
-            return pid
-    return None
-
-
-# vote value normalisation
-VOTE_MAP = {
-    "affirmative": "Yea",
-    "yea": "Yea",
-    "yes": "Yea",
-    "negative": "Nay",
-    "nay": "Nay",
-    "no": "Nay",
-    "abstain": "Abstain",
-    "absent": "Absent",
-    "non-voting": "Absent",
-    "excused": "Absent",
-}
-
-
-def normalise_vote(raw: str) -> str:
-    return VOTE_MAP.get((raw or "").strip().lower(), "Abstain")
-
-
-# main ingestion logic
-def populate_votes(limit: int = 100, year_filter: Optional[int] = None) -> None:
+def populate_votes(limit: int = 200, year_filter: Optional[int] = None) -> None:
     if not API_KEY:
         print("✗  NYC_COUNCIL_API_KEY not set — aborting.")
         sys.exit(1)
 
-    print(f"Fetching up to {limit} recent NYC Council matters from Legistar…")
+    print(f"Fetching NYC Council legislation (statuses: {', '.join(VOTED_STATUSES)})…")
 
-    params: dict = {
-        "$top": limit,
-        "$orderby": "MatterLastModifiedUtc desc",
-    }
-    if year_filter:
-        # Filter server-side by year using OData
-        params["$filter"] = (
-            f"year(MatterLastModifiedUtc) eq {year_filter}"
-        )
-
-    matters = legistar_get("/Matters", params)
-    if not isinstance(matters, list):
-        print("Unexpected API response:", matters)
-        return
-
-    print(f"  Retrieved {len(matters)} matters.")
+    inserted = 0
+    updated  = 0
+    per_status = max(1, limit // len(VOTED_STATUSES))
 
     with Session(engine) as session:
-        pol_map = build_politician_map(session)
-        print(f"  Loaded {len(pol_map)} council members for vote matching.")
+        for status in VOTED_STATUSES:
+            params: dict = {
+                "$top":      per_status,
+                "$orderby":  "MatterLastModifiedUtc desc",
+                "$filter":   f"MatterStatusName eq '{status}'",
+            }
+            if year_filter:
+                params["$filter"] += f" and year(MatterLastModifiedUtc) eq {year_filter}"
 
-        inserted_events  = 0
-        updated_events   = 0
-        inserted_votes   = 0
-        skipped_votes    = 0
-
-        for matter in matters:
-            matter_id   = matter.get("MatterId")
-            file_number = matter.get("MatterFile", "")
-            title       = matter.get("MatterName", "Untitled")
-            status      = matter.get("MatterStatusName", "Unknown")
-            matter_type = matter.get("MatterTypeName", "Legislation")
-            event_date  = parse_date(matter.get("MatterLastModifiedDate"))
-            event_url   = (
-                f"https://legistar.council.nyc.gov/gateway.aspx"
-                f"?m=l&id=/matter.aspx?key={matter_id}"
-            )
-            full_title  = f"NYC Council {matter_type} ({file_number}): {title}"
-
-            # Upsert LegislationEvent
-            existing_event = session.exec(
-                select(LegislationEvent).where(
-                    LegislationEvent.event_url == event_url
-                )
-            ).first()
-
-            if existing_event:
-                existing_event.status = status
-                existing_event.event_date = event_date
-                session.add(existing_event)
-                event_obj = existing_event
-                updated_events += 1
-            else:
-                event_obj = LegislationEvent(
-                    title=full_title,
-                    description=matter.get("MatterTitle", ""),
-                    jurisdiction="NYC Council",
-                    status=status,
-                    event_date=event_date,
-                    event_url=event_url,
-                )
-                session.add(event_obj)
-                session.flush()   # get the new id
-                inserted_events += 1
-
-            # Fetch votes for this matter
-            time.sleep(RATE_SLEEP)
             try:
-                vote_records = legistar_get(f"/Matters/{matter_id}/Votes")
-            except requests.exceptions.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
-                    # 404 = no votes for this matter yet (still in committee or an admin/non-votable item) - skip
-                    continue
-                print(f"  ⚠  Votes fetch failed for matter {matter_id}: {e}")
-                continue
+                matters = legistar_get("/Matters", params)
             except Exception as e:
-                print(f"  ⚠  Votes fetch failed for matter {matter_id}: {e}")
+                print(f"  ⚠  Failed to fetch status={status!r}: {e}")
                 continue
 
-            if not isinstance(vote_records, list) or not vote_records:
-                continue   # no votes yet (committee stage, not floor-voted)
+            if not isinstance(matters, list):
+                continue
 
-            for vr in vote_records:
-                voter_name  = vr.get("VotePersonName", "")
-                vote_value  = normalise_vote(vr.get("VoteValueName", ""))
-                pol_id      = fuzzy_match_politician(voter_name, pol_map)
+            print(f"  {status}: {len(matters)} matters")
 
-                if pol_id is None:
-                    skipped_votes += 1
-                    continue   # voter not in our Politician table - skip
+            for matter in matters:
+                matter_id   = matter.get("MatterId")
+                file_number = matter.get("MatterFile", "")
+                title       = matter.get("MatterName", "Untitled")
+                matter_type = matter.get("MatterTypeName", "Legislation")
+                event_date  = parse_date(matter.get("MatterLastModifiedDate"))
+                event_url   = (
+                    f"https://legistar.council.nyc.gov/gateway.aspx"
+                    f"?m=l&id=/matter.aspx?key={matter_id}"
+                )
+                full_title  = f"NYC Council {matter_type} ({file_number}): {title}"
+                outcome     = STATUS_TO_OUTCOME.get(status, "Pending")
 
-                # Dedup: one VoteRecord per (event, politician)
-                existing_vote = session.exec(
-                    select(VoteRecord).where(
-                        VoteRecord.legislation_event_id == event_obj.id,
-                        VoteRecord.politician_id == pol_id,
+                existing = session.exec(
+                    select(LegislationEvent).where(
+                        LegislationEvent.event_url == event_url
                     )
                 ).first()
 
-                if existing_vote:
-                    existing_vote.vote_cast = vote_value
-                    session.add(existing_vote)
+                if existing:
+                    existing.status     = outcome
+                    existing.event_date = event_date
+                    session.add(existing)
+                    updated += 1
                 else:
-                    session.add(
-                        VoteRecord(
-                            politician_id=pol_id,
-                            legislation_event_id=event_obj.id,
-                            vote_cast=vote_value,
-                        )
-                    )
-                    inserted_votes += 1
+                    session.add(LegislationEvent(
+                        title=full_title,
+                        description=matter.get("MatterTitle", "") or matter.get("MatterName", ""),
+                        jurisdiction="NYC Council",
+                        status=outcome,
+                        event_date=event_date,
+                        event_url=event_url,
+                    ))
+                    inserted += 1
+
+                time.sleep(RATE_SLEEP)
 
             session.commit()
 
-        print(
-            f"\n✓  Done.\n"
-            f"   LegislationEvents:  {inserted_events} inserted, {updated_events} updated\n"
-            f"   VoteRecords:        {inserted_votes} inserted, {skipped_votes} skipped "
-            f"(voter not in Politician table)"
-        )
+    print(
+        f"\n✓  Done.\n"
+        f"   LegislationEvents: {inserted} inserted, {updated} updated\n"
+        f"   Note: Per-member VoteRecords not available from Legistar NYC API.\n"
+        f"         Bill outcomes (Passed/Failed) are stored in LegislationEvent.status."
+    )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Populate NYC Council votes from Legistar")
-    parser.add_argument("--limit",  type=int, default=100,   help="Max matters to fetch (default 100)")
-    parser.add_argument("--year",   type=int, default=None,  help="Filter by year e.g. 2025")
+    parser = argparse.ArgumentParser(description="Populate NYC Council legislation outcomes from Legistar")
+    parser.add_argument("--limit", type=int, default=200, help="Max matters to fetch total (split across statuses, default 200)")
+    parser.add_argument("--year",  type=int, default=None, help="Filter by year e.g. 2024")
     args = parser.parse_args()
     populate_votes(limit=args.limit, year_filter=args.year)
