@@ -8,6 +8,9 @@ import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { SettingsModal } from "@/components/civiq/SettingsModal";
 import { useProfile } from "@/lib/useProfile";
 import { POLICY_AREAS } from "@/lib/policyMetadata";
+import { getRecentPolicies } from "@/lib/api";
+import { buildGeneralizedBriefingFromPolicies } from "@/lib/generalized-briefing";
+import { normalizePolicyReply, parseRetrievalSourcesEnvelope, type PolicyResponse } from "@/lib/policy-reply";
 import {
   ChevronDown, Info, Sparkles, Users, Settings,
   SlidersHorizontal, X, BarChart3, Newspaper,
@@ -30,8 +33,8 @@ const Hero = dynamic(
   },
 );
 
-const IssueBriefingCenter = dynamic(
-  () => import("@/components/civiq/IssueBriefingCenter").then((m) => m.IssueBriefingCenter),
+const PolicyBriefingPanel = dynamic(
+  () => import("@/components/civiq/PolicyBriefingPanel").then((m) => m.PolicyBriefingPanel),
   {
     ssr: false,
     loading: () => (
@@ -65,6 +68,71 @@ const LOCATIONS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "State
 
 type ActiveTab = "briefings" | "votes";
 
+
+function timeframeToDays(t: string): number | undefined {
+  if (t === "Last 30 Days") return 30;
+  if (t === "Last 6 Months") return 180;
+  return undefined;
+}
+
+function buildFilterSummary(area: string, location: string, time: string): string {
+  const parts: string[] = [];
+  if (location !== "All NYC") parts.push(location);
+  if (area !== "All") parts.push(area);
+  parts.push(time);
+  return parts.join(" · ");
+}
+
+function buildLlmQuery(
+  query: string,
+  area: string,
+  location: string,
+  isPersonalized: boolean,
+  profile: CivicProfile | null,
+): string {
+  // if user typed a query, use it as-is but enrich with context
+  if (query.trim()) {
+    let q = query.trim();
+    if (area !== "All") q += ` (focus on ${area})`;
+    if (location !== "All NYC") q += ` in ${location}`;
+    return q;
+  }
+  // filter-driven query (area/location change with no typed query)
+  const areaPhrase = area === "All" ? "all NYC policy areas" : area;
+  let q = `What are the most important recent developments in ${areaPhrase} for NYC residents? Summarize what happened, why it matters, who is affected, and what comes next.`;
+  if (location !== "All NYC") q += ` Focus on ${location}.`;
+  if (isPersonalized && profile) {
+    const parts: string[] = [];
+    if (profile.borough) parts.push(`living in ${profile.borough}`);
+    const housing = (profile as any).housing;
+    if (housing) parts.push(housing.toLowerCase());
+    const demos = (profile as any).demographics as string[] | undefined;
+    if (demos?.length) parts.push(demos.join(", ").toLowerCase());
+    if (parts.length) q += ` Tailor for residents who are ${parts.join(", ")}.`;
+  }
+  return q;
+}
+
+function buildDemographics(
+  location: string,
+  isPersonalized: boolean,
+  profile: CivicProfile | null,
+): Record<string, string> {
+  const d: Record<string, string> = {};
+  if (location !== "All NYC") d.borough = location;
+  if (!isPersonalized || !profile) return d;
+  if (profile.borough?.trim()) d.borough = profile.borough.trim();
+  if ((profile as any).housing?.trim()) d.housing = (profile as any).housing.trim();
+  const issues = profile.issues?.map((s) => s.trim()).filter(Boolean) ?? [];
+  if (issues.length) d.issues = issues.join(",");
+  const tags = ((profile as any).demographics as string[] | undefined)
+    ?.map((s) => s.trim()).filter(Boolean) ?? [];
+  if (tags.length) d.demographics = tags.join(",");
+  if (Object.keys(d).length) d.profile_active = isPersonalized ? "true" : "false";
+  return d;
+}
+
+
 function SidebarSelect<T extends string>({
   label, value, options, onChange,
 }: { label: string; value: T; options: readonly T[]; onChange: (v: T) => void }) {
@@ -88,8 +156,13 @@ function SidebarSelect<T extends string>({
 }
 
 function PerspectiveToggle({
-  isPersonalized, setIsPersonalized, onEditProfile,
-}: { isPersonalized: boolean; setIsPersonalized: (v: boolean) => void; onEditProfile: () => void; profile: CivicProfile | null }) {
+  isPersonalized, setIsPersonalized, onEditProfile, profile,
+}: {
+  isPersonalized: boolean;
+  setIsPersonalized: (v: boolean) => void;
+  onEditProfile: () => void;
+  profile: CivicProfile | null;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1">
@@ -131,7 +204,11 @@ function PerspectiveToggle({
 
 function IssueAreaPicker({
   selectedArea, setSelectedArea, profileAreaIds,
-}: { selectedArea: string; setSelectedArea: (v: string) => void; profileAreaIds: Set<string> }) {
+}: {
+  selectedArea: string;
+  setSelectedArea: (v: string) => void;
+  profileAreaIds: Set<string>;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="font-work-sans text-[9px] font-bold uppercase tracking-widest text-[var(--muted)]">Issue Focus</span>
@@ -193,7 +270,7 @@ function SidebarContent({
         </div>
       )}
 
-      <div className="flex-1 px-3 py-3 space-y-4">
+      <div className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
         <SidebarSelect label="Location" value={selectedLocation as any} options={LOCATIONS} onChange={setSelectedLocation as any} />
         <SidebarSelect label="Timeframe" value={selectedTime as any} options={TIME_RANGES} onChange={setSelectedTime as any} />
         <div className="h-px bg-[var(--border)]/40" />
@@ -257,7 +334,7 @@ function LeftSidebar(props: {
   return (
     <>
       {/* Desktop sidebar — natural height, scrolls with page */}
-      <aside className="hidden lg:block lg:w-56 xl:w-60 shrink-0 sticky top-4 rounded-2xl border border-[var(--border)] bg-white/60 dark:bg-[var(--surface-card)]/50 backdrop-blur-md shadow-sm">
+      <aside className="hidden lg:block lg:w-56 xl:w-60 shrink-0 sticky top-4 max-h-[calc(100vh-2rem)] rounded-2xl border border-[var(--border)] bg-white/60 dark:bg-[var(--surface-card)]/50 backdrop-blur-md shadow-sm overflow-hidden">
         <SidebarContent {...shared} />
       </aside>
 
@@ -282,15 +359,10 @@ function TabBar({ active, setActive }: { active: ActiveTab; setActive: (t: Activ
   return (
     <div className="flex gap-1 p-1 rounded-xl border border-[var(--border)] bg-slate-100/80 dark:bg-[var(--surface-elevated)]/60 w-fit">
       {tabs.map(({ id, label, icon: Icon }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => setActive(id)}
+        <button key={id} type="button" onClick={() => setActive(id)}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${active === id
             ? "bg-white dark:bg-[var(--surface-card)] text-[var(--foreground)] shadow-sm border border-[var(--border)]/20"
-            : "text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-        >
+            : "text-[var(--muted)] hover:text-[var(--foreground)]"}`}>
           <Icon className="h-3.5 w-3.5" />
           {label}
         </button>
@@ -305,14 +377,28 @@ export function HomeShell() {
   const [selectedArea, setSelectedArea] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All NYC");
   const [selectedTime, setSelectedTime] = useState("Last 30 Days");
-  const [isPersonalized, setIsPersonalized] = useState(true);
+  const [isPersonalized, setIsPersonalized] = useState(false); // default: Everyone
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("briefings");
 
+  // profile
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
 
+  // briefing state
+  const [snapshotLoading, setSnapshotLoading] = useState(true);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
+  const [generalizedBriefing, setGeneralizedBriefing] = useState<PolicyResponse | null>(null);
+  const [llmResponse, setLlmResponse] = useState<PolicyResponse | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
+  const [briefingQuery, setBriefingQuery] = useState("");
+
+  // track last filter combo that generated the snapshot (avoids redundant fetches)
+  const lastSnapshotKey = useRef("");
+
+  // onboarding
   useEffect(() => {
     if (!isLoaded || typeof window === "undefined") return;
     if (profile) {
@@ -322,7 +408,101 @@ export function HomeShell() {
     }
   }, [isLoaded, profile]);
 
-  const handleHeroSearch = useCallback(() => {
+  // static snapshot, re-fetches when location / timeframe / area / perspective changes.
+  const fetchSnapshot = useCallback(async (
+    area: string,
+    location: string,
+    time: string,
+    personalized: boolean,
+    prof: CivicProfile | null,
+  ) => {
+    const borough =
+      personalized && prof?.borough
+        ? prof.borough
+        : location !== "All NYC"
+          ? location
+          : undefined;
+    const areaParam = area !== "All" ? area : undefined;
+    const days = timeframeToDays(time);
+    const key = `${borough ?? ""}|${areaParam ?? ""}|${days ?? ""}`;
+    if (key === lastSnapshotKey.current) return;
+    lastSnapshotKey.current = key;
+
+    setSnapshotLoading(true);
+    setSnapshotError(null);
+    // clear LLM result when filters change
+    setLlmResponse(null);
+    setLlmError(null);
+    setBriefingQuery("");
+
+    try {
+      const { policies } = await getRecentPolicies(borough, areaParam, days);
+      const locationLabel =
+        personalized && prof?.borough ? prof.borough : location;
+      const snapshot = buildGeneralizedBriefingFromPolicies(policies, {
+        selectedArea: area,
+        locationLabel,
+        timeLabel: time,
+      });
+      setGeneralizedBriefing(snapshot);
+    } catch (e) {
+      setSnapshotError(e instanceof Error ? e.message : "Could not load records");
+    } finally {
+      setSnapshotLoading(false);
+    }
+  }, []);
+
+  // fetch snapshot on mount and when filters change
+  useEffect(() => {
+    if (!isLoaded) return;
+    fetchSnapshot(selectedArea, selectedLocation, selectedTime, isPersonalized, profile);
+  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile, isLoaded, fetchSnapshot]);
+
+  // LLM briefing, fires when user searches or changes issue
+  const fireLlmBriefing = useCallback(async (
+    userQuery: string,
+    area: string,
+    location: string,
+    personalized: boolean,
+    prof: CivicProfile | null,
+  ) => {
+    const q = buildLlmQuery(userQuery, area, location, personalized, prof);
+    const demographics = buildDemographics(location, personalized, prof);
+
+    setBriefingQuery(userQuery.trim() || buildFilterSummary(area, location, selectedTime));
+    setLlmLoading(true);
+    setLlmError(null);
+    setLlmResponse(null);
+
+    try {
+      const res = await fetch("/api/civic/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q, demographics, response_style: "structured" }),
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as any;
+        throw new Error(err.detail || err.error || `HTTP ${res.status}`);
+      }
+      const envelope = await res.json() as Record<string, unknown>;
+      const payload = "reply" in envelope ? envelope.reply : envelope;
+      const normalized = normalizePolicyReply(payload);
+      const retrieval_sources = parseRetrievalSourcesEnvelope(envelope, 12);
+      const su = envelope.sources_used;
+      setLlmResponse({
+        ...normalized,
+        retrieval_sources,
+        sources_used: typeof su === "number" ? su : retrieval_sources.length,
+      });
+    } catch (e) {
+      setLlmError(e instanceof Error ? e.message : "Briefing failed");
+    } finally {
+      setLlmLoading(false);
+    }
+  }, [selectedTime]);
+
+  const handleSearch = useCallback(() => {
     if (!query.trim()) return;
     setActiveTab("briefings");
     // try to match query to an issue area
@@ -334,7 +514,30 @@ export function HomeShell() {
       )
     );
     if (matched) setSelectedArea(matched.id);
-  }, [query]);
+    fireLlmBriefing(query, matched?.id ?? selectedArea, selectedLocation, isPersonalized, profile);
+  }, [query, selectedArea, selectedLocation, isPersonalized, profile, fireLlmBriefing]);
+
+  // area selection from sidebar
+  const handleAreaSelect = useCallback((area: string) => {
+    setSelectedArea(area);
+    if (llmResponse || llmLoading) {
+      fireLlmBriefing(query, area, selectedLocation, isPersonalized, profile);
+    }
+  }, [llmResponse, llmLoading, query, selectedLocation, isPersonalized, profile, fireLlmBriefing]);
+
+  // perspective toggle
+  const handlePerspectiveChange = useCallback((val: boolean) => {
+    setIsPersonalized(val);
+    if (llmResponse || llmLoading) {
+      fireLlmBriefing(query, selectedArea, selectedLocation, val, profile);
+    }
+  }, [llmResponse, llmLoading, query, selectedArea, selectedLocation, profile, fireLlmBriefing]);
+
+  // filter summary for panel header
+  const filterSummary = useMemo(
+    () => buildFilterSummary(selectedArea, selectedLocation, selectedTime),
+    [selectedArea, selectedLocation, selectedTime],
+  );
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
@@ -348,6 +551,8 @@ export function HomeShell() {
           if (typeof window !== "undefined") localStorage.removeItem("civic_profile_skipped");
           saveProfile(data);
           setShowOnboarding(false);
+          // Auto-enable "For Me" after onboarding
+          setIsPersonalized(true);
         }}
         onSkip={() => {
           localStorage.setItem("civic_profile_skipped", "true");
@@ -361,8 +566,8 @@ export function HomeShell() {
         <Hero
           query={query}
           onQueryChange={setQuery}
-          loading={false}
-          onSearch={handleHeroSearch}
+          loading={llmLoading}
+          onSearch={handleSearch}
         />
 
         {/* mobile filter toggle */}
@@ -371,8 +576,10 @@ export function HomeShell() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] bg-white/80 dark:bg-[var(--surface-card)]/80 text-[11px] font-bold text-[var(--foreground)] shadow-sm hover:bg-slate-50 transition-all">
             <SlidersHorizontal className="h-3.5 w-3.5 text-[var(--accent)]" />
             Filters
-            {selectedArea !== "All" && (
-              <span className="ml-1 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-white font-bold">1</span>
+            {(selectedArea !== "All" || selectedLocation !== "All NYC") && (
+              <span className="ml-1 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-white font-bold">
+                {[selectedArea !== "All", selectedLocation !== "All NYC"].filter(Boolean).length}
+              </span>
             )}
           </button>
         </div>
@@ -388,10 +595,10 @@ export function HomeShell() {
               selectedTime={selectedTime}
               setSelectedTime={setSelectedTime}
               isPersonalized={isPersonalized}
-              setIsPersonalized={setIsPersonalized}
+              setIsPersonalized={handlePerspectiveChange}
               onEditProfile={() => setShowEditProfile(true)}
               selectedArea={selectedArea}
-              setSelectedArea={setSelectedArea}
+              setSelectedArea={handleAreaSelect}
               profile={profile}
               mobileOpen={mobileSidebarOpen}
               onMobileClose={() => setMobileSidebarOpen(false)}
@@ -400,12 +607,17 @@ export function HomeShell() {
             {/* RIGHT: main content */}
             <div className="flex-1 min-w-0 space-y-5">
               <TabBar active={activeTab} setActive={setActiveTab} />
+
               {activeTab === "briefings" ? (
-                <IssueBriefingCenter
-                  profile={profile}
-                  isPersonalized={isPersonalized}
-                  selectedArea={selectedArea}
-                  setSelectedArea={setSelectedArea}
+                <PolicyBriefingPanel
+                  loading={llmLoading}
+                  error={llmError}
+                  response={llmResponse}
+                  briefingQuery={briefingQuery}
+                  snapshotLoading={snapshotLoading}
+                  snapshotError={snapshotError}
+                  generalizedBriefing={generalizedBriefing}
+                  filterSummary={filterSummary}
                 />
               ) : (
                 <VoteTracker

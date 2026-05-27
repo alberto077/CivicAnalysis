@@ -7,7 +7,7 @@ import {
   ExternalLink, Globe2, Sparkles, ChevronDown,
   ChevronRight, Newspaper, Hash, X,
   Lightbulb, Users, ArrowRight, AlertCircle,
-  TrendingUp, BookOpen, Phone,
+  BookOpen, Search,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MotionReveal } from "./MotionReveal";
@@ -40,14 +40,10 @@ function sourceHostname(url: string) {
 const SECTIONS = [
   {
     key: "what_happened" as const,
-    label: "What happened",
-    eyebrow: "Story",
-    Icon: Newspaper,
-    accent: "#3b82f6",
-    bg: "bg-blue-50/60 dark:bg-blue-950/20",
+    label: "What happened", eyebrow: "Story", Icon: Newspaper,
+    accent: "#3b82f6", bg: "bg-blue-50/60 dark:bg-blue-950/20",
     border: "border-blue-100 dark:border-blue-900/40",
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-500/10", iconColor: "text-blue-600 dark:text-blue-400",
     bulletColor: "#3b82f6",
   },
   {
@@ -110,7 +106,7 @@ function KpiCard({ headline, caption }: { headline: string; caption?: string }) 
 
 
 function SectionCard({
-  eyebrow, label, Icon, items, accent, bg, border, iconBg, iconColor, bulletColor,
+  eyebrow, label, Icon, items, bg, border, iconBg, iconColor, bulletColor,
 }: {
   eyebrow: string; label: string; Icon: any; items: string[];
   accent: string; bg: string; border: string; iconBg: string; iconColor: string; bulletColor: string;
@@ -148,33 +144,28 @@ function SectionCard({
 function SourceChip({ card }: { card: BriefingSourceCard }) {
   const host = card.url ? sourceHostname(card.url) : "";
   const color = srcColor(card.source_type ?? "");
-  const Inner = (
+  return (
     <div className="flex min-w-0 flex-col rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/70 dark:bg-[var(--surface-elevated)]/60 p-3 transition hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-700">
       <div className="flex items-start gap-2 justify-between mb-1">
         <p className="min-w-0 flex-1 text-[11.5px] font-semibold leading-snug text-slate-900 dark:text-[var(--foreground)] line-clamp-2">
           {card.title}
         </p>
         {card.source_type && (
-          <span
-            className="shrink-0 rounded px-1 py-0.5 text-[7px] font-bold uppercase tracking-widest border"
-            style={{ color, background: `${color}12`, borderColor: `${color}30` }}
-          >
+          <span className="shrink-0 rounded px-1 py-0.5 text-[7px] font-bold uppercase tracking-widest border"
+            style={{ color, background: `${color}12`, borderColor: `${color}30` }}>
             {card.source_type}
           </span>
         )}
       </div>
       {card.published_date && (
-        <p className="text-[9px] text-slate-400 dark:text-[var(--muted)] mb-1">
-          {card.published_date}
-        </p>
+        <p className="text-[9px] text-slate-400 dark:text-[var(--muted)] mb-1">{card.published_date}</p>
       )}
       <p className="text-[10.5px] leading-relaxed text-slate-600 dark:text-[#c8d8ea] line-clamp-2 flex-1 mb-2">
         <BriefingInline text={card.description} />
       </p>
       {card.url ? (
         <a href={card.url} target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] font-bold hover:underline"
-          style={{ color }}>
+          className="inline-flex items-center gap-1 text-[10px] font-bold hover:underline" style={{ color }}>
           <ExternalLink className="h-3 w-3 shrink-0" strokeWidth={2.5} />
           {host || "Open record"}
         </a>
@@ -183,7 +174,6 @@ function SourceChip({ card }: { card: BriefingSourceCard }) {
       )}
     </div>
   );
-  return Inner;
 }
 
 // ─── parse KPI text into headline + caption ───────────────────────────────────
@@ -193,6 +183,25 @@ function parseKpi(text: string): { headline: string; caption?: string } {
   const stat = text.trim().match(/^((?:\$|€|£)?[\d,.]+(?:%|[KMB])?)\s*[—:–\-]\s+(.+)$/i);
   if (stat) return { headline: stat[1].trim(), caption: stat[2].trim() };
   return { headline: text.trim() };
+}
+
+// snapshot recent bills/docs as a scannable list before any LLM call
+function SnapshotRecordList({ briefing }: { briefing: PolicyResponse }) {
+  const items = briefing.what_happened.slice(0, 8);
+  if (!items.length) return null;
+  return (
+    <div className="space-y-1.5">
+      <p className="font-work-sans text-[8px] font-black uppercase tracking-[0.22em] text-[var(--muted)] mb-2">
+        Recent indexed records
+      </p>
+      {items.map((item, i) => (
+        <div key={i} className="flex gap-2.5 rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/60 dark:bg-[var(--surface-elevated)]/40 px-3 py-2.5 text-[12px] leading-relaxed text-slate-700 dark:text-[#d8e6f2]">
+          <span className="mt-1.5 shrink-0 h-1.5 w-1.5 rounded-full bg-[var(--accent)]/40" />
+          <span><BriefingInline text={item} /></span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ─── main component ───────────────────────────────────────────────────────────
@@ -237,7 +246,7 @@ export function PolicyBriefingPanel({
       {error && (
         <div className="mb-3 rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-2.5 text-xs text-red-900 dark:border-red-900/40 dark:bg-red-950/50 dark:text-red-100 flex items-start gap-2" role="alert">
           <X className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
-          <span><span className="font-semibold">Policy data unavailable. </span>{error}</span>
+          <span><span className="font-semibold">Policy data not available. </span>{error}</span>
         </div>
       )}
 
@@ -266,8 +275,7 @@ export function PolicyBriefingPanel({
             {!loading && showBody && (
               <motion.div key={showLive ? "live" : "gen"}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-              >
+                transition={{ duration: 0.25 }}>
                 {/* header */}
                 <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-100 dark:border-[var(--border)]">
                   <div className="flex items-center gap-2 min-w-0">
@@ -276,7 +284,7 @@ export function PolicyBriefingPanel({
                     </span>
                     <div className="min-w-0">
                       <p className="font-work-sans text-[7.5px] font-black uppercase tracking-[0.22em] text-[var(--muted)] leading-none">
-                        {showLive ? "AI Briefing" : "Snapshot"}
+                        {showLive ? "AI Briefing" : "Recent Records"}
                       </p>
                       <p className="font-work-sans text-[11px] font-bold text-slate-800 dark:text-white truncate leading-tight">
                         {briefingQuery || filterSummary || "Current filters"}
@@ -294,15 +302,23 @@ export function PolicyBriefingPanel({
 
                   {/* snapshot notice */}
                   {showGeneralized && (
-                    <div className="rounded-xl border border-amber-200/80 bg-amber-50/80 dark:border-amber-900/40 dark:bg-amber-950/30 px-3.5 py-2.5">
-                      <p className="text-[10.5px] font-semibold text-amber-800 dark:text-amber-200 leading-snug">
-                        Showing indexed snapshot for current filters. Click a district or type a question above to generate a targeted briefing.
-                      </p>
+                    <div className="rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 dark:bg-[var(--accent)]/10 px-3.5 py-3">
+                      <div className="flex items-start gap-2.5">
+                        <Search className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" />
+                        <div>
+                          <p className="text-[11.5px] font-bold text-slate-800 dark:text-white leading-snug mb-0.5">
+                            Showing {safe.sources_used} indexed records for {filterSummary || "current filters"}
+                          </p>
+                          <p className="text-[10.5px] text-slate-500 dark:text-[var(--muted)] leading-relaxed">
+                            Type a question above and press Enter for an AI-generated briefing — e.g. "How does the housing bill affect Brooklyn renters?"
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 
                   {/* TL;DR */}
-                  {tldr.length > 0 && (
+                  {showLive && tldr.length > 0 && (
                     <div className="rounded-xl border border-slate-200/60 dark:border-[var(--border)] bg-slate-50/60 dark:bg-[var(--surface-elevated)]/40 p-3.5">
                       <div className="flex gap-2.5">
                         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--accent)]/10">
@@ -332,7 +348,7 @@ export function PolicyBriefingPanel({
                   )}
 
                   {/* KPI strip */}
-                  {kpiItems.length > 0 && (
+                  {showLive && kpiItems.length > 0 && (
                     <div className="space-y-1.5">
                       <p className="font-work-sans text-[7.5px] font-black uppercase tracking-[0.22em] text-[var(--muted)] flex items-center gap-1.5">
                         <Hash className="h-2.5 w-2.5" />Key figures
@@ -346,34 +362,25 @@ export function PolicyBriefingPanel({
                     </div>
                   )}
 
-                  {/* 2x2 dashboard grid */}
-                  {SECTIONS.some(s => safe[s.key].length > 0) && (
+                  {/* snapshot: scannable record list */}
+                  {showGeneralized && <SnapshotRecordList briefing={safe} />}
+
+                  {/* LLM: 2×2 section grid */}
+                  {showLive && SECTIONS.some(s => safe[s.key].length > 0) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {SECTIONS.map((sec) => (
-                        <SectionCard
-                          key={sec.key}
-                          eyebrow={sec.eyebrow}
-                          label={sec.label}
-                          Icon={sec.Icon}
-                          items={safe[sec.key]}
-                          accent={sec.accent}
-                          bg={sec.bg}
-                          border={sec.border}
-                          iconBg={sec.iconBg}
-                          iconColor={sec.iconColor}
-                          bulletColor={sec.bulletColor}
-                        />
-                      ))}
+                      {SECTIONS.map((sec) => {
+                        const { key, ...rest } = sec;
+                        return <SectionCard key={key} {...rest} items={safe[key]} />;
+                      })}
                     </div>
                   )}
 
                   {/* Read more */}
-                  {safe.read_more.length > 0 && (
+                  {showLive && safe.read_more.length > 0 && (
                     <details className="group rounded-xl border border-slate-200/80 dark:border-[var(--border)] bg-slate-50/50 dark:bg-[var(--surface-elevated)]/30">
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-[11px] font-bold text-slate-700 dark:text-[var(--foreground)] outline-none hover:bg-slate-100/50 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-1.5">
-                          <BookOpen className="h-3 w-3 text-slate-400" />
-                          More detail
+                          <BookOpen className="h-3 w-3 text-slate-400" />More detail
                         </span>
                         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400 transition group-open:rotate-180 dark:text-[var(--icon-cyan)]" />
                       </summary>
@@ -410,7 +417,7 @@ export function PolicyBriefingPanel({
                         ))}
                       </div>
                       {sourceCards.length > 4 && (
-                        <button type="button" onClick={() => setSourcesExpanded((v) => !v)}
+                        <button type="button" onClick={() => setSourcesExpanded(v => !v)}
                           className="mt-2 flex items-center gap-1 text-[11px] font-bold text-[var(--accent)] hover:underline">
                           {sourcesExpanded
                             ? <><ChevronDown className="h-3 w-3 rotate-180" />Show fewer</>
@@ -438,7 +445,7 @@ export function PolicyBriefingPanel({
               <motion.div key="snap-err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="px-6 py-8 text-center" role="alert">
                 <AlertCircle className="h-6 w-6 text-red-400 mx-auto mb-2" />
-                <p className="text-[12px] font-semibold text-slate-700 dark:text-[var(--foreground)]">Snapshot unavailable</p>
+                <p className="text-[12px] font-semibold text-slate-700 dark:text-[var(--foreground)]">Could not load records</p>
                 <p className="mt-1 text-[11px] text-[var(--muted)]">{snapshotError}</p>
               </motion.div>
             )}
@@ -448,13 +455,13 @@ export function PolicyBriefingPanel({
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="flex min-h-[240px] flex-col items-center justify-center px-6 py-10 text-center">
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)]/10 mb-4">
-                  <Sparkles className="h-5 w-5 text-[var(--accent)]/50" strokeWidth={1.5} />
+                  <Search className="h-5 w-5 text-[var(--accent)]/50" strokeWidth={1.5} />
                 </span>
                 <p className="text-[13.5px] font-semibold text-[var(--foreground)] mb-1">
-                  Select a district or search above
+                  Search to generate a briefing
                 </p>
-                <p className="max-w-[240px] text-[11.5px] text-[var(--muted)] leading-relaxed">
-                  Click any district on the map to generate an instant briefing for that area.
+                <p className="max-w-[260px] text-[11.5px] text-[var(--muted)] leading-relaxed">
+                  Type a question or topic above — e.g. "rent stabilization in Brooklyn" or "school funding cuts".
                 </p>
               </motion.div>
             )}
