@@ -1,38 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Sparkles, ChevronDown, ChevronRight, ExternalLink,
-    RefreshCw, Clock, AlertCircle, TrendingUp, Users,
-    Newspaper, Lightbulb, ArrowRight, Hash, Globe2,
-    BookOpen, CheckCircle2,
+    RefreshCw, Clock, AlertCircle, Globe2, Newspaper,
 } from "lucide-react";
 import { type CivicProfile } from "@/lib/useProfile";
 import { POLICY_AREAS, getPolicyAreaMetadata, srcColor, timeAgo } from "@/lib/policyMetadata";
+import { normalizePolicyReply, parseRetrievalSourcesEnvelope, type PolicyResponse } from "@/lib/policy-reply";
 import { BriefingInline } from "./BriefingInline";
 
-
-
-type BriefingData = {
-    tldr: string[];
-    topic_tags: string[];
-    what_happened: string[];
-    why_it_matters: string[];
-    whos_affected: string[];
-    key_numbers: string[];
-    what_happens_next: string[];
-    read_more: string[];
-    sources: Array<{ title: string; description: string; url?: string; source_type?: string; published_date?: string }>;
-    retrieval_sources: Array<{ title: string; source_url: string; source_type: string; published_date?: string }>;
-    area: string;
-    area_slug: string;
-    record_count: number;
-    sources_used: number;
-    cached: boolean;
-    cached_at: string;
-    cache_age_hours: number;
-};
 
 type AreaCard = {
     id: string;
@@ -41,7 +19,7 @@ type AreaCard = {
     color: string;
     Icon: any;
     isPersonalized: boolean;
-    briefing: BriefingData | null;
+    briefing: PolicyResponse | null;
     loading: boolean;
     error: string | null;
 };
@@ -80,7 +58,7 @@ const AREA_SLUG_MAP: Record<string, string> = {
     "Armed Forces and National Security": "armed-forces-and-national-security",
 };
 
-// Priority areas to show by default (most civic-relevant to NYC residents)
+// Priority areas shown first when no profile
 const PRIORITY_AREA_IDS = [
     "Housing and Community Development",
     "Transportation and Public Works",
@@ -92,71 +70,80 @@ const PRIORITY_AREA_IDS = [
     "Immigration",
 ];
 
-// Fetch briefing from backend
-async function fetchBriefing(
-    slug: string,
+function buildBriefingQuery(areaId: string, profile: CivicProfile | null, personalized: boolean): string {
+    const area = areaId === "All" ? "all NYC policy areas" : areaId;
+    let q = `What are the most important recent developments in ${area} for NYC residents? Summarize what happened, why it matters, who is affected, and what comes next.`;
+    if (personalized && profile) {
+        const parts: string[] = [];
+        if (profile.borough) parts.push(`living in ${profile.borough}`);
+        const housing = (profile as any).housing;
+        if (housing) parts.push(housing.toLowerCase());
+        const demos = (profile as any).demographics as string[] | undefined;
+        if (demos?.length) parts.push(demos.join(", ").toLowerCase());
+        if (parts.length) q += ` Focus on how this affects residents who are ${parts.join(", ")}.`;
+    }
+    return q;
+}
+
+function buildDemographics(profile: CivicProfile | null, personalized: boolean): Record<string, string> {
+    if (!personalized || !profile) return {};
+    const d: Record<string, string> = {};
+    if (profile.borough?.trim()) d.borough = profile.borough.trim();
+    if ((profile as any).housing?.trim()) d.housing = (profile as any).housing.trim();
+    const issues = profile.issues?.map((s) => s.trim()).filter(Boolean) ?? [];
+    if (issues.length) d.issues = issues.join(",");
+    const tags = ((profile as any).demographics as string[] | undefined)?.map((s) => s.trim()).filter(Boolean) ?? [];
+    if (tags.length) d.demographics = tags.join(",");
+    if (Object.keys(d).length) d.profile_active = "true";
+    return d;
+}
+
+
+
+async function fetchBriefingViaChat(
+    areaId: string,
     profile: CivicProfile | null,
     personalized: boolean,
-): Promise<BriefingData> {
-    const params = new URLSearchParams();
+): Promise<PolicyResponse> {
+    const query = buildBriefingQuery(areaId, profile, personalized);
+    const demographics = buildDemographics(profile, personalized);
 
-    if (personalized && profile) {
-        // Location
-        if (profile.borough?.trim()) {
-            params.set("borough", profile.borough.trim());
-        }
-
-        // Housing situation (Renter / Homeowner / NYCHA / Shared Housing)
-        const housing = (profile as any).housing;
-        if (typeof housing === "string" && housing.trim()) {
-            params.set("housing", housing.trim());
-        }
-
-        // Policy interest areas
-        const issues = profile.issues?.map((s) => s.trim()).filter(Boolean) ?? [];
-        if (issues.length) {
-            params.set("issues", issues.join(","));
-        }
-
-        // Demographic tags: Senior, Student, Veteran, Low-income, etc.
-        // Backend's build_profile_context() reads this as `demographics.get("demographics")`.
-        const demTags = (profile as any).demographics;
-        const tags: string[] = Array.isArray(demTags)
-            ? demTags.map((s: unknown) => String(s).trim()).filter(Boolean)
-            : typeof demTags === "string" && demTags.trim()
-                ? [demTags.trim()]
-                : [];
-        if (tags.length) {
-            params.set("demographics", tags.join(","));
-        }
-    }
-
-    params.set("personalized", personalized ? "true" : "false");
-
-    const url = `/api/civic/briefings/${slug}${params.toString() ? `?${params}` : ""}`;
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch("/api/civic/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, demographics, response_style: "structured" }),
+        cache: "no-store",
+    });
 
     if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as any;
+        const err = await res.json().catch(() => ({})) as any;
         throw new Error(err.detail || err.error || `HTTP ${res.status}`);
     }
 
-    return res.json();
+    const envelope = await res.json() as Record<string, unknown>;
+    // envelope shape: { reply: {...}, retrieval_sources: [...], sources_used: N }
+    const payload = "reply" in envelope ? envelope.reply : envelope;
+    const normalized = normalizePolicyReply(payload);
+    const retrieval_sources = parseRetrievalSourcesEnvelope(envelope, 12);
+    const su = envelope.sources_used;
+    return {
+        ...normalized,
+        retrieval_sources,
+        sources_used: typeof su === "number" ? su : retrieval_sources.length,
+    };
 }
 
-// Section config 
 const SECTIONS = [
-    { key: "what_happened", label: "What happened", eyebrow: "Story", accent: "#3b82f6", bg: "bg-blue-50/50 dark:bg-blue-950/20", border: "border-blue-100 dark:border-blue-900/30" },
-    { key: "why_it_matters", label: "Why it matters", eyebrow: "Impact", accent: "#f59e0b", bg: "bg-amber-50/50 dark:bg-amber-950/20", border: "border-amber-100 dark:border-amber-900/30" },
-    { key: "whos_affected", label: "Who's affected", eyebrow: "People", accent: "#10b981", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", border: "border-emerald-100 dark:border-emerald-900/30" },
-    { key: "what_happens_next", label: "Take action", eyebrow: "Next steps", accent: "#8b5cf6", bg: "bg-violet-50/50 dark:bg-violet-950/20", border: "border-violet-100 dark:border-violet-900/30" },
-] as const;
+    { key: "what_happened" as const, label: "What happened", accent: "#3b82f6", bg: "bg-blue-50/50 dark:bg-blue-950/20", border: "border-blue-100 dark:border-blue-900/30" },
+    { key: "why_it_matters" as const, label: "Why it matters", accent: "#f59e0b", bg: "bg-amber-50/50 dark:bg-amber-950/20", border: "border-amber-100 dark:border-amber-900/30" },
+    { key: "whos_affected" as const, label: "Who's affected", accent: "#10b981", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", border: "border-emerald-100 dark:border-emerald-900/30" },
+    { key: "what_happens_next" as const, label: "Take action", accent: "#8b5cf6", bg: "bg-violet-50/50 dark:bg-violet-950/20", border: "border-violet-100 dark:border-violet-900/30" },
+];
 
-// Briefing body (expanded view) 
-function BriefingBody({ briefing, color }: { briefing: BriefingData; color: string }) {
+
+function BriefingBody({ briefing, color }: { briefing: PolicyResponse; color: string }) {
     const [sourcesExpanded, setSourcesExpanded] = useState(false);
-
-    const allSources = useMemo(() => {
+    const allSources = (() => {
         const seen = new Set<string>();
         const out: Array<{ title: string; url?: string; type?: string; date?: string; description?: string }> = [];
 
@@ -172,7 +159,7 @@ function BriefingBody({ briefing, color }: { briefing: BriefingData; color: stri
             out.push({ title: s.title, url, type: s.source_type, date: s.published_date, description: s.description });
         }
         return out;
-    }, [briefing]);
+    })();
 
     const visibleSources = sourcesExpanded ? allSources : allSources.slice(0, 4);
 
@@ -194,8 +181,7 @@ function BriefingBody({ briefing, color }: { briefing: BriefingData; color: stri
             {briefing.topic_tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {briefing.topic_tags.map((tag) => (
-                        <span key={tag}
-                            className="rounded border border-slate-200/80 dark:border-[var(--border)] bg-white/80 dark:bg-[var(--surface-elevated)]/70 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#c8d8ea]">
+                        <span key={tag} className="rounded border border-slate-200/80 dark:border-[var(--border)] bg-white/80 dark:bg-[var(--surface-elevated)]/70 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#c8d8ea]">
                             {tag}
                         </span>
                     ))}
@@ -258,14 +244,14 @@ function BriefingBody({ briefing, color }: { briefing: BriefingData; color: stri
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {visibleSources.map((src, i) => {
-                            const color = srcColor(src.type ?? "");
+                            const c = srcColor(src.type ?? "");
                             return (
                                 <div key={i} className="rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/70 dark:bg-[var(--surface-elevated)]/60 p-3">
                                     <div className="flex items-start gap-2 mb-1">
                                         <p className="flex-1 text-[11px] font-semibold leading-snug text-slate-900 dark:text-[var(--foreground)] line-clamp-2">{src.title}</p>
                                         {src.type && (
                                             <span className="shrink-0 rounded px-1 py-0.5 text-[7px] font-bold uppercase border"
-                                                style={{ color, background: `${color}12`, borderColor: `${color}30` }}>
+                                                style={{ color: c, background: `${c}12`, borderColor: `${c}30` }}>
                                                 {src.type}
                                             </span>
                                         )}
@@ -278,7 +264,7 @@ function BriefingBody({ briefing, color }: { briefing: BriefingData; color: stri
                                     )}
                                     {src.url ? (
                                         <a href={src.url} target="_blank" rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 text-[9.5px] font-bold hover:underline" style={{ color }}>
+                                            className="inline-flex items-center gap-1 text-[9.5px] font-bold hover:underline" style={{ color: c }}>
                                             <ExternalLink className="h-2.5 w-2.5" />
                                             {new URL(src.url).hostname.replace("www.", "")}
                                         </a>
@@ -294,35 +280,29 @@ function BriefingBody({ briefing, color }: { briefing: BriefingData; color: stri
                             className="mt-2 flex items-center gap-1 text-[11px] font-bold text-[var(--accent)] hover:underline">
                             {sourcesExpanded
                                 ? <><ChevronDown className="h-3 w-3 rotate-180" />Show fewer</>
-                                : <><ChevronRight className="h-3 w-3" />Show {allSources.length - 4} more</>
-                            }
+                                : <><ChevronRight className="h-3 w-3" />Show {allSources.length - 4} more</>}
                         </button>
                     )}
                 </div>
             )}
 
-            {/* Cache indicator */}
-            <div className="flex items-center gap-1.5 pt-1">
-                <Clock className="h-2.5 w-2.5 text-slate-400" />
-                <p className="text-[9px] text-slate-400">
-                    {briefing.cached
-                        ? `Cached · updated ${briefing.cache_age_hours < 1 ? "just now" : `${Math.round(briefing.cache_age_hours)}h ago`}`
-                        : "Just generated"
-                    } · {briefing.record_count} record{briefing.record_count !== 1 ? "s" : ""} indexed
-                </p>
-            </div>
+            {/* Sources count footer */}
+            {briefing.sources_used > 0 && (
+                <div className="flex items-center gap-1.5 pt-1">
+                    <Clock className="h-2.5 w-2.5 text-slate-400" />
+                    <p className="text-[9px] text-slate-400">
+                        Generated from {briefing.sources_used} indexed record{briefing.sources_used !== 1 ? "s" : ""}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
 
 
 // Individual area card
-function AreaCard({
-    card,
-    isExpanded,
-    onToggle,
-    onRefresh,
-}: {
+
+function AreaCard({ card, isExpanded, onToggle, onRefresh }: {
     card: AreaCard;
     isExpanded: boolean;
     onToggle: () => void;
@@ -332,32 +312,18 @@ function AreaCard({
     const tldr = briefing?.tldr?.[0] ?? "";
 
     return (
-        <motion.div
-            layout
-            className={`rounded-2xl border bg-white/80 dark:bg-[var(--surface-card)]/80 backdrop-blur-sm shadow-sm overflow-hidden transition-shadow hover:shadow-md ${isExpanded
-                ? "border-2 col-span-full"
-                : "border-[var(--border)]"
+        <motion.div layout
+            className={`rounded-2xl border bg-white/80 dark:bg-[var(--surface-card)]/80 backdrop-blur-sm shadow-sm overflow-hidden transition-shadow hover:shadow-md ${isExpanded ? "border-2 col-span-full" : "border-[var(--border)]"
                 }`}
             style={isExpanded ? { borderColor: `${color}60` } : undefined}
         >
-            {/* Card header — always visible */}
-            <button
-                type="button"
-                className="w-full text-left"
-                onClick={onToggle}
-            >
-                {/* Color bar */}
+            <button type="button" className="w-full text-left" onClick={onToggle}>
                 <div className="h-1 w-full" style={{ background: color }} />
-
                 <div className="flex items-start gap-3 p-4">
-                    {/* Icon */}
-                    <span
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl mt-0.5"
-                        style={{ background: `${color}15` }}
-                    >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl mt-0.5"
+                        style={{ background: `${color}15` }}>
                         <Icon className="h-4.5 w-4.5" style={{ color }} aria-hidden />
                     </span>
-
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
                             <h3 className="font-work-sans text-[13px] font-bold text-slate-900 dark:text-white leading-tight truncate">
@@ -376,16 +342,18 @@ function AreaCard({
                                 {loading ? (
                                     <div className="flex items-center gap-1.5">
                                         <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: color }} />
-                                        <span className="text-[11px] text-[var(--muted)]">Loading briefing…</span>
+                                        <span className="text-[11px] text-[var(--muted)]">Generating briefing…</span>
                                     </div>
                                 ) : error ? (
-                                    <p className="text-[11px] text-red-500 dark:text-red-400 line-clamp-1">{error.includes("busy") ? "AI busy — click to retry" : error}</p>
+                                    <p className="text-[11px] text-red-500 dark:text-red-400 line-clamp-1">
+                                        {error.includes("busy") ? "AI busy — click to retry" : error}
+                                    </p>
                                 ) : tldr ? (
                                     <p className="text-[11.5px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         <BriefingInline text={tldr} />
                                     </p>
                                 ) : (
-                                    <p className="text-[11px] text-[var(--muted)]">Click to load briefing</p>
+                                    <p className="text-[11px] text-[var(--muted)]">Click to generate briefing</p>
                                 )}
                             </div>
                         )}
@@ -393,18 +361,14 @@ function AreaCard({
 
                     <div className="flex items-center gap-1.5 shrink-0 ml-2 mt-0.5">
                         {briefing && !loading && (
-                            <button
-                                type="button"
+                            <button type="button"
                                 onClick={(e) => { e.stopPropagation(); onRefresh(); }}
                                 className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                title="Refresh briefing"
-                            >
+                                title="Refresh briefing">
                                 <RefreshCw className="h-3 w-3" />
                             </button>
                         )}
-                        <ChevronDown
-                            className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                        />
+                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                     </div>
                 </div>
             </button>
@@ -412,18 +376,17 @@ function AreaCard({
             {/* Expanded body */}
             <AnimatePresence>
                 {isExpanded && (
-                    <motion.div
-                        key="body"
+                    <motion.div key="body"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                        className="overflow-hidden"
-                    >
+                        className="overflow-hidden">
                         <div className="px-4 pb-5 border-t border-slate-100 dark:border-[var(--border)]">
                             {loading ? (
                                 <div className="py-8 flex flex-col items-center gap-3">
-                                    <div className="h-7 w-7 rounded-full border-2 animate-spin" style={{ borderColor: `${color}30`, borderTopColor: color }} />
+                                    <div className="h-7 w-7 rounded-full border-2 animate-spin"
+                                        style={{ borderColor: `${color}30`, borderTopColor: color }} />
                                     <p className="text-[12px] text-[var(--muted)] animate-pulse">Generating briefing…</p>
                                 </div>
                             ) : error ? (
@@ -432,10 +395,8 @@ function AreaCard({
                                     <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
                                         {error.includes("busy") ? "AI service is busy — try again in a moment." : error}
                                     </p>
-                                    <button
-                                        onClick={onRefresh}
-                                        className="mt-1 text-[11px] font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
-                                    >
+                                    <button onClick={onRefresh}
+                                        className="mt-1 text-[11px] font-bold text-[var(--accent)] hover:underline flex items-center gap-1">
                                         <RefreshCw className="h-3 w-3" />Retry
                                     </button>
                                 </div>
@@ -461,8 +422,9 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showAll, setShowAll] = useState(false);
     const hasAutoExpanded = useRef(false);
+    const autoLoadTarget = useRef<string | null>(null);
 
-    // build / rebuild card list whenever profile or personalization changes
+    // build card list
     useEffect(() => {
         const profileIssueIds = new Set<string>(
             isPersonalized && profile?.issues ? profile.issues : []
@@ -471,15 +433,15 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
         const sorted = [...POLICY_AREAS]
             .filter(a => a.id !== "All")
             .sort((a, b) => {
-                const aProfile = profileIssueIds.has(a.id) ? 0 : 1;
-                const bProfile = profileIssueIds.has(b.id) ? 0 : 1;
-                const aPriority = PRIORITY_AREA_IDS.indexOf(a.id);
-                const bPriority = PRIORITY_AREA_IDS.indexOf(b.id);
-                if (aProfile !== bProfile) return aProfile - bProfile;
-                if (aPriority !== bPriority) {
-                    if (aPriority === -1) return 1;
-                    if (bPriority === -1) return -1;
-                    return aPriority - bPriority;
+                const aP = profileIssueIds.has(a.id) ? 0 : 1;
+                const bP = profileIssueIds.has(b.id) ? 0 : 1;
+                if (aP !== bP) return aP - bP;
+                const ai = PRIORITY_AREA_IDS.indexOf(a.id);
+                const bi = PRIORITY_AREA_IDS.indexOf(b.id);
+                if (ai !== bi) {
+                    if (ai === -1) return 1;
+                    if (bi === -1) return -1;
+                    return ai - bi;
                 }
                 return a.label.localeCompare(b.label);
             });
@@ -495,18 +457,12 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
             loading: false,
             error: null,
         })));
-
-        // reset
         hasAutoExpanded.current = false;
     }, [isPersonalized, profile]);
 
-    // Priority order:
-    // 1. If sidebar already has a specific selectedArea → use that
-    // 2. Otherwise use the first card in the sorted list
+    // auto-expand top card once cards are ready
     useEffect(() => {
-        if (hasAutoExpanded.current) return;
-        if (cards.length === 0) return;
-
+        if (hasAutoExpanded.current || cards.length === 0) return;
         const targetId =
             selectedArea && selectedArea !== "All" && cards.some(c => c.id === selectedArea)
                 ? selectedArea
@@ -515,26 +471,20 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
         hasAutoExpanded.current = true;
         setExpandedId(targetId);
         if (targetId !== selectedArea) setSelectedArea(targetId);
-        _autoLoadTarget.current = targetId;
+        autoLoadTarget.current = targetId;
     }, [cards]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const _autoLoadTarget = useRef<string | null>(null);
-
-    // When selectedArea changes from the sidebar, expand that card
+    // When sidebar selectedArea changes, expand + load that card
     useEffect(() => {
         if (selectedArea === "All") return;
         const card = cards.find(c => c.id === selectedArea);
         if (!card) return;
         setExpandedId(selectedArea);
-        if (!card.briefing && !card.loading) {
-            loadBriefing(selectedArea);
-        }
+        if (!card.briefing && !card.loading) loadBriefing(selectedArea);
     }, [selectedArea]); // eslint-disable-line
 
     const loadBriefing = useCallback(async (areaId: string) => {
-        if (_autoLoadTarget.current === areaId) {
-            _autoLoadTarget.current = null;
-        }
+        if (autoLoadTarget.current === areaId) autoLoadTarget.current = null;
 
         const card = cards.find(c => c.id === areaId);
         if (!card) return;
@@ -544,7 +494,7 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
         ));
 
         try {
-            const data = await fetchBriefing(card.slug, profile, isPersonalized);
+            const data = await fetchBriefingViaChat(areaId, profile, isPersonalized);
             setCards(prev => prev.map(c =>
                 c.id === areaId ? { ...c, briefing: data, loading: false, error: null } : c
             ));
@@ -558,12 +508,10 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
 
     // auto-load once loadBriefing is stable
     useEffect(() => {
-        const target = _autoLoadTarget.current;
+        const target = autoLoadTarget.current;
         if (!target) return;
         const card = cards.find(c => c.id === target);
-        if (card && !card.briefing && !card.loading) {
-            loadBriefing(target);
-        }
+        if (card && !card.briefing && !card.loading) loadBriefing(target);
     }, [loadBriefing]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleToggle = useCallback((areaId: string) => {
@@ -572,16 +520,12 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
         if (isOpening) {
             setSelectedArea(areaId);
             const card = cards.find(c => c.id === areaId);
-            if (card && !card.briefing && !card.loading) {
-                loadBriefing(areaId);
-            }
+            if (card && !card.briefing && !card.loading) loadBriefing(areaId);
         }
     }, [expandedId, cards, loadBriefing, setSelectedArea]);
 
     const handleRefresh = useCallback((areaId: string) => {
-        setCards(prev => prev.map(c =>
-            c.id === areaId ? { ...c, briefing: null } : c
-        ));
+        setCards(prev => prev.map(c => c.id === areaId ? { ...c, briefing: null } : c));
         loadBriefing(areaId);
     }, [loadBriefing]);
 
@@ -616,8 +560,8 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
 
             {/* Description */}
             <p className="text-[12px] text-[var(--muted)] leading-relaxed">
-                Daily AI-generated briefings for each issue area, grounded in indexed NYC Council, NY State, and federal records.
-                Click any area to expand. Your profile interests are highlighted.
+                AI-generated briefings for each issue area, grounded in indexed NYC Council, NY State, and federal records.
+                Click any area to expand. Your profile interests load first.
             </p>
 
             {/* Cards grid */}
@@ -636,16 +580,11 @@ export function IssueBriefingCenter({ profile, isPersonalized, selectedArea, set
             {/* Show more */}
             {cards.length > 8 && (
                 <div className="flex justify-center pt-2">
-                    <button
-                        type="button"
-                        onClick={() => setShowAll(v => !v)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--border)] bg-white/80 dark:bg-[var(--surface-card)]/80 text-[12px] font-bold text-[var(--foreground)] hover:bg-slate-50 dark:hover:bg-[var(--surface-elevated)] transition-all shadow-sm"
-                    >
-                        {showAll ? (
-                            <><ChevronDown className="h-3.5 w-3.5 rotate-180" />Show fewer areas</>
-                        ) : (
-                            <><ChevronDown className="h-3.5 w-3.5" />{cards.length - 8} more issue areas</>
-                        )}
+                    <button type="button" onClick={() => setShowAll(v => !v)}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--border)] bg-white/80 dark:bg-[var(--surface-card)]/80 text-[12px] font-bold text-[var(--foreground)] hover:bg-slate-50 dark:hover:bg-[var(--surface-elevated)] transition-all shadow-sm">
+                        {showAll
+                            ? <><ChevronDown className="h-3.5 w-3.5 rotate-180" />Show fewer areas</>
+                            : <><ChevronDown className="h-3.5 w-3.5" />{cards.length - 8} more issue areas</>}
                     </button>
                 </div>
             )}
