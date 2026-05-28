@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/civiq/ThemeProvider";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
+const ACCESSIBLE_CONTENT_ID = "civic-accessible-content";
+
 const playfairDisplay = Playfair_Display({
   weight: ["400", "500", "600"],
   variable: "--font-serif-display",
@@ -47,8 +49,13 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           <DevConsoleFilter />
-          {children}
-          <FloatingChatBot />
+          <div
+            id={ACCESSIBLE_CONTENT_ID}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            {children}
+            <FloatingChatBot />
+          </div>
           <AccessibilityWidget />
         </ThemeProvider>
       </body>

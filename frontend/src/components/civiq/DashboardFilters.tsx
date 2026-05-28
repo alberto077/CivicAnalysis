@@ -219,7 +219,7 @@ export function DashboardFilters({
                 <span
                   id={personalizeTooltipId}
                   role="tooltip"
-                  className="pointer-events-none invisible absolute left-1/2 top-full z-[80] mt-1.5 w-[min(15rem,calc(100vw-2.5rem))] -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,251,255,0.96)_100%)] px-3 py-2 font-work-sans text-[11px] font-medium leading-snug tracking-[0.01em] text-[var(--foreground)] shadow-[0_12px_36px_-14px_rgba(26,54,93,0.35)] opacity-0 backdrop-blur-xl transition-[opacity,visibility] duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(22,28,36,0.98)_100%)]"
+                  className="pointer-events-none absolute left-1/2 top-full z-[80] mt-1.5 hidden w-[min(15rem,calc(100vw-2.5rem))] -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(248,251,255,0.96)_100%)] px-3 py-2 font-work-sans text-[11px] font-medium leading-snug tracking-[0.01em] text-[var(--foreground)] opacity-0 shadow-[0_12px_36px_-14px_rgba(26,54,93,0.35)] backdrop-blur-xl transition-opacity duration-150 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100 dark:border-[var(--border)] dark:bg-[linear-gradient(135deg,rgba(28,36,44,0.99)_0%,rgba(22,28,36,0.98)_100%)]"
                 >
                   When on, we use your saved borough and interests with these filters. When off, only the filters above apply.
                 </span>

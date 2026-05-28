@@ -82,8 +82,8 @@ export function Header() {
               title="Update Preferences"
               aria-label="Update Preferences"
             >
-              <Settings className="h-4 w-4 shrink-0 text-[var(--muted)] transition-transform group-hover:rotate-90 group-hover:text-[var(--accent)] dark:text-sky-300 dark:group-hover:text-sky-200" />
-              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] group-hover:text-[var(--accent)] sm:inline dark:text-white dark:group-hover:text-white">
+              <Settings className="h-4 w-4 shrink-0 text-[#12355b] transition-transform group-hover:rotate-90 group-hover:text-[#0b1f3a] dark:text-white dark:group-hover:text-white/90" />
+              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-[#12355b] group-hover:text-[#0b1f3a] sm:inline dark:text-white dark:group-hover:text-white/90">
                 Profile
               </span>
             </button>
@@ -91,14 +91,14 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)] dark:text-[var(--icon-amber)] dark:hover:text-[var(--accent)] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[#12355b] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-[var(--accent)]/35 hover:text-[#0b1f3a] dark:text-white dark:hover:text-white/90 md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 shrink-0" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 shrink-0" />
               )}
             </button>
           </div>

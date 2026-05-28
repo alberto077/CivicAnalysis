@@ -20,6 +20,7 @@ type AccessibilitySettings = {
 type SettingKey = keyof AccessibilitySettings;
 
 const STORAGE_KEY = "civic_accessibility_settings";
+const ACCESSIBLE_CONTENT_ID = "civic-accessible-content";
 
 const DEFAULT_SETTINGS: AccessibilitySettings = {
   largeText: false,
@@ -30,6 +31,11 @@ const DEFAULT_SETTINGS: AccessibilitySettings = {
   focusMode: false,
   colorBlindFriendly: false,
 };
+
+function getAccessibleContentRoot(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  return document.getElementById(ACCESSIBLE_CONTENT_ID);
+}
 
 const SETTINGS: {
   key: SettingKey;
@@ -184,12 +190,15 @@ function SettingButton({
 }
 
 export function AccessibilityWidget() {
-  const stackRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
   const hasLoadedSavedSettings = useRef(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const panelBodyRef = useRef<HTMLDivElement>(null);
 
   const [isOpen, setIsOpen] = useState(false);
-  const footerAwareBottom = useFooterAwareBottom(24, 32, 12, 56, stackRef, isOpen);
+  /** Measure only the FAB — not the open panel — so footer lift does not shove the menu off-screen. */
+  const footerAwareBottom = useFooterAwareBottom(24, 32, 12, 56, fabRef, isOpen);
   const [settings, setSettings] =
     useState<AccessibilitySettings>(DEFAULT_SETTINGS);
 
@@ -212,23 +221,70 @@ export function AccessibilityWidget() {
   }, []);
 
   useEffect(() => {
-    const root = document.documentElement;
+    const content = getAccessibleContentRoot();
+    const html = document.documentElement;
 
-    root.classList.toggle("access-large-text", settings.largeText);
-    root.classList.toggle("access-high-contrast", settings.highContrast);
-    root.classList.toggle("access-reduce-motion", settings.reduceMotion);
-    root.classList.toggle("access-underline-links", settings.underlineLinks);
-    root.classList.toggle("access-readable-font", settings.readableFont);
-    root.classList.toggle("access-focus-mode", settings.focusMode);
-    root.classList.toggle(
+    // Display modes apply to page content only — keeps this menu usable while toggling.
+    content?.classList.toggle("access-large-text", settings.largeText);
+    content?.classList.toggle("access-high-contrast", settings.highContrast);
+    content?.classList.toggle("access-underline-links", settings.underlineLinks);
+    content?.classList.toggle("access-readable-font", settings.readableFont);
+    content?.classList.toggle(
       "access-color-blind-friendly",
       settings.colorBlindFriendly,
     );
+
+    html.classList.toggle("access-reduce-motion", settings.reduceMotion);
+    html.classList.toggle("access-focus-mode", settings.focusMode);
 
     if (hasLoadedSavedSettings.current) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function onPointerDown(event: PointerEvent) {
+      const widget = widgetRef.current;
+      if (!widget || !(event.target instanceof Node)) return;
+
+      if (!widget.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      const content = getAccessibleContentRoot();
+      content?.classList.remove(
+        "access-large-text",
+        "access-high-contrast",
+        "access-underline-links",
+        "access-readable-font",
+        "access-color-blind-friendly",
+      );
+      document.documentElement.classList.remove(
+        "access-reduce-motion",
+        "access-focus-mode",
+      );
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -241,10 +297,18 @@ export function AccessibilityWidget() {
   function toggleSetting(key: SettingKey) {
     hasLoadedSavedSettings.current = true;
 
+    const prevScrollTop = panelBodyRef.current?.scrollTop ?? 0;
+
     setSettings((currentSettings) => ({
       ...currentSettings,
       [key]: !currentSettings[key],
     }));
+
+    requestAnimationFrame(() => {
+      if (panelBodyRef.current) {
+        panelBodyRef.current.scrollTop = prevScrollTop;
+      }
+    });
   }
 
   function resetSettings() {
@@ -322,16 +386,13 @@ export function AccessibilityWidget() {
 
   return (
     <div
-      ref={stackRef}
-      className="fixed left-5 z-50 flex flex-col items-start transition-[bottom] duration-200 ease-out sm:left-8"
+      ref={widgetRef}
+      className={`fixed left-5 flex flex-col items-start transition-[bottom] duration-200 ease-out sm:left-8 ${isOpen ? "z-[200]" : "z-50"}`}
       style={{ bottom: `${footerAwareBottom}px` }}
     >
       {isOpen ? (
         <div
-          className="mb-4 flex w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]"
-          style={{
-            maxHeight: `min(calc(100dvh - ${footerAwareBottom}px - 5rem), calc(100vh - 13rem))`,
-          }}
+          className="accessibility-panel mb-4 flex max-h-[min(85dvh,calc(100dvh-6rem))] w-[calc(100vw-2rem)] max-w-[390px] min-h-0 flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-2xl dark:border-[var(--border)] dark:bg-[var(--surface-card)] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]"
         >
           <div className="shrink-0 bg-gradient-to-br from-[#12355b] via-[#0b1f3a] to-[#061525] px-5 py-4 text-white dark:from-[#0e2845] dark:via-[#081628] dark:to-[#04101c]">
             <div className="flex items-start justify-between gap-4">
@@ -369,7 +430,10 @@ export function AccessibilityWidget() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
+          <div
+            ref={panelBodyRef}
+            className="accessibility-panel-body min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-4 [-ms-overflow-style:auto] [scrollbar-width:thin]"
+          >
             {SETTINGS.map((setting) => (
               <SettingButton
                 key={setting.key}
@@ -465,6 +529,7 @@ export function AccessibilityWidget() {
       ) : null}
 
       <button
+          ref={fabRef}
           type="button"
           onClick={() => setIsOpen((current) => !current)}
           className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-white backdrop-blur-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 ${floatingFabLight} ${floatingFabDark}`}
