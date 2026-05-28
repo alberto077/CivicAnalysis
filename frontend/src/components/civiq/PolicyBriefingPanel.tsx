@@ -36,10 +36,9 @@ function sourceHostname(url: string) {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
 }
 
-
 const SECTIONS = [
   {
-    key: "what_happened" as const,
+    sectionKey: "what_happened" as const,
     label: "What happened", eyebrow: "Story", Icon: Newspaper,
     accent: "#3b82f6", bg: "bg-blue-50/60 dark:bg-blue-950/20",
     border: "border-blue-100 dark:border-blue-900/40",
@@ -47,44 +46,32 @@ const SECTIONS = [
     bulletColor: "#3b82f6",
   },
   {
-    key: "why_it_matters" as const,
-    label: "Why it matters",
-    eyebrow: "Impact",
-    Icon: Lightbulb,
-    accent: "#f59e0b",
-    bg: "bg-amber-50/60 dark:bg-amber-950/20",
+    sectionKey: "why_it_matters" as const,
+    label: "Why it matters", eyebrow: "Impact", Icon: Lightbulb,
+    accent: "#f59e0b", bg: "bg-amber-50/60 dark:bg-amber-950/20",
     border: "border-amber-100 dark:border-amber-900/40",
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10", iconColor: "text-amber-600 dark:text-amber-400",
     bulletColor: "#f59e0b",
   },
   {
-    key: "whos_affected" as const,
-    label: "Who's affected",
-    eyebrow: "People",
-    Icon: Users,
-    accent: "#10b981",
-    bg: "bg-emerald-50/60 dark:bg-emerald-950/20",
+    sectionKey: "whos_affected" as const,
+    label: "Who's affected", eyebrow: "People", Icon: Users,
+    accent: "#10b981", bg: "bg-emerald-50/60 dark:bg-emerald-950/20",
     border: "border-emerald-100 dark:border-emerald-900/40",
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600 dark:text-emerald-400",
     bulletColor: "#10b981",
   },
   {
-    key: "what_happens_next" as const,
-    label: "Take action",
-    eyebrow: "Next steps",
-    Icon: ArrowRight,
-    accent: "#8b5cf6",
-    bg: "bg-violet-50/60 dark:bg-violet-950/20",
+    sectionKey: "what_happens_next" as const,
+    label: "Take action", eyebrow: "Next steps", Icon: ArrowRight,
+    accent: "#8b5cf6", bg: "bg-violet-50/60 dark:bg-violet-950/20",
     border: "border-violet-100 dark:border-violet-900/40",
-    iconBg: "bg-violet-500/10",
-    iconColor: "text-violet-600 dark:text-violet-400",
+    iconBg: "bg-violet-500/10", iconColor: "text-violet-600 dark:text-violet-400",
     bulletColor: "#8b5cf6",
   },
 ] as const;
 
-// ─── KPI card ─────────────────────────────────────────────────────────────────
+
 
 function KpiCard({ headline, caption }: { headline: string; caption?: string }) {
   return (
@@ -109,7 +96,8 @@ function SectionCard({
   eyebrow, label, Icon, items, bg, border, iconBg, iconColor, bulletColor,
 }: {
   eyebrow: string; label: string; Icon: any; items: string[];
-  accent: string; bg: string; border: string; iconBg: string; iconColor: string; bulletColor: string;
+  accent: string; bg: string; border: string;
+  iconBg: string; iconColor: string; bulletColor: string;
 }) {
   if (!items.length) return null;
   return (
@@ -122,14 +110,14 @@ function SectionCard({
           <p className="font-work-sans text-[7.5px] font-black uppercase tracking-[0.24em] text-slate-400 dark:text-[var(--muted)] leading-none">
             {eyebrow}
           </p>
-          <h3 className="font-work-sans text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">
+          <h3 className="font-work-sans text-[13px] font-extrabold text-slate-900 dark:text-white leading-tight">
             {label}
           </h3>
         </div>
       </div>
       <ul className="space-y-1.5">
         {items.map((item, i) => (
-          <li key={i} className="flex gap-2 text-[12px] leading-relaxed text-slate-700 dark:text-[#d8e6f2]">
+          <li key={i} className="flex gap-2 text-sm leading-relaxed text-slate-700 dark:text-[#d8e6f2]">
             <span className="mt-1.5 shrink-0 h-1.5 w-1.5 rounded-full" style={{ background: bulletColor }} />
             <span><BriefingInline text={item} /></span>
           </li>
@@ -147,7 +135,7 @@ function SourceChip({ card }: { card: BriefingSourceCard }) {
   return (
     <div className="flex min-w-0 flex-col rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/70 dark:bg-[var(--surface-elevated)]/60 p-3 transition hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-700">
       <div className="flex items-start gap-2 justify-between mb-1">
-        <p className="min-w-0 flex-1 text-[11.5px] font-semibold leading-snug text-slate-900 dark:text-[var(--foreground)] line-clamp-2">
+        <p className="min-w-0 flex-1 text-[13px] font-semibold leading-snug text-slate-900 dark:text-[var(--foreground)] line-clamp-2">
           {card.title}
         </p>
         {card.source_type && (
@@ -160,7 +148,7 @@ function SourceChip({ card }: { card: BriefingSourceCard }) {
       {card.published_date && (
         <p className="text-[9px] text-slate-400 dark:text-[var(--muted)] mb-1">{card.published_date}</p>
       )}
-      <p className="text-[10.5px] leading-relaxed text-slate-600 dark:text-[#c8d8ea] line-clamp-2 flex-1 mb-2">
+      <p className="text-[12px] leading-relaxed text-slate-600 dark:text-[#c8d8ea] line-clamp-2 flex-1 mb-2">
         <BriefingInline text={card.description} />
       </p>
       {card.url ? (
@@ -195,7 +183,7 @@ function SnapshotRecordList({ briefing }: { briefing: PolicyResponse }) {
         Recent indexed records
       </p>
       {items.map((item, i) => (
-        <div key={i} className="flex gap-2.5 rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/60 dark:bg-[var(--surface-elevated)]/40 px-3 py-2.5 text-[12px] leading-relaxed text-slate-700 dark:text-[#d8e6f2]">
+        <div key={i} className="flex gap-2.5 rounded-xl border border-slate-100 dark:border-[var(--border)] bg-white/60 dark:bg-[var(--surface-elevated)]/40 px-3 py-2.5 text-sm leading-relaxed text-slate-700 dark:text-[#d8e6f2]">
           <span className="mt-1.5 shrink-0 h-1.5 w-1.5 rounded-full bg-[var(--accent)]/40" />
           <span><BriefingInline text={item} /></span>
         </div>
@@ -233,7 +221,10 @@ export function PolicyBriefingPanel({
   };
   const safe = showLive ? response! : showGeneralized && generalizedBriefing ? generalizedBriefing : EMPTY;
 
-  const sourceCards = useMemo(() => buildBriefingSourceCards(safe.sources, safe.retrieval_sources), [safe.sources, safe.retrieval_sources]);
+  const sourceCards = useMemo(
+    () => buildBriefingSourceCards(safe.sources, safe.retrieval_sources),
+    [safe.sources, safe.retrieval_sources],
+  );
   const kpiItems = useMemo(() => buildDisplayKeyNumbers(safe), [safe]);
   const visibleSources = sourcesExpanded ? sourceCards : sourceCards.slice(0, 4);
 
@@ -306,10 +297,10 @@ export function PolicyBriefingPanel({
                       <div className="flex items-start gap-2.5">
                         <Search className="h-4 w-4 shrink-0 mt-0.5 text-[var(--accent)]" />
                         <div>
-                          <p className="text-[11.5px] font-bold text-slate-800 dark:text-white leading-snug mb-0.5">
+                          <p className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug mb-0.5">
                             Showing {safe.sources_used} indexed records for {filterSummary || "current filters"}
                           </p>
-                          <p className="text-[10.5px] text-slate-500 dark:text-[var(--muted)] leading-relaxed">
+                          <p className="text-[12px] text-slate-500 dark:text-[var(--muted)] leading-relaxed">
                             Type a question above and press Enter for an AI-generated briefing — e.g. "How does the housing bill affect Brooklyn renters?"
                           </p>
                         </div>
@@ -327,7 +318,7 @@ export function PolicyBriefingPanel({
                         <div className="min-w-0">
                           <p className="font-work-sans text-[7.5px] font-black uppercase tracking-[0.24em] text-[var(--muted)] mb-1">TL;DR</p>
                           {tldr.map((line, i) => (
-                            <p key={i} className="text-[13px] font-bold leading-snug text-slate-900 dark:text-white mb-0.5 last:mb-0">
+                            <p key={i} className="text-[15px] font-bold leading-snug text-slate-900 dark:text-white mb-0.5 last:mb-0">
                               <BriefingInline text={line} />
                             </p>
                           ))}
@@ -366,19 +357,18 @@ export function PolicyBriefingPanel({
                   {showGeneralized && <SnapshotRecordList briefing={safe} />}
 
                   {/* LLM: 2×2 section grid */}
-                  {showLive && SECTIONS.some(s => safe[s.key].length > 0) && (
+                  {showLive && SECTIONS.some(s => safe[s.sectionKey].length > 0) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {SECTIONS.map((sec) => {
-                        const { key, ...rest } = sec;
-                        return <SectionCard key={key} {...rest} items={safe[key]} />;
-                      })}
+                      {SECTIONS.map((sec) => (
+                        <SectionCard key={sec.sectionKey} {...sec} items={safe[sec.sectionKey]} />
+                      ))}
                     </div>
                   )}
 
                   {/* Read more */}
                   {showLive && safe.read_more.length > 0 && (
                     <details className="group rounded-xl border border-slate-200/80 dark:border-[var(--border)] bg-slate-50/50 dark:bg-[var(--surface-elevated)]/30">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-[11px] font-bold text-slate-700 dark:text-[var(--foreground)] outline-none hover:bg-slate-100/50 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-[13px] font-bold text-slate-700 dark:text-[var(--foreground)] outline-none hover:bg-slate-100/50 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-1.5">
                           <BookOpen className="h-3 w-3 text-slate-400" />More detail
                         </span>
@@ -386,7 +376,7 @@ export function PolicyBriefingPanel({
                       </summary>
                       <ul className="space-y-1 border-t border-slate-200/70 dark:border-[var(--border)] px-3 pb-3 pt-2">
                         {safe.read_more.map((item, i) => (
-                          <li key={i} className="text-[11px] leading-relaxed text-slate-600 dark:text-[#c8d4e0]">
+                          <li key={i} className="text-[13px] leading-relaxed text-slate-600 dark:text-[#c8d4e0]">
                             <BriefingInline text={item} />
                           </li>
                         ))}
@@ -404,7 +394,7 @@ export function PolicyBriefingPanel({
                           </span>
                           <div>
                             <p className="font-work-sans text-[7.5px] font-black uppercase tracking-[0.22em] text-slate-400 dark:text-[var(--muted)] leading-none">Evidence</p>
-                            <h3 className="font-work-sans text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Official sources</h3>
+                            <h3 className="font-work-sans text-[13px] font-extrabold text-slate-900 dark:text-white leading-tight">Official sources</h3>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold text-[var(--muted)] tabular-nums">
