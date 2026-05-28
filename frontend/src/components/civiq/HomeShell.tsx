@@ -303,7 +303,11 @@ export function HomeShell() {
               />
             </div>
           ) : (
-            <RecentUpdates />
+            <RecentUpdates
+              context={context}
+              isPersonalized={isPersonalized}
+              profile={profile}
+            />
           )}
         </div>
       </main>
