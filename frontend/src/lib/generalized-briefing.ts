@@ -7,7 +7,7 @@ export type GeneralizedBriefingContext = {
   timeLabel: string;
 };
 
-const MAX_ITEMS = 8;
+const MAX_ITEMS = 50;
 const MAX_TAGS = 4;
 
 export function timeframeCutoffMs(selectedTime: string, now = Date.now()): number | null {

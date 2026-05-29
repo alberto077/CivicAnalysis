@@ -84,12 +84,14 @@ export async function getRecentPolicies(
   borough?: string,
   area?: string,
   days?: number,
+  limit?: number,
 ): Promise<{ policies: PolicyBriefing[] }> {
   try {
     const params = new URLSearchParams();
     if (borough) params.append("borough", borough);
     if (area) params.append("area", area);
     if (days) params.append("days", String(days));
+    if (limit) params.append("limit", String(limit));
 
     const res = await fetch(
       `${CIVIC_API}/policies${params.toString() ? `?${params}` : ""}`,
@@ -137,7 +139,7 @@ export type ChatExtra = {
   zip?: string; borough?: string; community_board?: string;
   issue_area?: string; timeframe?: string; location_scope?: string; profile_active?: string;
 };
-export type HealthResponse = { status?: string; db_connected?: boolean; has_data?: boolean; error?: string; };
+export type HealthResponse = { status?: string; db_connected?: boolean; has_data?: boolean; error?: string; total_records?: number; };
 export type PoliticianFilterOptions = { boroughs: string[]; stances: string[]; parties: string[]; districts: string[]; committees: string[]; };
 export type OpenAiChatRole = "system" | "user" | "assistant";
 export type OpenAiChatMessage = { role: OpenAiChatRole; content: string; };

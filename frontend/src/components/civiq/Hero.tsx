@@ -1,22 +1,23 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Search, MapPin, Home, User, Calendar, Tag, Sparkles, Users, X, ChevronDown } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Search, Sparkles, Users, X } from "lucide-react";
+import { useRef, useEffect, useCallback } from "react";
 import { POLICY_AREAS } from "@/lib/policyMetadata";
 import type { CivicProfile } from "@/lib/useProfile";
 
-
 export type HeroContext = {
-  location: string;
+  borough: string;
   housing: string;
-  whoami: string[];
+  income: string;
+  age: string;
+  demographics: string[];
+  issues: string[];
   timeframe: string;
-  issue: string;
 };
 
 export const EMPTY_CONTEXT: HeroContext = {
-  location: "", housing: "", whoami: [], timeframe: "", issue: "",
+  borough: "", housing: "", income: "", age: "", demographics: [], issues: [], timeframe: "",
 };
 
 type HeroProps = {
@@ -31,14 +32,16 @@ type HeroProps = {
   profile: CivicProfile | null;
 };
 
-type ChipId = "location" | "housing" | "whoami" | "timeframe" | "issue";
-
-
-// options
-const LOCATIONS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
-const HOUSING_OPTIONS = ["Renter", "Homeowner", "NYCHA resident", "Shared Housing", "Unhoused"];
-const WHOAMI_OPTIONS = ["Senior (65+)", "Student", "Veteran", "Parent / Caregiver", "Small business owner", "Low-income", "Immigrant / Non-citizen", "Person with disability", "Working class"];
-const TIMEFRAMES = ["Last 30 days", "Last 6 months", "Last year", "All time"];
+// options - should import these into OnboardingModal and SettingsModal
+export const BOROUGHS = ["Manhattan", "Queens", "Brooklyn", "Bronx", "Staten Island", "Other"];
+export const INCOME = ["Under $25K", "$26-50K", "$51-75K", "$76-100K", "Over $100K", "Prefer not to say"];
+export const HOUSING = ["Renter (Tenant)", "Homeowner", "Shared Housing", "Homeless / Unhoused", "Prefer not to say"];
+export const AGE = ["Under 18", "18–25", "26–35", "36–50", "51–65", "65+", "Prefer not to say"];
+export const DEMOGRAPHICS = [
+  "Student", "Immigrant / DACA", "Veteran", "Disability", "Small business owner",
+  "Child of US immigrants", "Recent NYC resident", "Single parent / Caregiver", "LGBTQ+", "BIPOC",
+];
+export const TIMEFRAMES = ["Last 30 days", "Last 6 months", "Last year", "All time"];
 const ISSUE_OPTIONS = POLICY_AREAS.filter(a => a.id !== "All");
 
 
@@ -63,194 +66,169 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11.5px] font-semibold transition-all whitespace-nowrap ${selected
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11.5px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${selected
         ? "text-white border-transparent shadow-sm"
-        : "bg-white/70 dark:bg-white/8 border-slate-200 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-800 dark:hover:text-white"
+        : "bg-white dark:bg-white/6 border-slate-200 dark:border-white/12 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/25 hover:bg-slate-50 dark:hover:bg-white/10"
         }`}
       style={selected ? { background: color ?? "var(--accent)" } : undefined}
     >
-      {selected && <span className="h-1.5 w-1.5 rounded-full bg-white/70 shrink-0" />}
       {children}
     </button>
   );
 }
 
 
-
-function ChipTrigger({
-  icon: Icon, label, active, activeLabel, onClear, onClick, expanded,
-}: {
-  icon: any;
-  label: string;
-  active: boolean;
-  activeLabel?: string;
-  onClear?: () => void;
-  onClick: () => void;
-  expanded: boolean;
-}) {
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11.5px] font-semibold transition-all whitespace-nowrap ${active || expanded
-        ? "bg-[var(--accent)] text-white border-transparent shadow-sm"
-        : "bg-white/70 dark:bg-white/8 border-slate-200 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/30 hover:text-slate-800 dark:hover:text-white"
-        }`}
-    >
-      <Icon className="h-3 w-3 shrink-0" />
-      <span>{active && activeLabel ? activeLabel : label}</span>
-      {active && onClear ? (
-        <span
-          role="button"
-          tabIndex={0}
-          onClick={(e) => { e.stopPropagation(); onClear(); }}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onClear?.(); } }}
-          className="ml-0.5 p-0.5 rounded-full hover:bg-white/25"
-          aria-label={`Clear ${label}`}
-        >
-          <X className="h-2.5 w-2.5" />
-        </span>
-      ) : (
-        <ChevronDown className={`h-2.5 w-2.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-      )}
-    </button>
+    <div className="flex gap-3 items-start py-2.5 border-b border-slate-100 dark:border-white/6 last:border-0">
+      <span className="w-20 flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1 text-right">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1.5 flex-1">
+        {children}
+      </div>
+    </div>
   );
 }
 
 
-// context chips + inline expanded options 
-function ContextChips({
-  context, onChange, isPersonalized, onPersonalizedChange, profile,
+function FilterBar({
+  context, onChange, isPersonalized, onPersonalizedChange,
 }: {
   context: HeroContext;
   onChange: (c: HeroContext) => void;
   isPersonalized: boolean;
   onPersonalizedChange: (v: boolean) => void;
-  profile: CivicProfile | null;
 }) {
-  const [expanded, setExpanded] = useState<ChipId | null>(null);
-  const set = useCallback((patch: Partial<HeroContext>) => onChange({ ...context, ...patch }), [context, onChange]);
+  const set = useCallback(
+    (patch: Partial<HeroContext>) => onChange({ ...context, ...patch }),
+    [context, onChange],
+  );
 
-  const toggle = (id: ChipId) => setExpanded(p => p === id ? null : id);
+  const toggleArray = (key: "demographics" | "issues", val: string) =>
+    set({ [key]: context[key].includes(val) ? context[key].filter(v => v !== val) : [...context[key], val] });
 
-  const selectedIssue = ISSUE_OPTIONS.find(o => o.id === context.issue);
-
-  // active labels for chips
-  const locationLabel = context.location || undefined;
-  const housingLabel = context.housing || undefined;
-  const whoamiLabel = context.whoami.length === 1 ? context.whoami[0] : context.whoami.length > 1 ? `${context.whoami.length} selected` : undefined;
-  const timeLabel = context.timeframe || undefined;
-  const issueLabel = selectedIssue?.label.split(" ").slice(0, 2).join(" ") || undefined;
+  const hasAny =
+    !!context.borough || !!context.housing || !!context.income || !!context.age ||
+    context.demographics.length > 0 || context.issues.length > 0 || !!context.timeframe;
 
   return (
-    <div className="mt-3 space-y-2.5">
-      {/* perspective toggle + chip triggers */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* perspective: For Me vs. Everyone */}
-        <div className="flex items-center rounded-full border border-slate-200 dark:border-white/15 bg-white/70 dark:bg-white/8 p-0.5 gap-0.5">
-          <button type="button" onClick={() => { onPersonalizedChange(true); setExpanded(null); }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${isPersonalized ? "bg-[var(--accent)] text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}>
-            <Sparkles className="h-2.5 w-2.5" />For Me
+    <div className="mt-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[var(--surface-card)]/70 backdrop-blur-sm shadow-sm overflow-hidden">
+
+      {/* top bar: perspective toggle + clear */}
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-100 dark:border-white/8 bg-slate-50/80 dark:bg-white/3">
+        <div className="flex items-center rounded-lg border border-slate-200 dark:border-white/12 bg-white dark:bg-white/6 p-0.5 gap-0.5">
+          <button
+            type="button"
+            onClick={() => onPersonalizedChange(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${isPersonalized
+              ? "bg-[var(--accent)] text-white shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
+              }`}
+          >
+            <Sparkles className="h-3 w-3" /> For me
           </button>
-          <button type="button" onClick={() => { onPersonalizedChange(false); setExpanded(null); }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${!isPersonalized ? "bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}>
-            <Users className="h-2.5 w-2.5" />Everyone
+          <button
+            type="button"
+            onClick={() => onPersonalizedChange(false)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${!isPersonalized
+              ? "bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
+              }`}
+          >
+            <Users className="h-3 w-3" /> Everyone
           </button>
         </div>
 
-        <div className="w-px h-4 bg-slate-200 dark:bg-white/15 mx-0.5" />
-
-        <ChipTrigger icon={MapPin} label="Location" active={!!locationLabel} activeLabel={locationLabel} onClear={() => { set({ location: "" }); setExpanded(null); }} onClick={() => toggle("location")} expanded={expanded === "location"} />
-        <ChipTrigger icon={Home} label="Housing" active={!!housingLabel} activeLabel={housingLabel} onClear={() => { set({ housing: "" }); setExpanded(null); }} onClick={() => toggle("housing")} expanded={expanded === "housing"} />
-        <ChipTrigger icon={User} label="Who I am" active={!!whoamiLabel} activeLabel={whoamiLabel} onClear={() => { set({ whoami: [] }); setExpanded(null); }} onClick={() => toggle("whoami")} expanded={expanded === "whoami"} />
-        <ChipTrigger icon={Calendar} label="Timeframe" active={!!timeLabel} activeLabel={timeLabel} onClear={() => { set({ timeframe: "" }); setExpanded(null); }} onClick={() => toggle("timeframe")} expanded={expanded === "timeframe"} />
-        <ChipTrigger icon={Tag} label="Issue" active={!!issueLabel} activeLabel={issueLabel} onClear={() => { set({ issue: "" }); setExpanded(null); }} onClick={() => toggle("issue")} expanded={expanded === "issue"} />
+        <button
+          type="button"
+          onClick={() => onChange(EMPTY_CONTEXT)}
+          disabled={!hasAny}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${hasAny
+            ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
+            : "border-slate-200 dark:border-white/8 bg-transparent text-slate-300 dark:text-slate-600 cursor-default"
+            }`}
+        >
+          <X className="h-3 w-3" /> Clear filters
+        </button>
       </div>
 
-      {/* inline expanded options */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            key={expanded}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5 backdrop-blur-sm px-3 py-3">
+      {/* filter rows */}
+      <div className="px-4 py-1">
 
-              {expanded === "location" && (
-                <div className="flex flex-wrap gap-2">
-                  {LOCATIONS.map(opt => (
-                    <Pill key={opt} selected={context.location === opt}
-                      onClick={() => { set({ location: context.location === opt ? "" : opt }); }}>
-                      {opt}
-                    </Pill>
-                  ))}
-                </div>
-              )}
+        <FilterSection label="Borough">
+          {BOROUGHS.map(opt => (
+            <Pill key={opt} selected={context.borough === opt}
+              onClick={() => set({ borough: context.borough === opt ? "" : opt })}>
+              {opt}
+            </Pill>
+          ))}
+        </FilterSection>
 
-              {expanded === "housing" && (
-                <div className="flex flex-wrap gap-2">
-                  {HOUSING_OPTIONS.map(opt => (
-                    <Pill key={opt} selected={context.housing === opt}
-                      onClick={() => { set({ housing: context.housing === opt ? "" : opt }); }}>
-                      {opt}
-                    </Pill>
-                  ))}
-                </div>
-              )}
-
-              {expanded === "whoami" && (
-                <>
-                  <p className="font-work-sans text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
-                    Select all that apply
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {WHOAMI_OPTIONS.map(opt => (
-                      <Pill key={opt} selected={context.whoami.includes(opt)}
-                        onClick={() => set({
-                          whoami: context.whoami.includes(opt)
-                            ? context.whoami.filter(w => w !== opt)
-                            : [...context.whoami, opt],
-                        })}>
-                        {opt}
-                      </Pill>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {expanded === "timeframe" && (
-                <div className="flex flex-wrap gap-2">
-                  {TIMEFRAMES.map(opt => (
-                    <Pill key={opt} selected={context.timeframe === opt}
-                      onClick={() => { set({ timeframe: context.timeframe === opt ? "" : opt }); }}>
-                      {opt}
-                    </Pill>
-                  ))}
-                </div>
-              )}
-
-              {expanded === "issue" && (
-                <div className="flex flex-wrap gap-2">
-                  {ISSUE_OPTIONS.map(opt => (
-                    <Pill key={opt.id} selected={context.issue === opt.id} color={opt.color}
-                      onClick={() => { set({ issue: context.issue === opt.id ? "" : opt.id }); }}>
-                      <opt.Icon className="h-3 w-3 shrink-0" />
-                      {opt.label}
-                    </Pill>
-                  ))}
-                </div>
-              )}
-
+        <div className="flex gap-0">
+          {/* Housing + Income share a row on wider screens */}
+          <div className="flex-1 flex gap-3 items-start py-2.5 border-b border-slate-100 dark:border-white/6">
+            <span className="w-20 flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1 text-right">Housing</span>
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {HOUSING.map(opt => (
+                <Pill key={opt} selected={context.housing === opt}
+                  onClick={() => set({ housing: context.housing === opt ? "" : opt })}>
+                  {opt}
+                </Pill>
+              ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+
+        <FilterSection label="Income">
+          {INCOME.map(opt => (
+            <Pill key={opt} selected={context.income === opt}
+              onClick={() => set({ income: context.income === opt ? "" : opt })}>
+              {opt}
+            </Pill>
+          ))}
+        </FilterSection>
+
+        <FilterSection label="Age">
+          {AGE.map(opt => (
+            <Pill key={opt} selected={context.age === opt}
+              onClick={() => set({ age: context.age === opt ? "" : opt })}>
+              {opt}
+            </Pill>
+          ))}
+        </FilterSection>
+
+        {/* Demographics - multi-select */}
+        <FilterSection label="I am">
+          {DEMOGRAPHICS.map(opt => (
+            <Pill key={opt} selected={context.demographics.includes(opt)}
+              onClick={() => toggleArray("demographics", opt)}>
+              {opt}
+            </Pill>
+          ))}
+        </FilterSection>
+
+        {/* Issue - multi-select */}
+        <FilterSection label="Issue">
+          {ISSUE_OPTIONS.map(opt => (
+            <Pill key={opt.id} selected={context.issues.includes(opt.id)} color={opt.color}
+              onClick={() => toggleArray("issues", opt.id)}>
+              <opt.Icon className="h-3 w-3 flex-shrink-0" />
+              {opt.label}
+            </Pill>
+          ))}
+        </FilterSection>
+
+        <FilterSection label="Timeframe">
+          {TIMEFRAMES.map(opt => (
+            <Pill key={opt} selected={context.timeframe === opt}
+              onClick={() => set({ timeframe: context.timeframe === opt ? "" : opt })}>
+              {opt}
+            </Pill>
+          ))}
+        </FilterSection>
+
+      </div>
     </div>
   );
 }
@@ -265,21 +243,30 @@ export function Hero({
   const introLen = headlineIntro.length;
   const line2Delay = 0.22 + introLen * HEADLINE_LETTER_STAGGER + 0.12;
 
-  // auto-fill chips from profile when "For Me" is toggled on
+  // sync context from profile when isPersonalized / "For Me" is toggled on
+  const prevProfile = useRef(profile);
   const prevPersonalized = useRef(isPersonalized);
+
   useEffect(() => {
-    if (isPersonalized && !prevPersonalized.current && profile) {
+    const profileChanged = prevProfile.current !== profile;
+    const personalizedTurnedOn = isPersonalized && !prevPersonalized.current;
+
+    if (isPersonalized && (personalizedTurnedOn || profileChanged) && profile) {
       onContextChange({
-        location: profile.borough ?? "",
-        housing: (profile as any).housing ?? "",
-        whoami: (profile as any).demographics ?? [],
-        timeframe: "",
-        issue: profile.issues?.[0] ?? "",
+        borough: profile.borough ?? "",
+        housing: profile.housing ?? "",
+        income: profile.income ?? "",
+        age: profile.age ?? "",
+        demographics: profile.demographics ?? [],
+        issues: profile.issues ?? [],
+        timeframe: context.timeframe, // preserve user-chosen timeframe
       });
     }
     if (!isPersonalized && prevPersonalized.current) {
       onContextChange(EMPTY_CONTEXT);
     }
+
+    prevProfile.current = profile;
     prevPersonalized.current = isPersonalized;
   }, [isPersonalized, profile]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -325,7 +312,7 @@ export function Hero({
             </motion.p>
           </div>
 
-          {/* search bar + chips */}
+          {/* search bar + filter bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
@@ -357,12 +344,11 @@ export function Hero({
                 </button>
               </div>
 
-              <ContextChips
+              <FilterBar
                 context={context}
                 onChange={onContextChange}
                 isPersonalized={isPersonalized}
                 onPersonalizedChange={onPersonalizedChange}
-                profile={profile}
               />
             </form>
           </motion.div>

@@ -517,7 +517,8 @@ async def health_check():
     try:
         with Session(engine) as session:
             count = len(session.exec(select(DocumentChunk).limit(1)).all())
-        return {"status": "ok", "db_connected": True, "has_data": count > 0}
+            total_docs = session.exec(select(func.count(PolicyDocument.id))).one()
+        return {"status": "ok", "db_connected": True, "has_data": count > 0, "total_records": total_docs}
     except Exception as e:
         return {"status": "degraded", "db_connected": False, "error": str(e)}
 

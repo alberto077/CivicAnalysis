@@ -64,23 +64,25 @@ function timeframeToDays(t: string): number | undefined {
 function buildLlmQuery(query: string, ctx: HeroContext, personalized: boolean): string {
   let q = query.trim();
   if (!q) {
-    const area = ctx.issue ? ctx.issue : "recent NYC policy";
+    const area = ctx.issues.length ? ctx.issues[0] : "recent NYC policy";
     q = `What are the most important recent developments in ${area} for NYC residents? Summarize what happened, why it matters, who is affected, and what comes next.`;
   }
   const parts: string[] = [];
-  if (ctx.location) parts.push(`in ${ctx.location}`);
+  if (ctx.borough) parts.push(`in ${ctx.borough}`);
   if (ctx.housing) parts.push(`who ${ctx.housing.toLowerCase()}`);
-  if (ctx.whoami.length) parts.push(`who ${ctx.whoami.join(", ").toLowerCase()}`);
+  if (ctx.demographics.length) parts.push(`who ${ctx.demographics.join(", ").toLowerCase()}`);
   if (parts.length) q += ` Focus on residents ${parts.join(", ")}.`;
   return q;
 }
 
 function buildDemographics(ctx: HeroContext): Record<string, string> {
   const d: Record<string, string> = {};
-  if (ctx.location) d.borough = ctx.location;
+  if (ctx.borough) d.borough = ctx.borough;
   if (ctx.housing) d.housing = ctx.housing;
-  if (ctx.whoami.length) d.demographics = ctx.whoami.join(",");
-  if (ctx.issue) d.issues = ctx.issue;
+  if (ctx.income) d.income = ctx.income;
+  if (ctx.age) d.age = ctx.age;
+  if (ctx.demographics.length) d.demographics = ctx.demographics.join(",");
+  if (ctx.issues.length) d.issues = ctx.issues.join(",");
   if (ctx.timeframe) d.timeframe = ctx.timeframe;
   if (Object.keys(d).length) d.profile_active = "true";
   return d;
@@ -88,8 +90,8 @@ function buildDemographics(ctx: HeroContext): Record<string, string> {
 
 function buildFilterSummary(ctx: HeroContext, personalized: boolean): string {
   const parts: string[] = [];
-  if (ctx.location) parts.push(ctx.location);
-  if (ctx.issue) parts.push(ctx.issue.split(" ").slice(0, 2).join(" "));
+  if (ctx.borough) parts.push(ctx.borough);
+  if (ctx.issues.length) parts.push(ctx.issues[0].split(" ").slice(0, 2).join(" "));
   if (ctx.timeframe) parts.push(ctx.timeframe);
   if (personalized) parts.push("For Me");
   return parts.join(" · ") || "All NYC";
@@ -103,7 +105,7 @@ function TabBar({ active, setActive }: { active: ActiveTab; setActive: (t: Activ
     { id: "legislation", label: "Recent Legislation", icon: BarChart3 },
   ];
   return (
-    <div className="flex gap-1 p-1 rounded-xl border border-[var(--border)] bg-slate-100/80 dark:bg-[var(--surface-elevated)]/60 w-fit">
+    <div className="mx-auto flex gap-1 p-1 rounded-xl border border-[var(--border)] bg-slate-100/80 dark:bg-[var(--surface-elevated)]/60 w-fit">
       {tabs.map(({ id, label, icon: Icon }) => (
         <button key={id} type="button" onClick={() => setActive(id)}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${active === id
@@ -148,22 +150,22 @@ export function HomeShell() {
     else if (!localStorage.getItem("civic_profile_skipped")) setShowOnboarding(true);
   }, [isLoaded, profile]);
 
-  // static snapshot
+  // static snapshot - uses first selected issue if any, falls back to all
   useEffect(() => {
     if (!isLoaded) return;
     let cancelled = false;
     setSnapshotLoading(true);
     setSnapshotError(null);
 
-    const borough = context.location || (isPersonalized && profile?.borough) || undefined;
-    const area = context.issue || undefined;
+    const borough = context.borough || (isPersonalized && profile?.borough) || undefined;
+    const area = context.issues[0] || undefined;
     const days = timeframeToDays(context.timeframe);
 
-    getRecentPolicies(borough, area, days).then(({ policies }) => {
+    getRecentPolicies(borough, area, days, 50).then(({ policies }) => {
       if (cancelled) return;
       setDigestPolicies(policies);
       setGeneralizedBriefing(buildGeneralizedBriefingFromPolicies(policies, {
-        selectedArea: context.issue || "All",
+        selectedArea: context.issues[0] || "All",
         locationLabel: borough ?? "All NYC",
         timeLabel: context.timeframe || "All Time",
       }));
@@ -173,7 +175,7 @@ export function HomeShell() {
     }).finally(() => { if (!cancelled) setSnapshotLoading(false); });
 
     return () => { cancelled = true; };
-  }, [isLoaded, context.location, context.issue, context.timeframe, isPersonalized, profile]);
+  }, [isLoaded, context.borough, context.issues, context.timeframe, isPersonalized, profile]);
 
   // LLM briefing
   const fireLlm = useCallback(async (q: string, ctx: HeroContext, personalized: boolean) => {
@@ -224,7 +226,7 @@ export function HomeShell() {
 
   // search handler
   const handleSearch = useCallback(() => {
-    if (!query.trim() && !context.issue && !context.location) return;
+    if (!query.trim() && !context.issues.length && !context.borough) return;
     setActiveTab("briefings");
     fireLlm(query, context, isPersonalized);
   }, [query, context, isPersonalized, fireLlm]);
