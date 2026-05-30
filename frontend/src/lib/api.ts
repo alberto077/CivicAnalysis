@@ -1,6 +1,7 @@
 import {
   normalizePolicyReply,
   parseRetrievalSourcesEnvelope,
+  patchNysSenateUrl,
   type PolicyResponse,
   type RetrievalTier,
 } from "@/lib/policy-reply";
@@ -110,12 +111,14 @@ export async function getRecentPolicies(
     return {
       policies: raw.map((p: any) => {
         const m = p.metadata || p.metadata_tags || {};
+        const sourceUrl = p.source_url || m.source_url || "#";
+        const pubDate = p.published_date || m.published_date || new Date().toISOString();
         return {
           id: p.id || p.source_url || Math.random().toString(),
           title: p.title || "Untitled Record",
-          source_url: p.source_url || m.source_url || "#",
+          source_url: patchNysSenateUrl(sourceUrl, pubDate) || sourceUrl,
           source_type: p.source_type || m.source_type || "Record",
-          published_date: p.published_date || m.published_date || new Date().toISOString(),
+          published_date: pubDate,
           impact: p.impact || m.impact || m.summary || "",
           affects: p.affects || m.affects || m.affected_groups || "",
           topic_tags: p.topic_tags || m.tags || [],

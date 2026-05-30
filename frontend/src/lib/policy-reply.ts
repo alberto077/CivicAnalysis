@@ -247,9 +247,10 @@ export function parseRetrievalSourcesEnvelope(
     const source_type = typeof r.source_type === "string" ? r.source_type.trim() : "";
     const published_date = optString(r.published_date);
     if (!source_url) continue;
+    const patchedUrl = patchNysSenateUrl(source_url, published_date) || source_url;
     out.push({
       title: title || "Source",
-      source_url,
+      source_url: patchedUrl,
       source_type,
       ...(published_date ? { published_date } : {}),
     });
