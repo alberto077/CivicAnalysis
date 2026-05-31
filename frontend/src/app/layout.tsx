@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Limelight, Playfair_Display, Work_Sans } from "next/font/google";
+import { Playfair_Display, Raleway, Work_Sans } from "next/font/google";
 
 import { FloatingChatBot } from "@/components/civiq/FloatingChatBot";
 import { AccessibilityWidget } from "@/components/civiq/AccessibilityWidget";
@@ -23,8 +23,8 @@ const workSans = Work_Sans({
   subsets: ["latin"],
 });
 
-const limelight = Limelight({
-  weight: ["400"],
+const raleway = Raleway({
+  weight: ["900"],
   variable: "--font-limelight",
   subsets: ["latin"],
 });
@@ -44,7 +44,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${playfairDisplay.variable} ${workSans.variable} ${limelight.variable} h-full antialiased`}
+      className={`${playfairDisplay.variable} ${workSans.variable} ${raleway.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider>

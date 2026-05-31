@@ -128,7 +128,7 @@ class NYSSenateTranscriptsScraper(BaseScraper):
 
             processed.append({
                 "title": title,
-                "source_url": f"https://www.nysenate.gov/transcripts/{year}/{date_str}/{session_type}",
+                "source_url": f"https://www.nysenate.gov/transcripts/{date_str.lower().replace(':', '')}",
                 "source_type": "NYS Senate Transcript",
                 "published_date": date_str,
                 "metadata_tags": metadata,

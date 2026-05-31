@@ -119,7 +119,7 @@ function PoliticianCard({ p }: { p: Politician }) {
     <motion.div
       variants={staggerItem}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="relative h-95 w-full perspective-[1000px] group"
+      className="relative h-100 w-full perspective-[1000px] group"
       onClick={() => setIsFlipped(f => !f)}
     >
       <motion.div
@@ -428,7 +428,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
           );
           setDynamicBoroughs(filtered.length ? filtered : NYC_BOROUGHS);
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         setDynamicBoroughs(["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]);
       }
@@ -1006,7 +1006,7 @@ export function PoliticianCards({ userBorough }: { userBorough?: string }) {
             )}
 
             {/* scroll top/bot */}
-            <div className={`fixed right-8 z-50 flex flex-col gap-2 transition-all duration-300 ${ atBottom ? "bottom-58" : "bottom-28" }`}>
+            <div className={`fixed right-8 z-50 flex flex-col gap-2 transition-all duration-300 ${atBottom ? "bottom-58" : "bottom-28"}`}>
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                 className="rounded-xl border-2 border-slate-200 bg-white/90 p-3 text-slate-600 shadow-lg backdrop-blur-sm transition-all hover:border-(--accent) hover:text-(--accent) active:scale-95 dark:border-(--border) dark:bg-(--surface-elevated)/95 dark:text-(--foreground-secondary) dark:shadow-[0_8px_28px_-8px_rgba(0,0,0,0.5)] dark:hover:border-(--accent) dark:hover:text-(--accent)"

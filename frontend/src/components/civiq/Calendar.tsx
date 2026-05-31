@@ -38,6 +38,16 @@ const SOURCES: Source[] = [
         badge: "NYC Council",
     },
     {
+        id: "nyc-rules-calendar",
+        tier: "city",
+        label: "NYC Rules – Citywide Rulemaking Calendar",
+        shortLabel: "NYC Rules Calendar",
+        url: "https://rules.cityofnewyork.us/calendar/",
+        description:
+            "Official rulemaking calendar detailing public hearings, proposed rule changes, and newly adopted regulations across NYC departments and agencies.",
+        badge: "NYC Gov",
+    },
+    {
         id: "nyc-public-meetings",
         tier: "city",
         label: "NYC Civic Engagement – Public Meetings",

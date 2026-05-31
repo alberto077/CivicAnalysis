@@ -115,6 +115,40 @@ function normTitleKey(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+export function patchNysSenateUrl(url: string | undefined, publishedDate?: string): string | undefined {
+  if (!url) return undefined;
+  if (!url.includes('nysenate.gov')) return url;
+
+  // fix transcript URLs
+  if (url.includes('/transcripts/')) {
+    const transcriptRegex = /\/transcripts\/\d{4}\/([^/?#]+)\/([^/?#]+)/;
+    const match = url.match(transcriptRegex);
+    if (match && match[1]) {
+      const dateStr = match[1].toLowerCase().replace(/:/g, '');
+      return url.replace(transcriptRegex, `/transcripts/${dateStr}`);
+    }
+  }
+
+  if (!publishedDate) return url;
+
+  try {
+    const d = new Date(publishedDate);
+    const year = d.getFullYear();
+    if (!isNaN(year)) {
+      // NYS Senate session years are odd -- if even, -= 1
+      const sessionYear = year % 2 === 1 ? year : year - 1;
+
+      // fix bill URLs
+      if (url.includes('/legislation/bills/')) {
+        return url.replace(/\/bills\/\d{4}\//, `/bills/${sessionYear}/`);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return url;
+}
+
 // Host + pathname only — used to recover the indexed URL when the model emits
 // a truncated version of the same link (LLMs routinely drop `?ID=…` etc).
 function urlPathKey(url: string): string {
@@ -165,26 +199,29 @@ export function buildBriefingSourceCards(
     const llmUrl = safeHttpUrl(s.url);
     const llmPathHit = llmUrl ? byPath.get(urlPathKey(llmUrl)) : undefined;
     const url = matchUrl ?? llmPathHit ?? llmUrl;
-    if (url) usedUrls.add(url);
+    const pubDate = optString(s.published_date) || optString(match?.published_date);
+    const patchedUrl = patchNysSenateUrl(url, pubDate);
+    if (patchedUrl) usedUrls.add(patchedUrl);
     out.push({
       title: s.title.trim() || "Source",
       description: s.description.trim(),
-      url,
+      url: patchedUrl,
       source_type: optString(s.source_type) || optString(match?.source_type),
-      published_date: optString(s.published_date) || optString(match?.published_date),
+      published_date: pubDate,
     });
   }
 
   for (const r of retrievalList) {
     const url = safeHttpUrl(r.source_url);
-    if (!url || usedUrls.has(url)) continue;
-    usedUrls.add(url);
+    const patchedUrl = patchNysSenateUrl(url, r.published_date);
+    if (!patchedUrl || usedUrls.has(patchedUrl)) continue;
+    usedUrls.add(patchedUrl);
     out.push({
       title: r.title.trim() || "Source",
       description: r.source_type
         ? `${r.source_type} — official record from the indexed library.`
         : "Official document from the indexed search library.",
-      url,
+      url: patchedUrl,
       source_type: optString(r.source_type),
       published_date: optString(r.published_date),
     });
@@ -210,9 +247,10 @@ export function parseRetrievalSourcesEnvelope(
     const source_type = typeof r.source_type === "string" ? r.source_type.trim() : "";
     const published_date = optString(r.published_date);
     if (!source_url) continue;
+    const patchedUrl = patchNysSenateUrl(source_url, published_date) || source_url;
     out.push({
       title: title || "Source",
-      source_url,
+      source_url: patchedUrl,
       source_type,
       ...(published_date ? { published_date } : {}),
     });
@@ -268,27 +306,27 @@ export function normalizePolicyReply(payload: unknown): PolicyResponse {
 
   const sources: PolicySource[] = Array.isArray(p.sources)
     ? (p.sources as unknown[])
-        .filter(
-          (item): item is Record<string, unknown> =>
-            typeof item === "object" &&
-            item !== null &&
-            typeof (item as Record<string, unknown>).title === "string" &&
-            typeof (item as Record<string, unknown>).description === "string",
-        )
-        .map((item) => {
-          const url =
-            optString(item.url) ||
-            optString(item.source_url) ||
-            optString(item.href) ||
-            optString(item.link);
-          return {
-            title: String(item.title).trim(),
-            description: String(item.description).trim(),
-            url,
-            source_type: optString(item.source_type),
-            published_date: optString(item.published_date),
-          };
-        })
+      .filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as Record<string, unknown>).title === "string" &&
+          typeof (item as Record<string, unknown>).description === "string",
+      )
+      .map((item) => {
+        const url =
+          optString(item.url) ||
+          optString(item.source_url) ||
+          optString(item.href) ||
+          optString(item.link);
+        return {
+          title: String(item.title).trim(),
+          description: String(item.description).trim(),
+          url,
+          source_type: optString(item.source_type),
+          published_date: optString(item.published_date),
+        };
+      })
     : [];
 
   return {

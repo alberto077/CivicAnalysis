@@ -1,336 +1,320 @@
 "use client";
+
 import dynamic from "next/dynamic";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/civiq/Header";
-import { RecentUpdates } from "@/components/civiq/RecentUpdates";
-import { ProfileActivitySection } from "@/components/civiq/ProfileActivitySection";
 import { SiteFooter } from "@/components/civiq/SiteFooter";
 import { OnboardingModal } from "@/components/civiq/OnboardingModal";
 import { SettingsModal } from "@/components/civiq/SettingsModal";
 import { useProfile } from "@/lib/useProfile";
-import {
-  checkHealth,
-  sendChat,
-  type PolicyResponse,
-} from "@/lib/api";
+import { getRecentPolicies, type PolicyBriefing } from "@/lib/api";
 import { buildGeneralizedBriefingFromPolicies } from "@/lib/generalized-briefing";
-import { useRecentPoliciesSnapshot } from "@/lib/useRecentPoliciesSnapshot";
-import { useProfileActivityFeed } from "@/lib/useProfileActivityFeed";
+import { normalizePolicyReply, parseRetrievalSourcesEnvelope, type PolicyResponse } from "@/lib/policy-reply";
+import { BarChart3, Newspaper } from "lucide-react";
+import { EMPTY_CONTEXT, type HeroContext } from "@/components/civiq/Hero";
 
-const DashboardFilters = dynamic(
-  () =>
-    import("@/components/civiq/DashboardFilters").then((mod) => mod.DashboardFilters),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full mb-2 sm:mb-4" aria-hidden>
-        <div className="glass-card surface-float soft-inset h-[220px] animate-pulse rounded-3xl border border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/80" />
-      </div>
-    ),
-  },
-);
 
 const Hero = dynamic(
-  () => import("@/components/civiq/Hero").then((mod) => mod.Hero),
-  {
-    ssr: false,
-    loading: () => (
-      <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32 sm:pt-28" aria-hidden>
-        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
-          <div>
-            <div className="mt-5 h-16 w-full max-w-2xl animate-pulse rounded-2xl bg-slate-200/85 sm:h-20 md:h-24 dark:bg-[var(--surface-elevated)]/90" />
-            <div className="mt-6 h-6 w-3/4 animate-pulse rounded-lg bg-slate-200/80 sm:h-7 dark:bg-[var(--surface-card)]/80" />
-            <div className="mt-10 h-20 w-full max-w-2xl animate-pulse rounded-3xl border border-[var(--border)] bg-white/65 sm:h-24 dark:bg-[var(--surface-card)]/70" />
-          </div>
-        </div>
-      </section>
-    ),
-  },
+  () => import("@/components/civiq/Hero").then((m) => m.Hero),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse bg-slate-100/50" /> },
 );
 
-/** Client-only: avoids RSC/cache drift vs live bundle (hydration mismatches on empty/loading markup). */
 const PolicyBriefingPanel = dynamic(
-  () =>
-    import("@/components/civiq/PolicyBriefingPanel").then((mod) => mod.PolicyBriefingPanel),
-  {
-    ssr: false,
-    loading: () => (
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-hidden>
-        <div className="mt-10 h-11 w-64 max-w-[80%] animate-pulse rounded-xl bg-slate-200/90 dark:bg-[var(--surface-elevated)]/85" />
-        <div className="mt-10 overflow-hidden rounded-[3rem] border border-slate-200/90 bg-white p-8 shadow-xl sm:p-12 dark:border-[var(--border)] dark:bg-[var(--surface-card)]">
-          <div className="min-h-[280px] animate-pulse rounded-2xl bg-slate-100/90 dark:bg-[var(--surface-elevated)]/80" />
-        </div>
-      </section>
-    ),
-  },
+  () => import("@/components/civiq/PolicyBriefingPanel").then((m) => m.PolicyBriefingPanel),
+  { ssr: false },
 );
 
+const DigestCards = dynamic(
+  () => import("@/components/civiq/DigestCards").then((m) => m.DigestCards),
+  { ssr: false },
+);
+
+const RecentUpdates = dynamic(
+  () => import("@/components/civiq/RecentUpdates").then((m) => m.RecentUpdates),
+  { ssr: false },
+);
+
+
+// session cache
+function cacheKey(query: string, ctx: HeroContext, personalized: boolean): string {
+  return JSON.stringify({ query, ctx, personalized });
+}
+
+function getCached(key: string): PolicyResponse | null {
+  try {
+    const raw = sessionStorage.getItem(`briefing:${key}`);
+    return raw ? (JSON.parse(raw) as PolicyResponse) : null;
+  } catch { return null; }
+}
+
+function setCached(key: string, data: PolicyResponse): void {
+  try { sessionStorage.setItem(`briefing:${key}`, JSON.stringify(data)); } catch { }
+}
+
+
+type ActiveTab = "briefings" | "legislation";
+
+function timeframeToDays(t: string): number | undefined {
+  if (t === "Last 30 days") return 30;
+  if (t === "Last 6 months") return 180;
+  if (t === "Last year") return 365;
+  return undefined;
+}
+
+function buildLlmQuery(query: string, ctx: HeroContext, personalized: boolean): string {
+  let q = query.trim();
+  if (!q) {
+    const area = ctx.issues.length ? ctx.issues[0] : "recent NYC policy";
+    q = `What are the most important recent developments in ${area} for NYC residents? Summarize what happened, why it matters, who is affected, and what comes next.`;
+  }
+  const parts: string[] = [];
+  if (ctx.borough) parts.push(`in ${ctx.borough}`);
+  if (ctx.housing) parts.push(`who ${ctx.housing.toLowerCase()}`);
+  if (ctx.demographics.length) parts.push(`who ${ctx.demographics.join(", ").toLowerCase()}`);
+  if (parts.length) q += ` Focus on residents ${parts.join(", ")}.`;
+  return q;
+}
+
+function buildDemographics(ctx: HeroContext): Record<string, string> {
+  const d: Record<string, string> = {};
+  if (ctx.borough) d.borough = ctx.borough;
+  if (ctx.housing) d.housing = ctx.housing;
+  if (ctx.income) d.income = ctx.income;
+  if (ctx.age) d.age = ctx.age;
+  if (ctx.demographics.length) d.demographics = ctx.demographics.join(",");
+  if (ctx.issues.length) d.issues = ctx.issues.join(",");
+  if (ctx.timeframe) d.timeframe = ctx.timeframe;
+  if (Object.keys(d).length) d.profile_active = "true";
+  return d;
+}
+
+function buildFilterSummary(ctx: HeroContext, personalized: boolean): string {
+  const parts: string[] = [];
+  if (ctx.borough) parts.push(ctx.borough);
+  if (ctx.issues.length) parts.push(ctx.issues[0].split(" ").slice(0, 2).join(" "));
+  if (ctx.timeframe) parts.push(ctx.timeframe);
+  if (personalized) parts.push("For Me");
+  return parts.join(" · ") || "All NYC";
+}
+
+
+
+function TabBar({ active, setActive }: { active: ActiveTab; setActive: (t: ActiveTab) => void }) {
+  const tabs: { id: ActiveTab; label: string; icon: any }[] = [
+    { id: "briefings", label: "Issue Briefings", icon: Newspaper },
+    { id: "legislation", label: "Recent Legislation", icon: BarChart3 },
+  ];
+  return (
+    <div className="mx-auto flex gap-1 p-1 rounded-xl border border-[var(--border)] bg-slate-100/80 dark:bg-[var(--surface-elevated)]/60 w-fit">
+      {tabs.map(({ id, label, icon: Icon }) => (
+        <button key={id} type="button" onClick={() => setActive(id)}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold transition-all ${active === id
+            ? "bg-white dark:bg-[var(--surface-card)] text-[var(--foreground)] shadow-sm border border-[var(--border)]/20"
+            : "text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}>
+          <Icon className="h-3.5 w-3.5" />{label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 
 export function HomeShell() {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<PolicyResponse | null>(null);
-  const [lastBriefingQuery, setLastBriefingQuery] = useState("");
-  
-  // Dashboard Filters State
-  const [selectedArea, setSelectedArea] = useState("All");
-  const [selectedLocation, setSelectedLocation] = useState("All NYC");
-  const [selectedTime, setSelectedTime] = useState("Last 30 Days");
-  const [isPersonalized, setIsPersonalized] = useState(true);
+  const [context, setContext] = useState<HeroContext>(EMPTY_CONTEXT);
+  const [isPersonalized, setIsPersonalized] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("briefings");
 
-  useEffect(() => {
-    if (selectedTime === "Current Session") setSelectedTime("Last 30 Days");
-  }, [selectedTime, setSelectedTime]);
-
+  // profile
   const { profile, isLoaded, saveProfile } = useProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [profileSkipped, setProfileSkipped] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
+  // snapshot (instant, no LLM)
+  const [digestPolicies, setDigestPolicies] = useState<PolicyBriefing[]>([]);
+  const [snapshotLoading, setSnapshotLoading] = useState(true);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
+  const [generalizedBriefing, setGeneralizedBriefing] = useState<PolicyResponse | null>(null);
+
+  // LLM briefing
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
+  const [llmResponse, setLlmResponse] = useState<PolicyResponse | null>(null);
+  const [briefingQuery, setBriefingQuery] = useState("");
+
+  // onboarding
   useEffect(() => {
-    if (typeof window === "undefined" || !isLoaded) return;
-    if (profile) {
-      localStorage.removeItem("civic_profile_skipped");
-      setProfileSkipped(false);
-    } else {
-      setProfileSkipped(Boolean(localStorage.getItem("civic_profile_skipped")));
-    }
+    if (!isLoaded || typeof window === "undefined") return;
+    if (profile) localStorage.removeItem("civic_profile_skipped");
+    else if (!localStorage.getItem("civic_profile_skipped")) setShowOnboarding(true);
   }, [isLoaded, profile]);
 
-  const profileActivity = useProfileActivityFeed({
-    isProfileLoaded: isLoaded,
-    profile,
-    isPersonalized,
-    selectedTime,
-  });
-
-  const { policies: snapshotPolicies, snapshotLoading, snapshotError } = useRecentPoliciesSnapshot(
-    selectedArea,
-    selectedLocation,
-    selectedTime,
-    isPersonalized,
-    profile,
-    isLoaded,
-  );
-
-  const filterSummary = useMemo(
-    () =>
-      [selectedLocation, selectedArea === "All" ? "All policy areas" : selectedArea, selectedTime].join(
-        " · ",
-      ),
-    [selectedArea, selectedLocation, selectedTime],
-  );
-
-  const generalizedBriefing = useMemo((): PolicyResponse | null => {
-    if (response) return null;
-    if (snapshotLoading || snapshotError) return null;
-    if (!snapshotPolicies.length) return null;
-    return buildGeneralizedBriefingFromPolicies(snapshotPolicies, {
-      selectedArea,
-      locationLabel: selectedLocation,
-      timeLabel: selectedTime,
-    });
-  }, [
-    response,
-    snapshotPolicies,
-    snapshotLoading,
-    snapshotError,
-    selectedArea,
-    selectedLocation,
-    selectedTime,
-  ]);
-
-  // Show onboarding on first load if profile doesn't exist
+  // static snapshot - uses first selected issue if any, falls back to all
   useEffect(() => {
-    if (isLoaded && !profile && !showOnboarding) {
-      if (typeof window !== "undefined" && !localStorage.getItem("civic_profile_skipped")) {
-        setShowOnboarding(true);
-      }
+    if (!isLoaded) return;
+    let cancelled = false;
+    setSnapshotLoading(true);
+    setSnapshotError(null);
+
+    const borough = context.borough || (isPersonalized && profile?.borough) || undefined;
+    const area = context.issues[0] || undefined;
+    const days = timeframeToDays(context.timeframe);
+
+    getRecentPolicies(borough, area, days, 50).then(({ policies }) => {
+      if (cancelled) return;
+      setDigestPolicies(policies);
+      setGeneralizedBriefing(buildGeneralizedBriefingFromPolicies(policies, {
+        selectedArea: context.issues[0] || "All",
+        locationLabel: borough ?? "All NYC",
+        timeLabel: context.timeframe || "All Time",
+      }));
+    }).catch(e => {
+      if (cancelled) return;
+      setSnapshotError(e instanceof Error ? e.message : "Could not load records");
+    }).finally(() => { if (!cancelled) setSnapshotLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [isLoaded, context.borough, context.issues, context.timeframe, isPersonalized, profile]);
+
+  // LLM briefing
+  const fireLlm = useCallback(async (q: string, ctx: HeroContext, personalized: boolean) => {
+    const key = cacheKey(q, ctx, personalized);
+    const cached = getCached(key);
+    if (cached) {
+      setLlmResponse(cached);
+      setBriefingQuery(q || buildFilterSummary(ctx, personalized));
+      return;
     }
-  }, [isLoaded, profile, showOnboarding]);
 
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    const q = searchQuery.trim();
-    if (!q) return;
-
-    const buildEffectiveFilters = () => {
-      const effectiveBorough =
-        selectedLocation !== "All NYC"
-          ? selectedLocation
-          : isPersonalized && profile?.borough
-            ? profile.borough
-            : undefined;
-
-      return {
-        borough: effectiveBorough,
-        issue_area: selectedArea !== "All" ? selectedArea : undefined,
-        timeframe: selectedTime !== "All Time" ? selectedTime : undefined,
-        location_scope: selectedLocation !== "All NYC" ? selectedLocation : undefined,
-        profile_active: isPersonalized ? "true" : "false",
-      };
-    };
-
-    const buildAugmentedQuery = (baseQuery: string) => {
-      const parts = [baseQuery.trim()];
-      const zMatch = baseQuery.match(/\b\d{5}\b/);
-      if (zMatch) parts.push(`location: ZIP code ${zMatch[0]}`);
-
-      if (selectedArea !== "All") parts.push(`focus area: ${selectedArea}`);
-      if (selectedLocation !== "All NYC") parts.push(`jurisdiction: ${selectedLocation}`);
-      if (selectedTime !== "All Time") parts.push(`period: ${selectedTime}`);
-      
-      if (isPersonalized && profile) {
-        if (profile.borough && selectedLocation === "All NYC") parts.push(`user borough: ${profile.borough}`);
-        if (profile.issues?.length) parts.push(`user interests: ${profile.issues.join(", ")}`);
-      }
-
-      return parts.join(" | ");
-    };
-
-    setLoading(true);
-    setError(null);
+    const llmQuery = buildLlmQuery(q, ctx, personalized);
+    const demographics = buildDemographics(ctx);
+    setBriefingQuery(q || buildFilterSummary(ctx, personalized));
+    setLlmLoading(true);
+    setLlmError(null);
+    setLlmResponse(null);
 
     try {
-      await checkHealth();
-
-      const filters = buildEffectiveFilters();
-      const augmentedQuery = buildAugmentedQuery(q);
-      
-      // Extract ZIP for direct filter if present
-      const zipMatch = q.match(/\b\d{5}\b/);
-
-      const data = await sendChat(augmentedQuery, {
-        borough: filters.borough,
-        zip: zipMatch ? zipMatch[0] : undefined,
-        issue_area: filters.issue_area,
-        timeframe: filters.timeframe,
-        location_scope: filters.location_scope,
-        profile_active: filters.profile_active,
+      const res = await fetch("/api/civic/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: llmQuery, demographics, response_style: "structured" }),
+        cache: "no-store",
       });
-
-      console.log("CHAT RESPONSE", data);
-      setResponse(data);
-      setLastBriefingQuery(q);
-      
-      // Smooth scroll to results
-      setTimeout(() => {
-        document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as any;
+        throw new Error(err.detail || err.error || `HTTP ${res.status}`);
+      }
+      const envelope = await res.json() as Record<string, unknown>;
+      const payload = "reply" in envelope ? envelope.reply : envelope;
+      const normalized = normalizePolicyReply(payload);
+      const retrieval_sources = parseRetrievalSourcesEnvelope(envelope, 12);
+      const su = envelope.sources_used;
+      const result: PolicyResponse = {
+        ...normalized,
+        retrieval_sources,
+        sources_used: typeof su === "number" ? su : retrieval_sources.length,
+      };
+      setCached(key, result);
+      setLlmResponse(result);
     } catch (e) {
-      console.error("Briefing request failed:", e);
-      setError(e instanceof Error ? e.message : "Unable to load policy data");
+      setLlmError(e instanceof Error ? e.message : "Briefing failed");
     } finally {
-      setLoading(false);
+      setLlmLoading(false);
     }
-  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile]);
+  }, []);
 
-  const lastBriefingQueryRef = useRef(lastBriefingQuery);
-  lastBriefingQueryRef.current = lastBriefingQuery;
+  // search handler
+  const handleSearch = useCallback(() => {
+    if (!query.trim() && !context.issues.length && !context.borough) return;
+    setActiveTab("briefings");
+    fireLlm(query, context, isPersonalized);
+  }, [query, context, isPersonalized, fireLlm]);
 
-  // Re-run the last successful briefing when dashboard filters / profile change — not when the hero search box text changes
-  useEffect(() => {
-    const q = lastBriefingQueryRef.current.trim();
-    if (!q) return;
-    void handleSearch(q);
-  }, [selectedArea, selectedLocation, selectedTime, isPersonalized, profile, handleSearch]);
+  // digest card click
+  const handleCardClick = useCallback((policy: PolicyBriefing) => {
+    const q = `What does "${policy.title}" mean for NYC residents? Who is affected and what should they know?`;
+    setQuery(q);
+    setActiveTab("briefings");
+    fireLlm(q, context, isPersonalized);
+  }, [context, isPersonalized, fireLlm]);
+
+  const filterSummary = useMemo(
+    () => buildFilterSummary(context, isPersonalized),
+    [context, isPersonalized],
+  );
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-hidden">
-      <div
-        className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(90,110,140,0.15)]"
-        aria-hidden
-      />
-      <div
-        className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)] dark:bg-[rgba(60,75,98,0.12)]"
-        aria-hidden
-      />
-      <OnboardingModal 
-        isOpen={showOnboarding} 
+      <div className="ambient-orb -top-24 -left-20 h-72 w-72 bg-[rgba(168,218,220,0.28)] dark:bg-[rgba(90,110,140,0.15)]" aria-hidden />
+      <div className="ambient-orb bottom-10 left-[20%] h-64 w-64 bg-[rgba(26,54,93,0.10)] dark:bg-[rgba(60,75,98,0.12)]" aria-hidden />
+
+      <OnboardingModal
+        isOpen={showOnboarding}
         initialProfile={profile}
         onSave={(data) => {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("civic_profile_skipped");
-          }
-          setProfileSkipped(false);
+          if (typeof window !== "undefined") localStorage.removeItem("civic_profile_skipped");
           saveProfile(data);
           setShowOnboarding(false);
+          // Auto-enable "For Me" after onboarding
+          setIsPersonalized(true);
         }}
         onSkip={() => {
           localStorage.setItem("civic_profile_skipped", "true");
-          setProfileSkipped(true);
           setShowOnboarding(false);
         }}
       />
 
       <Header />
+
       <main className="relative z-10 mt-10 flex-1">
         <Hero
           query={query}
           onQueryChange={setQuery}
-          loading={loading}
-          onSearch={() => handleSearch(query)}
-        />
-
-        <div className="mx-auto mt-2 max-w-7xl px-4 sm:mt-4 sm:px-6 lg:px-8">
-          <DashboardFilters
-            selectedArea={selectedArea}
-            setSelectedArea={setSelectedArea}
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            selectedTime={selectedTime}
-            setSelectedTime={setSelectedTime}
-            isPersonalized={isPersonalized}
-            setIsPersonalized={setIsPersonalized}
-            onEditProfile={() => setShowEditProfile(true)}
-          />
-        </div>
-
-        <SettingsModal
-          isOpen={showEditProfile}
-          onClose={() => setShowEditProfile(false)}
-        />
-
-        {/* 1. Policy Briefing (Search Results) */}
-        <div id="results" className="scroll-mt-20 mt-6 sm:mt-8">
-          <PolicyBriefingPanel
-            loading={loading}
-            error={error}
-            response={response}
-            briefingQuery={lastBriefingQuery}
-            snapshotLoading={snapshotLoading}
-            snapshotError={snapshotError}
-            generalizedBriefing={generalizedBriefing}
-            filterSummary={filterSummary}
-          />
-        </div>
-
-        <ProfileActivitySection
-          isProfileLoaded={isLoaded}
+          loading={llmLoading}
+          onSearch={handleSearch}
+          context={context}
+          onContextChange={setContext}
+          isPersonalized={isPersonalized}
+          onPersonalizedChange={setIsPersonalized}
           profile={profile}
-          profileSkipped={profileSkipped}
-          items={profileActivity.items}
-          loading={profileActivity.loading}
-          error={profileActivity.error}
-          mode={profileActivity.mode}
-          mappedAreas={profileActivity.mappedAreas}
-          profileBorough={profileActivity.profileBorough}
-          onSetupProfile={() => setShowOnboarding(true)}
-          onEditProfile={() => setShowEditProfile(true)}
         />
 
-        {/* 2. Dashboard feed */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
-          <div id="updates">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 pb-16 space-y-6">
+          <TabBar active={activeTab} setActive={setActiveTab} />
+
+          {activeTab === "briefings" ? (
+            <div className="space-y-6">
+              {/* digest cards */}
+              <DigestCards
+                policies={digestPolicies}
+                loading={snapshotLoading}
+                onCardClick={handleCardClick}
+              />
+
+              {/* briefing - snapshot or LLM result */}
+              <PolicyBriefingPanel
+                loading={llmLoading}
+                error={llmError}
+                response={llmResponse}
+                briefingQuery={briefingQuery}
+                snapshotLoading={snapshotLoading}
+                snapshotError={snapshotError}
+                generalizedBriefing={generalizedBriefing}
+                filterSummary={filterSummary}
+              />
+            </div>
+          ) : (
             <RecentUpdates
-              policies={snapshotPolicies}
-              policiesLoading={snapshotLoading}
-              policiesError={snapshotError}
+              context={context}
+              isPersonalized={isPersonalized}
+              profile={profile}
             />
-          </div>
+          )}
         </div>
       </main>
+
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <SiteFooter />
     </div>
   );

@@ -25,7 +25,13 @@ from tag_classifier import TagClassifier
 
 # Configuration
 NYS_SENATE_API_KEY = os.getenv("NYS_SENATE_API_KEY")
-SESSION_YEAR = datetime.now().year
+# biennial legislative session year (ODD-EVEN), uses odd year as session year
+def get_session_year(year: int = None) -> int:
+    if year is None:
+        year = datetime.now().year
+    return year if year % 2 == 1 else year - 1
+
+SESSION_YEAR = get_session_year()
 
 class NYSSenateBillsScraper(BaseScraper):
     """

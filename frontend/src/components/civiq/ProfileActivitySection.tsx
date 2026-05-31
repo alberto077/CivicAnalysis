@@ -1,230 +1,241 @@
 "use client";
 
-import { ExternalLink, Sparkles, UserRound } from "lucide-react";
+import { useMemo } from "react";
+import {
+  User, Sparkles, Settings, Plus, ExternalLink,
+  Users, Clock, Building2,
+} from "lucide-react";
+import { type CivicProfile } from "@/lib/useProfile";
+import { type PolicyBriefing } from "@/lib/api";
 import { MotionReveal } from "./MotionReveal";
-import { PolicyTitleSplit } from "./PolicyTitleSplit";
-import type { CivicProfile } from "@/lib/useProfile";
-import type { ProfileActivityItem, ProfileActivityMode } from "@/lib/useProfileActivityFeed";
-import type { PolicyApiArea } from "@/lib/profileIssueToPolicyArea";
+import { getPolicyAreaMetadata, timeAgo } from "@/lib/policyMetadata";
 
-type ProfileActivitySectionProps = {
+type Props = {
   isProfileLoaded: boolean;
   profile: CivicProfile | null;
   profileSkipped: boolean;
-  items: ProfileActivityItem[];
+  items: PolicyBriefing[];
   loading: boolean;
   error: string | null;
-  mode: ProfileActivityMode;
-  mappedAreas: PolicyApiArea[];
+  mode: "personalized" | "fallback" | "empty" | "citywide" | string;
+  mappedAreas: string[];
   profileBorough: string | undefined;
   onSetupProfile: () => void;
   onEditProfile: () => void;
 };
 
-export function ProfileActivitySection({
-  isProfileLoaded,
-  profile,
-  profileSkipped,
-  items,
-  loading,
-  error,
-  mode,
-  mappedAreas,
-  profileBorough,
-  onSetupProfile,
-  onEditProfile,
-}: ProfileActivitySectionProps) {
-  const title =
-    mode === "personalized" ? "Picked for your profile" : "Recent activity";
-
-  const subtitleParts: string[] = [];
-  if (mode === "personalized" && profile) {
-    if (profileBorough) subtitleParts.push(profileBorough);
-    if (mappedAreas.length) subtitleParts.push(mappedAreas.join(", "));
-    if (!subtitleParts.length) subtitleParts.push("Your saved interests");
-  } else if (mode === "personalize_off") {
-    subtitleParts.push("High-match picks need personalization");
-  } else if (profileSkipped) {
-    subtitleParts.push("Add a profile for borough + topic matches");
-  } else if (!profile) {
-    subtitleParts.push("Set up your profile to see targeted picks");
-  } else {
-    subtitleParts.push("Profile picks");
-  }
-
-  const showCardGrid = mode === "personalized" && items.length > 0;
-  const showPersonalizedEmpty =
-    mode === "personalized" && isProfileLoaded && !loading && !error && items.length === 0;
-  const showNonPersonalizedPanel = mode !== "personalized" && isProfileLoaded && !loading && !error;
-
+function SectionHeader({ eyebrow, title, badge, action }: {
+  eyebrow: string; title: string; badge?: string; action?: { label: string; onClick: () => void };
+}) {
   return (
-    <section
-      id="profile-activity"
-      className="mx-auto mt-6 max-w-7xl scroll-mt-20 px-4 sm:mt-8 sm:px-6 lg:px-8"
-      aria-labelledby="profile-activity-heading"
-    >
-      <MotionReveal>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                <Sparkles className="h-4 w-4" strokeWidth={1.65} aria-hidden />
-              </span>
-              <h2
-                id="profile-activity-heading"
-                className="font-work-sans text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl"
-              >
-                {title}
-              </h2>
-            </div>
-            <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[var(--muted)]">
-              {subtitleParts.join(" · ")}
-            </p>
-            {mode === "personalize_off" ? (
-              <p className="mt-1 max-w-2xl text-[12px] leading-snug text-[var(--foreground-secondary)]">
-                Turn on &quot;Personalize results&quot; in the filters above. This strip only lists records that match
-                both your borough and saved topic tags.
-              </p>
-            ) : null}
-            {mode === "personalized" ? (
-              <p className="mt-1 max-w-2xl text-[12px] leading-snug text-[var(--foreground-secondary)]">
-                Only cross-matches (borough + your tags) appear here—approximate, device-local preferences. For the
-                full chronological feed, see{" "}
-                <a href="#updates" className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline">
-                  Recent policy updates
-                </a>
-                .
-              </p>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            {!profile ? (
-              <button
-                type="button"
-                onClick={onSetupProfile}
-                className="filter-pill font-work-sans inline-flex items-center gap-2 rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)]"
-              >
-                <UserRound className="h-3.5 w-3.5 dark:text-[var(--icon-cyan)]" aria-hidden />
-                Set up profile
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onEditProfile}
-                className="filter-pill font-work-sans rounded-xl border-0 bg-[linear-gradient(to_bottom,#fcfdfe_0%,#f5f9fc_50%,#eef4f9_100%)] px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--foreground)] transition hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-soft)] dark:bg-[linear-gradient(180deg,#151b22_0%,#0f1318_100%)]"
-              >
-                Edit profile
-              </button>
-            )}
-          </div>
+    <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+        </span>
+        <div>
+          <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">{eyebrow}</p>
+          <h2 className="font-limelight text-lg font-semibold tracking-tight text-[rgba(20,31,45,0.9)] dark:text-[var(--foreground)] leading-tight">{title}</h2>
         </div>
-      </MotionReveal>
-
-      <MotionReveal className="mt-6">
-        <div className="glass-card feature-border-glow overflow-hidden rounded-2xl border border-[var(--border)] md:rounded-3xl">
-          {!isProfileLoaded || loading ? (
-            <div className="flex min-h-[160px] flex-col items-center justify-center gap-3 px-6 py-12">
-              <div
-                className="h-9 w-9 animate-spin rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)]"
-                aria-hidden
-              />
-              <p className="text-sm text-[var(--muted)]">Loading high-match picks…</p>
-            </div>
-          ) : error ? (
-            <div className="px-6 py-10 text-center" role="alert">
-              <p className="font-work-sans text-sm font-semibold text-[var(--foreground)]">Could not load activity</p>
-              <p className="mt-1 font-work-sans text-xs text-[var(--muted)]">{error}</p>
-            </div>
-          ) : showCardGrid ? (
-            <div className="p-5 sm:p-6 md:p-8">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {items.map((p) => (
-                  <article
-                    key={policyRowKey(p)}
-                    className="flex flex-col rounded-2xl border border-[var(--border)] bg-white/55 p-4 shadow-[0_8px_28px_-18px_rgba(26,54,93,0.18)] backdrop-blur-sm dark:bg-[var(--surface-elevated)]/50 dark:shadow-[0_12px_36px_-24px_rgba(0,0,0,0.5)]"
-                  >
-                    <p className="font-work-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
-                      {p.matchSummary}
-                    </p>
-                    <h3 className="mt-2 line-clamp-2 min-h-0 font-work-sans text-[15px] leading-snug text-[var(--foreground)]">
-                      <PolicyTitleSplit title={p.title} />
-                    </h3>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {p.source_type ? (
-                        <span className="font-work-sans rounded bg-[var(--accent-soft)]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                          {p.source_type}
-                        </span>
-                      ) : null}
-                      {p.published_date ? (
-                        <span className="font-work-sans text-[11px] text-[var(--muted)]">
-                          {new Date(p.published_date).toLocaleDateString()}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border)]/70 pt-3">
-                      {canOpenOfficialUrl(p.source_url) ? (
-                        <a
-                          href={p.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-work-sans inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--accent)] underline-offset-2 hover:underline dark:text-[var(--icon-mint)]"
-                        >
-                          Open record
-                          <ExternalLink className="size-3.5 shrink-0" aria-hidden />
-                        </a>
-                      ) : (
-                        <span className="font-work-sans text-[11px] text-[var(--muted)]">No direct link for this row</span>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : showPersonalizedEmpty ? (
-            <div className="px-6 py-12 text-center sm:px-10">
-              <p className="font-work-sans text-sm font-semibold text-[var(--foreground)]">
-                No cross-matches in this window
-              </p>
-              <p className="mx-auto mt-2 max-w-lg font-work-sans text-[13px] leading-relaxed text-[var(--muted)]">
-                We didn&apos;t find records that matched both your borough and saved topic tags for your current
-                timeframe. Add interests in your profile, widen the dashboard timeframe, or browse the full feed below.
-              </p>
-              <a
-                href="#updates"
-                className="mt-5 inline-flex font-work-sans text-sm font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
-              >
-                Go to Recent policy updates
-              </a>
-            </div>
-          ) : showNonPersonalizedPanel ? (
-            <div className="px-6 py-12 text-center sm:px-10">
-              <p className="font-work-sans text-sm font-semibold text-[var(--foreground)]">
-                {mode === "personalize_off"
-                  ? "Personalization is off"
-                  : profileSkipped
-                    ? "Browsing without a saved profile"
-                    : "Profile not set yet"}
-              </p>
-              <p className="mx-auto mt-2 max-w-lg font-work-sans text-[13px] leading-relaxed text-[var(--muted)]">
-                This area only shows <strong className="font-semibold text-[var(--foreground)]">high-confidence</strong>{" "}
-                matches (your NYC borough plus topic tags from your profile). Citywide lists stay in{" "}
-                <a href="#updates" className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline">
-                  Recent policy updates
-                </a>
-                .
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </MotionReveal>
-    </section>
+      </div>
+      <div className="flex items-center gap-2">
+        {badge && (
+          <span className="hidden sm:flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 text-amber-700 dark:text-amber-400">
+            <Sparkles className="h-2 w-2" />{badge}
+          </span>
+        )}
+        {action && (
+          <button onClick={action.onClick} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+            <Settings className="h-2.5 w-2.5" />{action.label}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
-function policyRowKey(p: ProfileActivityItem): string {
-  return `${p.id}-${p.source_url}-${p.title}`;
+function ProfileChips({ profile, onEdit }: { profile: CivicProfile; onEdit: () => void }) {
+  const chips = useMemo(() => {
+    const out: { label: string; color?: string }[] = [];
+    if (profile.borough) out.push({ label: profile.borough, color: "#ee7a85" });
+    if (profile.housing) out.push({ label: profile.housing });
+    (profile.issues ?? []).slice(0, 3).forEach((issue) => {
+      const meta = getPolicyAreaMetadata(issue);
+      out.push({ label: issue.split(" ").slice(0, 2).join(" "), color: meta.id !== "All" ? meta.color : undefined });
+    });
+    return out;
+  }, [profile]);
+
+  return (
+    <div className="flex items-center justify-between gap-3 mb-4 px-3 py-2.5 rounded-xl border border-[var(--border)] bg-white/60 dark:bg-[var(--surface-card)]/50 backdrop-blur-md">
+      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10">
+          <User className="h-2.5 w-2.5 text-[var(--accent)]" />
+        </span>
+        {chips.map((c, i) => (
+          <span key={i} className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+            style={{ color: c.color ?? "var(--muted)", background: c.color ? `${c.color}12` : "var(--surface-elevated)", borderColor: c.color ? `${c.color}30` : "var(--border)" }}>
+            {c.label}
+          </span>
+        ))}
+      </div>
+      <button onClick={onEdit} className="shrink-0 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+        <Settings className="h-2.5 w-2.5" />Edit
+      </button>
+    </div>
+  );
 }
 
-function canOpenOfficialUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url?.trim() ?? "");
+function EmptyState({ icon: Icon = Sparkles, title, body, cta, onCta }: {
+  icon?: React.ElementType; title: string; body: string; cta: string; onCta: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/40">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)]/10 mx-auto mb-3">
+        <Icon className="h-4 w-4 text-[var(--accent)]" />
+      </div>
+      <p className="text-[13px] font-semibold text-[var(--foreground)] mb-1">{title}</p>
+      <p className="text-[11px] text-[var(--muted)] leading-relaxed max-w-[200px] mx-auto mb-4">{body}</p>
+      <button onClick={onCta}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white bg-[var(--accent)] hover:brightness-110 transition-all active:scale-[0.98] shadow-sm">
+        <Plus className="h-3 w-3" />{cta}
+      </button>
+    </div>
+  );
+}
+
+function SkeletonList({ count = 4 }: { count?: number }) {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="animate-pulse rounded-2xl border border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/40 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-4 w-16 rounded bg-slate-200/70 dark:bg-slate-700/50" />
+            <div className="h-3 w-10 rounded bg-slate-200/50 dark:bg-slate-700/30 ml-auto" />
+          </div>
+          <div className="h-4 w-4/5 rounded bg-slate-200/70 dark:bg-slate-700/50 mb-1.5" />
+          <div className="h-3 w-3/5 rounded bg-slate-200/50 dark:bg-slate-700/30" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ProfileActivitySection({
+  isProfileLoaded, profile, profileSkipped,
+  items, loading, error, mode, mappedAreas, profileBorough,
+  onSetupProfile, onEditProfile,
+}: Props) {
+
+  if (!isProfileLoaded) return <MotionReveal><section><div className="h-7 w-40 animate-pulse rounded-xl bg-slate-200/60 dark:bg-[var(--surface-elevated)]/60 mb-4" /><SkeletonList /></section></MotionReveal>;
+
+  if (!profile && !profileSkipped) return (
+    <MotionReveal><section>
+      <SectionHeader eyebrow="Activity" title="Your Civic Feed" />
+      <EmptyState icon={User} title="Set up your profile"
+        body="Tell us your borough and interests to surface legislation that affects you most."
+        cta="Set up profile" onCta={onSetupProfile} />
+    </section></MotionReveal>
+  );
+
+  if (profileSkipped || mode === "empty" || (mode !== "personalized" && mode !== "fallback" && mode !== "citywide" && !items.length)) return (
+    <MotionReveal><section>
+      <SectionHeader eyebrow="Activity" title="Your Civic Feed" />
+      <EmptyState icon={Sparkles} title="No activity to show"
+        body={profileSkipped ? "Create a profile to see personalized legislation." : "Add issue areas to your profile to see matched activity."}
+        cta={profileSkipped ? "Create profile" : "Edit profile"} onCta={profileSkipped ? onSetupProfile : onEditProfile} />
+    </section></MotionReveal>
+  );
+
+  const contextLabel = [profileBorough, ...(mappedAreas?.slice(0, 2) ?? [])].filter(Boolean).join(" · ");
+
+  return (
+    <MotionReveal>
+      <section>
+        <SectionHeader
+          eyebrow={mode === "personalized" ? "Personalized" : mode === "everyone" ? "Everyone" : "Activity"}
+          title="Your Civic Feed"
+          badge={contextLabel || undefined}
+        />
+
+        {profile && <ProfileChips profile={profile} onEdit={onEditProfile} />}
+
+        {loading && <SkeletonList />}
+
+        {!loading && error && (
+          <div className="rounded-xl border border-red-200/60 bg-red-50/80 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200" role="alert">
+            <p className="font-semibold">Could not load your feed.</p>
+            <p className="mt-0.5 text-[13px] opacity-80">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && !items.length && (
+          <div className="rounded-xl border border-dashed border-[var(--border)] bg-white/40 dark:bg-[var(--surface-card)]/40 p-8 text-center">
+            <p className="text-[12px] text-[var(--muted)]">No records matched your profile for this period.</p>
+          </div>
+        )}
+
+        {!loading && !error && items.length > 0 && (
+          <div className="space-y-2.5">
+            {items.map((item) => {
+              const matchedArea = mappedAreas?.find((area) => {
+                const kws = getPolicyAreaMetadata(area).keywords;
+                const hay = `${item.title} ${(item.topic_tags ?? []).join(" ")}`.toLowerCase();
+                return kws.some((k) => hay.includes(k));
+              });
+              const meta = getPolicyAreaMetadata(matchedArea ?? item.source_type ?? "");
+              const color = meta.color;
+              const AreaIcon = meta.Icon ?? Building2;
+
+              return (
+                <div key={item.id}
+                  className="group relative rounded-2xl border border-[var(--border)] bg-white/60 dark:bg-[var(--surface-card)]/50 backdrop-blur-md px-4 py-3.5 hover:bg-white/80 dark:hover:bg-[var(--surface-card)]/75 hover:shadow-sm transition-all">
+                  <div className="absolute left-0 inset-y-3.5 w-[3px] rounded-full" style={{ background: color }} />
+                  <div className="pl-3">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest border"
+                        style={{ color, background: `${color}12`, borderColor: `${color}30` }}>
+                        <AreaIcon className="h-2 w-2" />
+                        {matchedArea ?? item.source_type ?? "Record"}
+                      </span>
+                      {item.source_type && matchedArea && item.source_type !== matchedArea && (
+                        <span className="text-[8px] text-[var(--muted)] uppercase tracking-widest px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[var(--surface-elevated)] border border-[var(--border)]">
+                          {item.source_type}
+                        </span>
+                      )}
+                      {item.published_date && (
+                        <span className="flex items-center gap-0.5 text-[9px] text-[var(--muted)] tabular-nums ml-auto">
+                          <Clock className="h-2 w-2" />{timeAgo(item.published_date)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[13px] font-semibold text-[var(--foreground)] leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2 mb-1">
+                      {item.title}
+                    </p>
+                    {item.impact && (
+                      <p className="text-[11px] text-[var(--muted)] leading-relaxed line-clamp-2 mb-1.5 italic">{item.impact}</p>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      {item.affects ? (
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Users className="h-2.5 w-2.5 text-[var(--muted)] shrink-0" />
+                          <span className="text-[9px] text-[var(--muted)] truncate max-w-[110px]">{item.affects}</span>
+                        </div>
+                      ) : <div />}
+                      {item.source_url && item.source_url !== "#" && (
+                        <a href={item.source_url} target="_blank" rel="noopener noreferrer"
+                          className="flex shrink-0 items-center gap-0.5 text-[9px] font-bold text-[var(--accent)] hover:underline">
+                          Source <ExternalLink className="h-2 w-2" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </MotionReveal>
+  );
 }
