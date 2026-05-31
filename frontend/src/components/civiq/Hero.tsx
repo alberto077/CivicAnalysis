@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight, Search, Sparkles, Users, X } from "lucide-react";
-import { useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Search, Sparkles, Users, X, ChevronDown } from "lucide-react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { POLICY_AREAS } from "@/lib/policyMetadata";
 import type { CivicProfile } from "@/lib/useProfile";
 
@@ -44,6 +44,7 @@ export const DEMOGRAPHICS = [
 export const TIMEFRAMES = ["Last 30 days", "Last 6 months", "Last year", "All time"];
 const ISSUE_OPTIONS = POLICY_AREAS.filter(a => a.id !== "All");
 
+const MAX_CHIPS = 7;
 
 const HEADLINE_LETTER_STAGGER = 0.14;
 const HEADLINE_LETTER_DURATION = 1.05;
@@ -54,23 +55,74 @@ const letterVariants = {
 };
 
 
+// get flat list of chip labels from the current context
+function getActiveChips(context: HeroContext): string[] {
+  const chips: string[] = [];
+  if (context.borough) chips.push(context.borough);
+  if (context.housing) chips.push(context.housing);
+  if (context.income) chips.push(context.income);
+  if (context.age) chips.push(context.age);
+  context.demographics.forEach(d => chips.push(d));
+  if (context.timeframe) chips.push(context.timeframe);
+  return chips;
+}
+
+
+const CAT_COLORS = {
+  borough: ["#f0f9ff", "#bae6fd", "#0369a1", "#0ea5e9", "#0284c7", "#fff"],
+  housing: ["#f0fdf4", "#bbf7d0", "#047857", "#10b981", "#059669", "#fff"],
+  income: ["#fffbeb", "#fde68a", "#92400e", "#f59e0b", "#d97706", "#fff"],
+  age: ["#faf5ff", "#e9d5ff", "#6d28d9", "#8b5cf6", "#7c3aed", "#fff"],
+  demographics: ["#fff1f2", "#fecdd3", "#9f1239", "#f43f5e", "#e11d48", "#fff"],
+  timeframe: ["#f8fafc", "#e2e8f0", "#475569", "#64748b", "#475569", "#fff"],
+} as const;
+
+type CatKey = keyof typeof CAT_COLORS;
+
+const CHIP_COLORS: Record<CatKey, [string, string]> = {
+  borough: ["#e0f2fe", "#0369a1"],
+  housing: ["#d1fae5", "#047857"],
+  income: ["#fef3c7", "#92400e"],
+  age: ["#ede9fe", "#5b21b6"],
+  demographics: ["#ffe4e6", "#9f1239"],
+  timeframe: ["#f1f5f9", "#475569"],
+};
+
 function Pill({
-  selected, onClick, color, children,
+  selected, onClick, color, catKey, children,
 }: {
   selected: boolean;
   onClick: () => void;
   color?: string;
+  catKey?: CatKey;
   children: React.ReactNode;
 }) {
+  const cat = catKey ? CAT_COLORS[catKey] : null;
+  let style: React.CSSProperties;
+  if (selected) {
+    if (color) {
+      style = { background: color, borderColor: color, color: "#fff" };
+    } else if (cat) {
+      style = { background: cat[3], borderColor: cat[4], color: cat[5] };
+    } else {
+      style = { background: "var(--accent)", borderColor: "transparent", color: "#fff" };
+    }
+  } else {
+    style = cat
+      ? { background: cat[0], borderColor: cat[1], color: cat[2] }
+      : {};
+  }
+
+  const baseUnsel = cat
+    ? ""
+    : "bg-white dark:bg-white/6 border-slate-200 dark:border-white/12 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/25 hover:bg-slate-50 dark:hover:bg-white/10";
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11.5px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${selected
-        ? "text-white border-transparent shadow-sm"
-        : "bg-white dark:bg-white/6 border-slate-200 dark:border-white/12 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/25 hover:bg-slate-50 dark:hover:bg-white/10"
-        }`}
-      style={selected ? { background: color ?? "var(--accent)" } : undefined}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11.5px] font-medium transition-all whitespace-nowrap flex-shrink-0 ${baseUnsel}`}
+      style={style}
     >
       {children}
     </button>
@@ -93,13 +145,16 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
 
 
 function FilterBar({
-  context, onChange, isPersonalized, onPersonalizedChange,
+  context, onChange, isPersonalized, onPersonalizedChange, onSearch,
 }: {
   context: HeroContext;
   onChange: (c: HeroContext) => void;
   isPersonalized: boolean;
   onPersonalizedChange: (v: boolean) => void;
+  onSearch: () => void | Promise<void>;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const set = useCallback(
     (patch: Partial<HeroContext>) => onChange({ ...context, ...patch }),
     [context, onChange],
@@ -112,12 +167,25 @@ function FilterBar({
     !!context.borough || !!context.housing || !!context.income || !!context.age ||
     context.demographics.length > 0 || context.issues.length > 0 || !!context.timeframe;
 
-  return (
-    <div className="mt-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[var(--surface-card)]/70 backdrop-blur-sm shadow-sm overflow-hidden">
+  const chips = getActiveChips(context);
+  const visibleChips = chips.slice(0, MAX_CHIPS);
+  const overflowCount = chips.length - visibleChips.length;
+  const issueCount = context.issues.length;
+  const totalCount = chips.length + (issueCount > 0 ? 1 : 0);
 
-      {/* top bar: perspective toggle + clear */}
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-100 dark:border-white/8 bg-slate-50/80 dark:bg-white/3">
-        <div className="flex items-center rounded-lg border border-slate-200 dark:border-white/12 bg-white dark:bg-white/6 p-0.5 gap-0.5">
+  return (
+    <div
+      className="mt-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[var(--surface-card)]/70 backdrop-blur-sm shadow-sm overflow-hidden cursor-pointer"
+      onClick={() => setIsOpen(v => !v)}
+    >
+      {/* top bar */}
+      <div className="flex items-center px-3 py-2 bg-slate-50/80 dark:bg-white/3">
+
+        {/* perspective toggle */}
+        <div
+          className="flex items-center rounded-lg border border-slate-200 dark:border-white/12 bg-white dark:bg-white/6 p-0.5 gap-0.5 flex-shrink-0"
+          onClick={e => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={() => onPersonalizedChange(true)}
@@ -126,7 +194,8 @@ function FilterBar({
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
               }`}
           >
-            <Sparkles className="h-3 w-3" /> For me
+            <Sparkles className="h-3 w-3 flex-shrink-0" />
+            For me
           </button>
           <button
             type="button"
@@ -136,99 +205,202 @@ function FilterBar({
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
               }`}
           >
-            <Users className="h-3 w-3" /> Everyone
+            <Users className="h-3 w-3 flex-shrink-0" />
+            Everyone
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onChange(EMPTY_CONTEXT)}
-          disabled={!hasAny}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${hasAny
-            ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
-            : "border-slate-200 dark:border-white/8 bg-transparent text-slate-300 dark:text-slate-600 cursor-default"
-            }`}
-        >
-          <X className="h-3 w-3" /> Clear filters
-        </button>
+        <div className="absolute left-0 right-0 flex justify-center pointer-events-none">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.button
+              key={hasAny ? "search" : "expand"}
+              type="button"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => { e.stopPropagation(); hasAny ? void onSearch() : setIsOpen(v => !v); }}
+              className={`pointer-events-auto flex items-center px-4 py-1.5 rounded-lg text-[11.5px] font-semibold border transition-all ${hasAny
+                ? "bg-[var(--accent)] text-white border-transparent hover:brightness-110 hover:shadow-md"
+                : "bg-white dark:bg-white/6 border-slate-200 dark:border-white/12 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-white hover:border-slate-400 dark:hover:border-white/30 hover:bg-slate-50 dark:hover:bg-white/12"
+                }`}
+            >
+              {hasAny ? <><Search className="h-3 w-3 mr-1.5 flex-shrink-0" />Search ({totalCount})</> : "Expand"}
+            </motion.button>
+          </AnimatePresence>
+        </div>
+
+        {/* clear button */}
+        <div className="ml-auto flex-shrink-0" onClick={e => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => onChange(EMPTY_CONTEXT)}
+            disabled={!hasAny}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${hasAny
+              ? "border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
+              : "border-slate-200 dark:border-white/8 bg-transparent text-slate-300 dark:text-slate-600 cursor-default"
+              }`}
+          >
+            <X className="h-3 w-3 flex-shrink-0" />
+            Clear
+          </button>
+        </div>
       </div>
 
       {/* filter rows */}
-      <div className="px-4 py-1">
+      <div className="px-3 py-2 border-t border-slate-100 dark:border-white/8 flex items-center gap-1.5 min-h-[36px] flex-wrap" onClick={e => e.stopPropagation()}>
+        <AnimatePresence mode="popLayout">
+          {totalCount === 0 ? (
+            <motion.span
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="text-[11px] text-slate-400 dark:text-slate-500 select-none"
+            >
+              0 filters selected
+            </motion.span>
+          ) : (
+            <>
+              {/* non-issue chips, colored by category */}
+              {visibleChips.map(chip => {
+                // map chip back to its category for the right tint
+                const cat: CatKey =
+                  chip === context.borough ? "borough"
+                    : chip === context.housing ? "housing"
+                      : chip === context.income ? "income"
+                        : chip === context.age ? "age"
+                          : chip === context.timeframe ? "timeframe"
+                            : "demographics";
+                const [bg, text] = CHIP_COLORS[cat];
+                return (
+                  <motion.span
+                    key={chip}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex-shrink-0 px-2.5 py-0.5 rounded-lg text-[10.5px] font-semibold whitespace-nowrap border"
+                    style={{ background: bg, color: text, borderColor: text + "44" }}
+                  >
+                    {chip}
+                  </motion.span>
+                );
+              })}
 
-        <FilterSection label="Borough">
-          {BOROUGHS.map(opt => (
-            <Pill key={opt} selected={context.borough === opt}
-              onClick={() => set({ borough: context.borough === opt ? "" : opt })}>
-              {opt}
-            </Pill>
-          ))}
-        </FilterSection>
+              {/* issues grouped chip */}
+              {issueCount > 0 && (
+                <motion.span
+                  key="issues-chip"
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex-shrink-0 px-2.5 py-0.5 rounded-lg text-[10.5px] font-semibold whitespace-nowrap border"
+                  style={{ background: "#dcfce7", color: "#166534", borderColor: "#86efac" }}
+                >
+                  Issues ({issueCount})
+                </motion.span>
+              )}
 
-        <div className="flex gap-0">
-          {/* Housing + Income share a row on wider screens */}
-          <div className="flex-1 flex gap-3 items-start py-2.5 border-b border-slate-100 dark:border-white/6">
-            <span className="w-20 flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1 text-right">Housing</span>
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {HOUSING.map(opt => (
-                <Pill key={opt} selected={context.housing === opt}
-                  onClick={() => set({ housing: context.housing === opt ? "" : opt })}>
-                  {opt}
-                </Pill>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <FilterSection label="Income">
-          {INCOME.map(opt => (
-            <Pill key={opt} selected={context.income === opt}
-              onClick={() => set({ income: context.income === opt ? "" : opt })}>
-              {opt}
-            </Pill>
-          ))}
-        </FilterSection>
-
-        <FilterSection label="Age">
-          {AGE.map(opt => (
-            <Pill key={opt} selected={context.age === opt}
-              onClick={() => set({ age: context.age === opt ? "" : opt })}>
-              {opt}
-            </Pill>
-          ))}
-        </FilterSection>
-
-        {/* Demographics - multi-select */}
-        <FilterSection label="I am">
-          {DEMOGRAPHICS.map(opt => (
-            <Pill key={opt} selected={context.demographics.includes(opt)}
-              onClick={() => toggleArray("demographics", opt)}>
-              {opt}
-            </Pill>
-          ))}
-        </FilterSection>
-
-        {/* Issue - multi-select */}
-        <FilterSection label="Issue">
-          {ISSUE_OPTIONS.map(opt => (
-            <Pill key={opt.id} selected={context.issues.includes(opt.id)} color={opt.color}
-              onClick={() => toggleArray("issues", opt.id)}>
-              <opt.Icon className="h-3 w-3 flex-shrink-0" />
-              {opt.label}
-            </Pill>
-          ))}
-        </FilterSection>
-
-        <FilterSection label="Timeframe">
-          {TIMEFRAMES.map(opt => (
-            <Pill key={opt} selected={context.timeframe === opt}
-              onClick={() => set({ timeframe: context.timeframe === opt ? "" : opt })}>
-              {opt}
-            </Pill>
-          ))}
-        </FilterSection>
-
+              {/* overflow for non-issue chips */}
+              {overflowCount > 0 && (
+                <motion.span
+                  key="overflow"
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[10.5px] font-medium bg-slate-100 dark:bg-white/8 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 whitespace-nowrap"
+                >
+                  +{overflowCount} more
+                </motion.span>
+              )}
+            </>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* filter rows */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="filter-rows"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.32, 0, 0.67, 0] }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 py-1 border-t border-slate-100 dark:border-white/8" onClick={e => e.stopPropagation()}>
+              <FilterSection label="Borough">
+                {BOROUGHS.map(opt => (
+                  <Pill key={opt} selected={context.borough === opt} catKey="borough"
+                    onClick={() => set({ borough: context.borough === opt ? "" : opt })}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="Housing">
+                {HOUSING.map(opt => (
+                  <Pill key={opt} selected={context.housing === opt} catKey="housing"
+                    onClick={() => set({ housing: context.housing === opt ? "" : opt })}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="Income">
+                {INCOME.map(opt => (
+                  <Pill key={opt} selected={context.income === opt} catKey="income"
+                    onClick={() => set({ income: context.income === opt ? "" : opt })}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="Age">
+                {AGE.map(opt => (
+                  <Pill key={opt} selected={context.age === opt} catKey="age"
+                    onClick={() => set({ age: context.age === opt ? "" : opt })}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="I am">
+                {DEMOGRAPHICS.map(opt => (
+                  <Pill key={opt} selected={context.demographics.includes(opt)} catKey="demographics"
+                    onClick={() => toggleArray("demographics", opt)}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="Issue">
+                {ISSUE_OPTIONS.map(opt => (
+                  <Pill key={opt.id} selected={context.issues.includes(opt.id)} color={opt.color}
+                    onClick={() => toggleArray("issues", opt.id)}>
+                    <opt.Icon className="h-3 w-3 flex-shrink-0" />
+                    {opt.label}
+                  </Pill>
+                ))}
+              </FilterSection>
+
+              <FilterSection label="Timeframe">
+                {TIMEFRAMES.map(opt => (
+                  <Pill key={opt} selected={context.timeframe === opt} catKey="timeframe"
+                    onClick={() => set({ timeframe: context.timeframe === opt ? "" : opt })}>
+                    {opt}
+                  </Pill>
+                ))}
+              </FilterSection>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -337,7 +509,7 @@ export function Hero({
                   type="submit"
                   disabled={loading || !query.trim()}
                   aria-label={loading ? "Loading" : "Search"}
-                  className="command-submit hero-droplet-submit relative flex h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none transition-[transform,filter] duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/55 disabled:pointer-events-none"
+                  className="command-submit hero-droplet-submit relative flex h-[clamp(2rem,calc(100cqh-22px),2.75rem)] w-[clamp(2rem,calc(100cqh-22px),2.75rem)] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none transition-[transform,background-color,box-shadow] duration-200 hover:scale-105 hover:bg-white/20 dark:hover:bg-white/15 hover:shadow-[0_0_0_2px_rgba(255,255,255,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/55 disabled:pointer-events-none disabled:opacity-40"
                 >
                   <span className="sr-only">{loading ? "Loading…" : "Search"}</span>
                   <ArrowRight className="hero-submit-arrow relative z-10 h-[clamp(0.95rem,calc(0.32*100cqh-2px),1.25rem)] w-[clamp(0.95rem,calc(0.32*100cqh-2px),1.25rem)] shrink-0 text-[#12355b] dark:text-white" strokeWidth={2.5} aria-hidden />
@@ -349,6 +521,7 @@ export function Hero({
                 onChange={onContextChange}
                 isPersonalized={isPersonalized}
                 onPersonalizedChange={onPersonalizedChange}
+                onSearch={onSearch}
               />
             </form>
           </motion.div>
