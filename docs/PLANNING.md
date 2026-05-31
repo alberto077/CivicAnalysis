@@ -321,19 +321,19 @@ CivicAnalysis/
 | | Create `GitHub Actions` orchestration for daily scraping pipeline | DevOps | ✅ |
 | | OnboardingModal + Dashboard Filters (UI) | FE | ✅ |
 | | Personalization toggle + Advanced Filters on Dashboard | FE | ✅ |
-| **Apr 23** | **CLASS DEMO** | ALL | ⏳ Pending |
-| | Connect Dashboard to Live Data (Filters: Borough, Issue, Time) | FE | ⏳ Pending |
+| **Apr 23** | **CLASS DEMO** | ALL | ✅ |
+| | Connect Dashboard to Live Data (Filters: Borough, Issue, Time) | FE | ✅ |
 | | Multi-page Migration: Separate routes for Map, Politicians, Chat, etc. | FE | ✅ |
 | | Politician Cards: Live data + activity signals | FE | ✅ |
 | | About Page: Project | FE | ✅ |
 | | Map Geography Model: Borough, Neighborhood, ZIP-to-District mapping | BE/ML | ✅ |
-| **May 01** | **Interactive Map & Chatbot Polish** | ALL | ⏳ Pending |
-| | Interactive Map: Neighborhoods, Districts, Zip codes | FE | ⏳ Pending |
-| | LLM Chatbot - RAG + user context | FE | ⏳ Pending |
+| **May 01** | **Interactive Map & Chatbot Polish** | ALL | ✅ |
+| | Interactive Map: Neighborhoods, Districts, Zip codes | FE | ✅ |
+| | LLM Chatbot - RAG + user context | FE | ✅ |
 | | [STRETCH] Error handling & Rate limiting for public demo | BE | ✅ |
 | | [STRETCH] Voyage AI Reranker integration | ML | ⏳ Pending |
-| | [STRETCH] Extensive WCAG AAA Accessibility Overhaul / Multi-language support | FE | ⏳ Pending |
-| **May 08** | **Working MVP end-to-end integration** | ALL | ⏳ Pending |
-| | QA, Testing, UI Polish | ALL | ⏳ Pending |
+| | [STRETCH] Extensive WCAG AAA Accessibility Overhaul / Multi-language support | FE | ✅ |
+| **May 08** | **Working MVP end-to-end integration** | ALL | ✅ |
+| | QA, Testing, UI Polish | ALL | ✅ |
 | | All hosting live (Vercel / Render / Neon) | ALL | ✅ |
-| **May 15** | **Final Projects and Demos Due** | ALL | ⏳ Pending |
+| **May 15** | **Final Projects and Demos Due** | ALL | ✅ |
