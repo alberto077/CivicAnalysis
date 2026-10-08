@@ -190,6 +190,8 @@ RULES:
                 messages=[{"role": "system", "content": system_prompt}, *turns],
                 model=GROQ_MODEL,
                 temperature=0.3,
+                response_format={"type": "json_object"},
+                reasoning_effort="low",
             )
             raw = resp.choices[0].message.content or ""
             logger.info("LLM structured response len=%d", len(raw))
@@ -298,7 +300,16 @@ directly to the user's profile if one exists, or to a general NYC resident if no
         try:
             return json.loads(text)
         except Exception:
-            return {"error": "Invalid JSON from LLM", "raw": raw}
+            pass
+        # fall back to the outermost {...} in case the model wrapped it in prose
+        start, end = text.find("{"), text.rfind("}")
+        if start != -1 and end > start:
+            try:
+                return json.loads(text[start:end + 1])
+            except Exception:
+                pass
+        logger.warning("Invalid JSON from LLM: %s", raw[:500])
+        return {"error": "Invalid JSON from LLM", "raw": raw}
 
 
     # mock data
