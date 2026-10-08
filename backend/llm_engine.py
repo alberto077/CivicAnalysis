@@ -12,6 +12,9 @@ except ImportError:
 
 logger = logging.getLogger("civic_spiegel.llm")
 
+# Groq retired llama-3.1-8b-instant on 2026-08-16.
+GROQ_MODEL = "openai/gpt-oss-20b"
+
 
 class LLMEngine:
     def __init__(self):
@@ -185,7 +188,7 @@ RULES:
         try:
             resp = self.client.chat.completions.create(
                 messages=[{"role": "system", "content": system_prompt}, *turns],
-                model="llama-3.1-8b-instant",
+                model=GROQ_MODEL,
                 temperature=0.3,
             )
             raw = resp.choices[0].message.content or ""
@@ -253,7 +256,7 @@ directly to the user's profile if one exists, or to a general NYC resident if no
         try:
             resp = self.client.chat.completions.create(
                 messages=[{"role": "system", "content": system_prompt}, *turns],
-                model="llama-3.1-8b-instant",
+                model=GROQ_MODEL,
                 temperature=0.25,
             )
             text = (resp.choices[0].message.content or "").strip()
